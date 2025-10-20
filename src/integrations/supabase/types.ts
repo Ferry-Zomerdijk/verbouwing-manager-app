@@ -14,7 +14,330 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contractors: {
+        Row: {
+          bedrijf: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          naam: string
+          notities: string | null
+          project_id: string
+          rol: string | null
+          telefoon: string | null
+        }
+        Insert: {
+          bedrijf?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          naam: string
+          notities?: string | null
+          project_id: string
+          rol?: string | null
+          telefoon?: string | null
+        }
+        Update: {
+          bedrijf?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          naam?: string
+          notities?: string | null
+          project_id?: string
+          rol?: string | null
+          telefoon?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractors_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      costs: {
+        Row: {
+          bedrag: number
+          categorie: Database["public"]["Enums"]["cost_category"]
+          created_at: string | null
+          datum: string
+          factuur_url: string | null
+          id: string
+          koppeling_begrotingspost: string | null
+          leverancier: string | null
+          ocr_herkenning: Json | null
+          project_id: string
+        }
+        Insert: {
+          bedrag: number
+          categorie: Database["public"]["Enums"]["cost_category"]
+          created_at?: string | null
+          datum?: string
+          factuur_url?: string | null
+          id?: string
+          koppeling_begrotingspost?: string | null
+          leverancier?: string | null
+          ocr_herkenning?: Json | null
+          project_id: string
+        }
+        Update: {
+          bedrag?: number
+          categorie?: Database["public"]["Enums"]["cost_category"]
+          created_at?: string | null
+          datum?: string
+          factuur_url?: string | null
+          id?: string
+          koppeling_begrotingspost?: string | null
+          leverancier?: string | null
+          ocr_herkenning?: Json | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          bestand_url: string
+          bestandsnaam: string
+          id: string
+          project_id: string
+          type: Database["public"]["Enums"]["document_type"]
+          upload_datum: string | null
+        }
+        Insert: {
+          bestand_url: string
+          bestandsnaam: string
+          id?: string
+          project_id: string
+          type: Database["public"]["Enums"]["document_type"]
+          upload_datum?: string | null
+        }
+        Update: {
+          bestand_url?: string
+          bestandsnaam?: string
+          id?: string
+          project_id?: string
+          type?: Database["public"]["Enums"]["document_type"]
+          upload_datum?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          bericht: string
+          datum: string | null
+          gelezen: boolean | null
+          id: string
+          project_id: string | null
+          titel: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          bericht: string
+          datum?: string | null
+          gelezen?: boolean | null
+          id?: string
+          project_id?: string | null
+          titel: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          bericht?: string
+          datum?: string | null
+          gelezen?: boolean | null
+          id?: string
+          project_id?: string | null
+          titel?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photos: {
+        Row: {
+          afbeelding_url: string
+          created_at: string | null
+          fase: Database["public"]["Enums"]["photo_phase"]
+          herkende_objecten: Json | null
+          id: string
+          notitie: string | null
+          project_id: string
+        }
+        Insert: {
+          afbeelding_url: string
+          created_at?: string | null
+          fase: Database["public"]["Enums"]["photo_phase"]
+          herkende_objecten?: Json | null
+          id?: string
+          notitie?: string | null
+          project_id: string
+        }
+        Update: {
+          afbeelding_url?: string
+          created_at?: string | null
+          fase?: Database["public"]["Enums"]["photo_phase"]
+          herkende_objecten?: Json | null
+          id?: string
+          notitie?: string | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          naam: string | null
+          rol: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          naam?: string | null
+          rol?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          naam?: string | null
+          rol?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          beschrijving: string | null
+          created_at: string | null
+          einddatum: string | null
+          id: string
+          naam: string
+          startdatum: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
+          totaal_begroting: number | null
+          type: string | null
+          updated_at: string | null
+          user_id: string
+          voortgang: number | null
+          werkelijke_kosten: number | null
+        }
+        Insert: {
+          beschrijving?: string | null
+          created_at?: string | null
+          einddatum?: string | null
+          id?: string
+          naam: string
+          startdatum?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          totaal_begroting?: number | null
+          type?: string | null
+          updated_at?: string | null
+          user_id: string
+          voortgang?: number | null
+          werkelijke_kosten?: number | null
+        }
+        Update: {
+          beschrijving?: string | null
+          created_at?: string | null
+          einddatum?: string | null
+          id?: string
+          naam?: string
+          startdatum?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          totaal_begroting?: number | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string
+          voortgang?: number | null
+          werkelijke_kosten?: number | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          beschrijving: string | null
+          created_at: string | null
+          deadline: string | null
+          id: string
+          prioriteit: Database["public"]["Enums"]["task_priority"] | null
+          project_id: string
+          status: Database["public"]["Enums"]["task_status"] | null
+          titel: string
+          updated_at: string | null
+          verantwoordelijke: string | null
+        }
+        Insert: {
+          beschrijving?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          prioriteit?: Database["public"]["Enums"]["task_priority"] | null
+          project_id: string
+          status?: Database["public"]["Enums"]["task_status"] | null
+          titel: string
+          updated_at?: string | null
+          verantwoordelijke?: string | null
+        }
+        Update: {
+          beschrijving?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          prioriteit?: Database["public"]["Enums"]["task_priority"] | null
+          project_id?: string
+          status?: Database["public"]["Enums"]["task_status"] | null
+          titel?: string
+          updated_at?: string | null
+          verantwoordelijke?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +346,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      cost_category: "Materiaal" | "Arbeid" | "Vergunningen" | "Overig"
+      document_type:
+        | "Offerte"
+        | "Vergunning"
+        | "Handleiding"
+        | "Garantie"
+        | "Contract"
+        | "Overig"
+      notification_type: "Taak" | "Budget" | "Document"
+      photo_phase: "Voor" | "Tijdens" | "Na"
+      project_status: "Gepland" | "Lopend" | "Afgerond"
+      task_priority: "Laag" | "Middel" | "Hoog"
+      task_status: "Te doen" | "Bezig" | "Gereed"
+      user_role: "Eigenaar" | "Partner" | "Aannemer" | "Adviseur"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +486,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      cost_category: ["Materiaal", "Arbeid", "Vergunningen", "Overig"],
+      document_type: [
+        "Offerte",
+        "Vergunning",
+        "Handleiding",
+        "Garantie",
+        "Contract",
+        "Overig",
+      ],
+      notification_type: ["Taak", "Budget", "Document"],
+      photo_phase: ["Voor", "Tijdens", "Na"],
+      project_status: ["Gepland", "Lopend", "Afgerond"],
+      task_priority: ["Laag", "Middel", "Hoog"],
+      task_status: ["Te doen", "Bezig", "Gereed"],
+      user_role: ["Eigenaar", "Partner", "Aannemer", "Adviseur"],
+    },
   },
 } as const
