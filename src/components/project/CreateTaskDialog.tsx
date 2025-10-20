@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface CreateTaskDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  onSuccess: () => void;
+}
+
+const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateTaskDialogProps) => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    titel: "",
+    beschrijving: "",
+    deadline: "",
+    status: "Te doen",
+    prioriteit: "Middel",
+    verantwoordelijke: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.from("tasks").insert([{
+        project_id: projectId,
+        titel: formData.titel,
+        beschrijving: formData.beschrijving || null,
+        deadline: formData.deadline || null,
+        status: formData.status as any,
+        prioriteit: formData.prioriteit as any,
+        verantwoordelijke: formData.verantwoordelijke || null,
+      }]);
+
+      if (error) throw error;
+
+      onSuccess();
+      onOpenChange(false);
+      setFormData({
+        titel: "",
+        beschrijving: "",
+        deadline: "",
+        status: "Te doen",
+        prioriteit: "Middel",
+        verantwoordelijke: "",
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nieuwe Taak</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="titel">Titel *</Label>
+            <Input
+              id="titel"
+              value={formData.titel}
+              onChange={(e) => setFormData({ ...formData, titel: e.target.value })}
+              placeholder="Taak titel"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="beschrijving">Beschrijving</Label>
+            <Textarea
+              id="beschrijving"
+              value={formData.beschrijving}
+              onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
+              placeholder="Taak beschrijving..."
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="prioriteit">Prioriteit</Label>
+              <Select
+                value={formData.prioriteit}
+                onValueChange={(value) => setFormData({ ...formData, prioriteit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Laag">Laag</SelectItem>
+                  <SelectItem value="Middel">Middel</SelectItem>
+                  <SelectItem value="Hoog">Hoog</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="deadline">Deadline</Label>
+              <Input
+                id="deadline"
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="verantwoordelijke">Verantwoordelijke</Label>
+            <Input
+              id="verantwoordelijke"
+              value={formData.verantwoordelijke}
+              onChange={(e) => setFormData({ ...formData, verantwoordelijke: e.target.value })}
+              placeholder="Naam"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuleren
+            </Button>
+            <Button type="submit" disabled={loading} className="gradient-primary">
+              {loading ? "Bezig..." : "Taak Aanmaken"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CreateTaskDialog;
