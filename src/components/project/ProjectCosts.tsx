@@ -143,7 +143,7 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                     </TableCell>
                     <TableCell>{cost.leverancier || "-"}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {cost.beschrijving || "-"}
+                      {(cost as any).beschrijving || "-"}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
