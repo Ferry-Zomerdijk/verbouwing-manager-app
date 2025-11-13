@@ -6,14 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import ProjectOverview from "@/components/project/ProjectOverview";
-import ProjectTasks from "@/components/project/ProjectTasks";
+import ProjectTasksWithDnd from "@/components/project/ProjectTasksWithDnd";
 import ProjectCosts from "@/components/project/ProjectCosts";
+import ProjectContractors from "@/components/project/ProjectContractors";
+import ProjectDocuments from "@/components/project/ProjectDocuments";
+import ProjectPhotos from "@/components/project/ProjectPhotos";
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: project, isLoading } = useQuery({
+  const { data: project, isLoading, refetch } = useQuery({
     queryKey: ["project", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,11 +100,11 @@ const ProjectDetail = () => {
           </TabsList>
 
           <TabsContent value="overzicht">
-            <ProjectOverview project={project} />
+            <ProjectOverview project={project} onUpdate={() => refetch()} />
           </TabsContent>
 
           <TabsContent value="taken">
-            <ProjectTasks projectId={project.id} />
+            <ProjectTasksWithDnd projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="kosten">
@@ -109,21 +112,15 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="documenten">
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">Documentenbeheer komt binnenkort...</p>
-            </div>
+            <ProjectDocuments projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="fotos">
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">Fotogalerij komt binnenkort...</p>
-            </div>
+            <ProjectPhotos projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="aannemers">
-            <div className="text-center py-16">
-              <p className="text-muted-foreground">Aannemersbeheer komt binnenkort...</p>
-            </div>
+            <ProjectContractors projectId={project.id} />
           </TabsContent>
         </Tabs>
       </main>

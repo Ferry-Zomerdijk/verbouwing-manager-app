@@ -3,16 +3,57 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateProjectDialog from "@/components/CreateProjectDialog";
 import { toast } from "sonner";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+
+  useKeyboardShortcuts([
+    {
+      key: "n",
+      ctrlKey: true,
+      callback: () => setCreateDialogOpen(true),
+    },
+    {
+      key: "?",
+      shiftKey: true,
+      callback: () => setShortcutsDialogOpen(true),
+    },
+    {
+      key: "1",
+      altKey: true,
+      callback: () => setFilter("all"),
+    },
+    {
+      key: "2",
+      altKey: true,
+      callback: () => setFilter("Lopend"),
+    },
+    {
+      key: "3",
+      altKey: true,
+      callback: () => setFilter("Gepland"),
+    },
+    {
+      key: "4",
+      altKey: true,
+      callback: () => setFilter("Afgerond"),
+    },
+  ]);
 
   const { data: projects, isLoading, refetch } = useQuery({
     queryKey: ["projects"],
@@ -56,6 +97,9 @@ const Dashboard = () => {
               <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Nieuw Project
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)}>
+                <Keyboard className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="icon" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
@@ -115,6 +159,40 @@ const Dashboard = () => {
           toast.success("Project succesvol aangemaakt!");
         }}
       />
+
+      <Dialog open={shortcutsDialogOpen} onOpenChange={setShortcutsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Toetsenbord Sneltoetsen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Nieuw project</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl + N</kbd>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Sneltoetsen tonen</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Shift + ?</kbd>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Filter: Alle projecten</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 1</kbd>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Filter: Lopend</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 2</kbd>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Filter: Gepland</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 3</kbd>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Filter: Afgerond</span>
+              <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 4</kbd>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
