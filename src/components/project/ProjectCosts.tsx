@@ -3,14 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, FileText, Download } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import CreateCostDialog from "./CreateCostDialog";
+import EditCostDialog from "./EditCostDialog";
+import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProjectCostsProps {
   projectId: string;
@@ -25,6 +32,10 @@ const categoryColors = {
 
 const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCost, setSelectedCost] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: costs, refetch } = useQuery({
     queryKey: ["costs", projectId],
@@ -62,6 +73,27 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
     } catch (error: any) {
       console.error("Download error:", error);
       toast.error("Fout bij downloaden factuur");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCost) return;
+    setDeleting(true);
+    try {
+      // Delete invoice file if exists
+      if (selectedCost.factuur_url) {
+        await supabase.storage.from("invoices").remove([selectedCost.factuur_url]);
+      }
+      
+      const { error } = await supabase.from("costs").delete().eq("id", selectedCost.id);
+      if (error) throw error;
+      
+      toast.success("Kosten verwijderd");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -125,9 +157,10 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                   <TableHead>Datum</TableHead>
                   <TableHead>Categorie</TableHead>
                   <TableHead>Leverancier</TableHead>
-                  <TableHead>Omschrijving</TableHead>
+                  <TableHead>Beschrijving</TableHead>
                   <TableHead className="text-right">Bedrag</TableHead>
-                  <TableHead className="text-center">Factuur</TableHead>
+                  <TableHead className="w-[100px]">Factuur</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,9 +170,7 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                       {format(new Date(cost.datum), "dd MMM yyyy", { locale: nl })}
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${categoryColors[cost.categorie as keyof typeof categoryColors]} text-white`}>
-                        {cost.categorie}
-                      </Badge>
+                      <Badge variant="outline">{cost.categorie}</Badge>
                     </TableCell>
                     <TableCell>{cost.leverancier || "-"}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
@@ -148,27 +179,48 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                     <TableCell className="text-right font-semibold">
                       €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell>
                       {cost.factuur_url ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDownloadInvoice(cost.factuur_url!, cost.id)}
-                              >
-                                <FileText className="w-4 h-4 text-primary" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Download factuur</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadInvoice(cost.factuur_url, cost.id)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                       ) : (
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedCost(cost);
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Bewerken
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedCost(cost);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Verwijderen
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -188,9 +240,33 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
         projectId={projectId}
         onSuccess={() => {
           refetch();
-          toast.success("Kostenpost succesvol toegevoegd!");
+          toast.success("Kosten succesvol toegevoegd!");
         }}
       />
+
+      {selectedCost && (
+        <>
+          <EditCostDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            cost={selectedCost}
+            onSuccess={() => {
+              refetch();
+              toast.success("Kosten bijgewerkt!");
+            }}
+          />
+
+          <DeleteConfirmationDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            title="Kosten Verwijderen"
+            description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig."
+            itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`}
+            onConfirm={handleDelete}
+            loading={deleting}
+          />
+        </>
+      )}
     </div>
   );
 };
