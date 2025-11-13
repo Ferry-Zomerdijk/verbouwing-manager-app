@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Upload, FileText, Loader2, X } from "lucide-react";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -16,12 +19,104 @@ interface CreateCostDialogProps {
 
 const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCostDialogProps) => {
   const [loading, setLoading] = useState(false);
+  const [processingOCR, setProcessingOCR] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split("T")[0],
     bedrag: "",
     leverancier: "",
     categorie: "Materiaal",
+    beschrijving: "",
   });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Alleen PDF, JPG en PNG bestanden zijn toegestaan");
+        return;
+      }
+      
+      // Validate file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("Bestand is te groot. Maximum 20MB");
+        return;
+      }
+      
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setProcessingOCR(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Niet ingelogd");
+
+      // Upload to storage with user folder structure
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('invoices')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) throw uploadError;
+      
+      setUploadedFilePath(fileName);
+
+      // Process with OCR
+      toast.info("Factuur wordt geanalyseerd...");
+      
+      const { data: ocrData, error: functionError } = await supabase.functions
+        .invoke('process-invoice', {
+          body: { filePath: fileName }
+        });
+
+      if (functionError) throw functionError;
+
+      if (ocrData?.success && ocrData?.data) {
+        const extracted = ocrData.data;
+        
+        // Auto-fill form
+        setFormData({
+          datum: extracted.datum || formData.datum,
+          bedrag: extracted.bedrag?.toString() || "",
+          leverancier: extracted.leverancier || "",
+          categorie: formData.categorie,
+          beschrijving: extracted.beschrijving || "",
+        });
+
+        toast.success("Factuurgegevens succesvol ingelezen!");
+      } else {
+        toast.warning("Factuur geüpload, maar automatische extractie mislukt. Vul de gegevens handmatig in.");
+      }
+    } catch (error: any) {
+      console.error("OCR error:", error);
+      toast.error(error.message || "Fout bij het verwerken van de factuur");
+      
+      // Clean up uploaded file on error
+      if (uploadedFilePath) {
+        await supabase.storage.from('invoices').remove([uploadedFilePath]);
+        setUploadedFilePath(null);
+      }
+    } finally {
+      setProcessingOCR(false);
+    }
+  };
+
+  const handleRemoveFile = async () => {
+    if (uploadedFilePath) {
+      await supabase.storage.from('invoices').remove([uploadedFilePath]);
+      setUploadedFilePath(null);
+    }
+    setSelectedFile(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,18 +129,25 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
         bedrag: parseFloat(formData.bedrag),
         leverancier: formData.leverancier || null,
         categorie: formData.categorie as any,
+        beschrijving: formData.beschrijving || null,
+        factuur_url: uploadedFilePath || null,
       }]);
 
       if (error) throw error;
 
       onSuccess();
       onOpenChange(false);
+      
+      // Reset form
       setFormData({
         datum: new Date().toISOString().split("T")[0],
         bedrag: "",
         leverancier: "",
         categorie: "Materiaal",
+        beschrijving: "",
       });
+      setSelectedFile(null);
+      setUploadedFilePath(null);
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
@@ -55,12 +157,85 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nieuwe Kostenpost</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Tabs defaultValue="manual" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">Handmatig</TabsTrigger>
+            <TabsTrigger value="upload">Factuur Uploaden</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upload" className="space-y-4">
+            {!selectedFile ? (
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileSelect}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-2">
+                    Klik of sleep een factuur hierheen
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PDF, JPG of PNG (max 20MB)
+                  </p>
+                </label>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                  <FileText className="w-8 h-8 text-primary" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRemoveFile}
+                    disabled={processingOCR}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {!uploadedFilePath && (
+                  <Button
+                    type="button"
+                    onClick={handleFileUpload}
+                    disabled={processingOCR}
+                    className="w-full"
+                  >
+                    {processingOCR ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Factuur analyseren...
+                      </>
+                    ) : (
+                      "Analyseer met AI"
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="manual">
+            {/* Manual form is always available below */}
+          </TabsContent>
+        </Tabs>
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="datum">Datum *</Label>
@@ -115,11 +290,22 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
             />
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div>
+            <Label htmlFor="beschrijving">Omschrijving</Label>
+            <Textarea
+              id="beschrijving"
+              value={formData.beschrijving}
+              onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
+              placeholder="Beschrijving van producten/diensten"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuleren
             </Button>
-            <Button type="submit" disabled={loading} className="gradient-primary">
+            <Button type="submit" disabled={loading || processingOCR}>
               {loading ? "Bezig..." : "Kostenpost Toevoegen"}
             </Button>
           </div>
