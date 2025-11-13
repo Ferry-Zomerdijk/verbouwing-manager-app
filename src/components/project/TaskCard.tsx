@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import { useSwipeable } from "react-swipeable";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,22 @@ const TaskCard = ({ task, onUpdate }: TaskCardProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [swiped, setSwiped] = useState<"left" | "right" | null>(null);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      setSwiped("left");
+      setTimeout(() => setDeleteDialogOpen(true), 100);
+      setTimeout(() => setSwiped(null), 300);
+    },
+    onSwipedRight: () => {
+      setSwiped("right");
+      setTimeout(() => setEditDialogOpen(true), 100);
+      setTimeout(() => setSwiped(null), 300);
+    },
+    trackMouse: false,
+    trackTouch: true,
+  });
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -48,7 +65,13 @@ const TaskCard = ({ task, onUpdate }: TaskCardProps) => {
 
   return (
     <>
-      <Card className="p-4 hover:shadow-md transition-smooth group">
+      <Card 
+        {...swipeHandlers}
+        className={`p-4 hover:shadow-md transition-all group relative ${
+          swiped === "left" ? "translate-x-[-100px] opacity-50" : 
+          swiped === "right" ? "translate-x-[100px] opacity-50" : ""
+        }`}
+      >
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 cursor-pointer" onClick={() => setEditDialogOpen(true)}>
