@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro } from "lucide-react";
+import { Plus, Euro, FileText, Download } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import CreateCostDialog from "./CreateCostDialog";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProjectCostsProps {
   projectId: string;
@@ -38,6 +39,31 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
       return data;
     },
   });
+
+  const handleDownloadInvoice = async (filePath: string, costId: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('invoices')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factuur-${costId}.${filePath.split('.').pop()}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Factuur gedownload");
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast.error("Fout bij downloaden factuur");
+    }
+  };
 
   const totalCosts = costs?.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0) || 0;
 
@@ -99,7 +125,9 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                   <TableHead>Datum</TableHead>
                   <TableHead>Categorie</TableHead>
                   <TableHead>Leverancier</TableHead>
+                  <TableHead>Omschrijving</TableHead>
                   <TableHead className="text-right">Bedrag</TableHead>
+                  <TableHead className="text-center">Factuur</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -114,8 +142,33 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                       </Badge>
                     </TableCell>
                     <TableCell>{cost.leverancier || "-"}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {cost.beschrijving || "-"}
+                    </TableCell>
                     <TableCell className="text-right font-semibold">
                       €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {cost.factuur_url ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDownloadInvoice(cost.factuur_url!, cost.id)}
+                              >
+                                <FileText className="w-4 h-4 text-primary" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Download factuur</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
