@@ -1,8 +1,20 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import EditTaskDialog from "./EditTaskDialog";
+import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface TaskCardProps {
   task: any;
@@ -15,18 +27,59 @@ const priorityColors = {
   Hoog: "bg-red-500",
 };
 
-const TaskCard = ({ task }: TaskCardProps) => {
+const TaskCard = ({ task, onUpdate }: TaskCardProps) => {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+      if (error) throw error;
+      toast.success("Taak verwijderd");
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <Card className="p-4 hover:shadow-md transition-smooth cursor-pointer">
-      <div className="space-y-3">
-        <div>
-          <h4 className="font-semibold mb-1">{task.titel}</h4>
-          {task.beschrijving && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {task.beschrijving}
-            </p>
-          )}
-        </div>
+    <>
+      <Card className="p-4 hover:shadow-md transition-smooth group">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 cursor-pointer" onClick={() => setEditDialogOpen(true)}>
+              <h4 className="font-semibold mb-1">{task.titel}</h4>
+              {task.beschrijving && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {task.beschrijving}
+                </p>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Bewerken
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Verwijderen
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
         <div className="flex items-center gap-2">
           <Badge className={`${priorityColors[task.prioriteit as keyof typeof priorityColors]} text-white text-xs`}>
@@ -41,14 +94,32 @@ const TaskCard = ({ task }: TaskCardProps) => {
           </div>
         )}
 
-        {task.verantwoordelijke && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <User className="w-3 h-3" />
-            <span>{task.verantwoordelijke}</span>
-          </div>
-        )}
-      </div>
-    </Card>
+          {task.verantwoordelijke && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <User className="w-3 h-3" />
+              <span>{task.verantwoordelijke}</span>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <EditTaskDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        task={task}
+        onSuccess={onUpdate}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Taak Verwijderen"
+        description="Dit kan niet ongedaan worden gemaakt."
+        itemName={task.titel}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+    </>
   );
 };
 
