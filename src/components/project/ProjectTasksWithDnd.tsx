@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileSpreadsheet } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -16,6 +16,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import DraggableTaskCard from "./DraggableTaskCard";
 import TaskCard from "./TaskCard";
 import CreateTaskDialog from "./CreateTaskDialog";
+import ImportTasksDialog from "./ImportTasksDialog";
 import { toast } from "sonner";
 
 interface ProjectTasksWithDndProps {
@@ -24,6 +25,7 @@ interface ProjectTasksWithDndProps {
 
 const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -117,10 +119,16 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Taken</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuwe Taak
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Importeren uit Excel
+          </Button>
+          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Nieuwe Taak
+          </Button>
+        </div>
       </div>
 
       <DndContext
@@ -187,6 +195,12 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
           refetch();
           toast.success("Taak succesvol aangemaakt!");
         }}
+      />
+
+      <ImportTasksDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        projectId={projectId}
       />
     </div>
   );
