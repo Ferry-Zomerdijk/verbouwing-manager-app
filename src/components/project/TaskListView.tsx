@@ -4,12 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUpDown, MoreVertical, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import EditTaskDialog from "./EditTaskDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { TaskBulkActions } from "./TaskBulkActions";
+import { InlineEditableCell } from "./InlineEditableCell";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -48,8 +51,25 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
   const [sortKey, setSortKey] = useState<SortKey>("deadline");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      toast.success("Taak bijgewerkt");
+      onUpdate();
+    } catch (error) {
+      toast.error("Fout bij bijwerken van taak");
+      console.error(error);
+      throw error;
+    }
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -186,30 +206,86 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                       onCheckedChange={() => toggleTaskSelection(task.id)}
                     />
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColors[task.status]}>
-                      {task.status}
-                    </Badge>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={task.status}
+                      onValueChange={(value) =>
+                        updateTask(task.id, { status: value as Task["status"] })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-32 border-none shadow-none">
+                        <Badge variant="outline" className={statusColors[task.status]}>
+                          {task.status}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Te doen">Te doen</SelectItem>
+                        <SelectItem value="Bezig">Bezig</SelectItem>
+                        <SelectItem value="Gereed">Gereed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
-                  <TableCell>
-                    {task.prioriteit ? (
-                      <Badge variant="outline" className={priorityColors[task.prioriteit]}>
-                        {task.prioriteit}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">-</span>
-                    )}
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={task.prioriteit || "none"}
+                      onValueChange={(value) =>
+                        updateTask(task.id, {
+                          prioriteit: value === "none" ? null : (value as Task["prioriteit"]),
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-28 border-none shadow-none">
+                        {task.prioriteit ? (
+                          <Badge variant="outline" className={priorityColors[task.prioriteit]}>
+                            {task.prioriteit}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Geen</SelectItem>
+                        <SelectItem value="Hoog">Hoog</SelectItem>
+                        <SelectItem value="Middel">Middel</SelectItem>
+                        <SelectItem value="Laag">Laag</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
-                  <TableCell className="font-medium max-w-xs truncate">{task.titel}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {task.deel_van_huis || <span className="text-muted-foreground">-</span>}
+                  <TableCell className="font-medium max-w-xs" onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      value={task.titel}
+                      onSave={(value) => updateTask(task.id, { titel: value || "" })}
+                      placeholder="Titel..."
+                    />
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {task.verantwoordelijke || <span className="text-muted-foreground">-</span>}
+                  <TableCell className="hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      value={task.deel_van_huis}
+                      onSave={(value) => updateTask(task.id, { deel_van_huis: value })}
+                      placeholder="Deel van huis"
+                    />
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{formatDate(task.begindatum)}</TableCell>
-                  <TableCell>
-                    <span
+                  <TableCell className="hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      value={task.verantwoordelijke}
+                      onSave={(value) => updateTask(task.id, { verantwoordelijke: value })}
+                      placeholder="Verantwoordelijke"
+                    />
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      type="date"
+                      value={task.begindatum}
+                      onSave={(value) => updateTask(task.id, { begindatum: value })}
+                      placeholder="-"
+                    />
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      type="date"
+                      value={task.deadline}
+                      onSave={(value) => updateTask(task.id, { deadline: value })}
+                      placeholder="-"
                       className={
                         isDeadlineOverdue(task.deadline)
                           ? "text-red-600 dark:text-red-400 font-medium"
@@ -217,9 +293,7 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                           ? "text-orange-600 dark:text-orange-400 font-medium"
                           : ""
                       }
-                    >
-                      {formatDate(task.deadline)}
-                    </span>
+                    />
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
@@ -229,10 +303,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditTask(task)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Bewerken
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeleteTask(task)}
                           className="text-destructive"
@@ -249,18 +319,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
           </TableBody>
         </Table>
       </div>
-
-      {editTask && (
-        <EditTaskDialog
-          open={!!editTask}
-          onOpenChange={(open) => !open && setEditTask(null)}
-          task={editTask}
-          onSuccess={() => {
-            setEditTask(null);
-            onUpdate();
-          }}
-        />
-      )}
 
       {deleteTask && (
         <DeleteConfirmationDialog
