@@ -366,3 +366,97 @@ export const generateExcelTemplate = () => {
   // Download bestand
   XLSX.writeFile(workbook, 'taken_template.xlsx');
 };
+
+// Export taken naar Excel
+export interface ExportTask {
+  begindatum: string | null;
+  deadline: string | null;
+  deel_van_huis: string | null;
+  titel: string;
+  verantwoordelijke: string | null;
+  status: string;
+  beschrijving: string | null;
+}
+
+export interface ExportFilters {
+  statuses: string[];
+  dateFrom: string | null;
+  dateTo: string | null;
+}
+
+const formatDateForExcel = (dateStr: string | null): string => {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return '';
+  }
+};
+
+export const exportTasksToExcel = (
+  tasks: ExportTask[],
+  filters: ExportFilters,
+  projectName: string
+) => {
+  // Filter taken
+  let filteredTasks = tasks;
+  
+  // Filter op status
+  if (filters.statuses.length > 0) {
+    filteredTasks = filteredTasks.filter(task => 
+      filters.statuses.includes(task.status)
+    );
+  }
+  
+  // Filter op datumbereik (gebruik deadline voor filtering)
+  if (filters.dateFrom) {
+    filteredTasks = filteredTasks.filter(task => {
+      if (!task.deadline) return false;
+      return new Date(task.deadline) >= new Date(filters.dateFrom!);
+    });
+  }
+  
+  if (filters.dateTo) {
+    filteredTasks = filteredTasks.filter(task => {
+      if (!task.deadline) return false;
+      return new Date(task.deadline) <= new Date(filters.dateTo!);
+    });
+  }
+  
+  // Converteer naar Excel format
+  const excelData = filteredTasks.map(task => ({
+    'Begindatum': formatDateForExcel(task.begindatum),
+    'Einddatum': formatDateForExcel(task.deadline),
+    'Deel van huis': task.deel_van_huis || '',
+    'Activiteit': task.titel,
+    'Wie': task.verantwoordelijke || '',
+    'Status': task.status,
+    'Opmerking': task.beschrijving || ''
+  }));
+  
+  // Maak worksheet en workbook
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Taken');
+  
+  // Kolom breedtes
+  worksheet['!cols'] = [
+    { wch: 12 }, // Begindatum
+    { wch: 12 }, // Einddatum
+    { wch: 15 }, // Deel van huis
+    { wch: 25 }, // Activiteit
+    { wch: 20 }, // Wie
+    { wch: 10 }, // Status
+    { wch: 30 }  // Opmerking
+  ];
+  
+  // Download bestand met project naam en datum
+  const today = new Date().toISOString().split('T')[0];
+  const filename = `${projectName}_taken_${today}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+};

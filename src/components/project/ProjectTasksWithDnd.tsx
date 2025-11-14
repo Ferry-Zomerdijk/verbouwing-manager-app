@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileSpreadsheet } from "lucide-react";
+import { Plus, FileSpreadsheet, FileDown } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -17,6 +17,8 @@ import DraggableTaskCard from "./DraggableTaskCard";
 import TaskCard from "./TaskCard";
 import CreateTaskDialog from "./CreateTaskDialog";
 import ImportTasksDialog from "./ImportTasksDialog";
+import { ExportTasksDialog } from "./ExportTasksDialog";
+import { ExportTask } from "@/lib/excelImport";
 import { toast } from "sonner";
 
 interface ProjectTasksWithDndProps {
@@ -26,6 +28,7 @@ interface ProjectTasksWithDndProps {
 const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -36,6 +39,20 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
       },
     })
   );
+
+  const { data: project } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: tasks, refetch } = useQuery({
     queryKey: ["tasks", projectId],
@@ -197,10 +214,25 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
         }}
       />
 
-      <ImportTasksDialog
-        open={importDialogOpen}
+      <ImportTasksDialog 
+        open={importDialogOpen} 
         onOpenChange={setImportDialogOpen}
         projectId={projectId}
+      />
+      
+      <ExportTasksDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        tasks={(tasks || []).map(task => ({
+          begindatum: (task as any).begindatum || null,
+          deadline: task.deadline || null,
+          deel_van_huis: (task as any).deel_van_huis || null,
+          titel: task.titel,
+          verantwoordelijke: task.verantwoordelijke || null,
+          status: task.status,
+          beschrijving: task.beschrijving || null
+        } as ExportTask))}
+        projectName={project?.naam || 'project'}
       />
     </div>
   );
