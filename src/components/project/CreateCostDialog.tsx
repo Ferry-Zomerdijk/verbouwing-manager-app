@@ -22,6 +22,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
   const [processingOCR, setProcessingOCR] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split("T")[0],
     bedrag: "",
@@ -30,22 +31,44 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
     beschrijving: "",
   });
 
+  const validateFile = (file: File): boolean => {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Alleen PDF, JPG en PNG bestanden zijn toegestaan");
+      return false;
+    }
+    
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Bestand is te groot. Maximum 20MB");
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Alleen PDF, JPG en PNG bestanden zijn toegestaan");
-        return;
-      }
-      
-      // Validate file size (max 20MB)
-      if (file.size > 20 * 1024 * 1024) {
-        toast.error("Bestand is te groot. Maximum 20MB");
-        return;
-      }
-      
+    if (file && validateFile(file)) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && validateFile(file)) {
       setSelectedFile(file);
     }
   };
@@ -170,7 +193,16 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
 
           <TabsContent value="upload" className="space-y-4">
             {!selectedFile ? (
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                  isDragging 
+                    ? 'border-primary bg-primary/5 scale-[1.02]' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
                 <input
                   type="file"
                   id="file-upload"
@@ -178,10 +210,12 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleFileSelect}
                 />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <label htmlFor="file-upload" className="cursor-pointer block">
+                  <Upload className={`w-12 h-12 mx-auto mb-4 transition-colors ${
+                    isDragging ? 'text-primary' : 'text-muted-foreground'
+                  }`} />
                   <p className="text-sm font-medium mb-2">
-                    Klik of sleep een factuur hierheen
+                    {isDragging ? 'Laat los om te uploaden' : 'Klik of sleep een factuur hierheen'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     PDF, JPG of PNG (max 20MB)
