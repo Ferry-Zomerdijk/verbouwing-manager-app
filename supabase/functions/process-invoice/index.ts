@@ -49,10 +49,21 @@ serve(async (req) => {
     if (mimeType === 'application/pdf') {
       console.log('Processing PDF with Document Parse API...');
       
-      // Get public URL for the file
-      const { data: { publicUrl } } = supabase.storage
+      // Create signed URL for secure access to private file
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('invoices')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 300); // 5 minutes validity
+
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
+      }
+
+      if (!signedUrlData?.signedUrl) {
+        throw new Error('No signed URL returned');
+      }
+
+      console.log('Created signed URL for Document Parse API');
 
       const parseResponse = await fetch('https://api.lovable.app/document-parse', {
         method: 'POST',
@@ -61,7 +72,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          file_url: publicUrl,
+          file_url: signedUrlData.signedUrl,
           extract_tables: true,
           extract_text: true
         })
