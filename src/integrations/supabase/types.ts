@@ -61,6 +61,7 @@ export type Database = {
       costs: {
         Row: {
           bedrag: number
+          beschrijving: string | null
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at: string | null
           datum: string
@@ -73,6 +74,7 @@ export type Database = {
         }
         Insert: {
           bedrag: number
+          beschrijving?: string | null
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
@@ -85,6 +87,7 @@ export type Database = {
         }
         Update: {
           bedrag?: number
+          beschrijving?: string | null
           categorie?: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
@@ -293,9 +296,11 @@ export type Database = {
       }
       tasks: {
         Row: {
+          begindatum: string | null
           beschrijving: string | null
           created_at: string | null
           deadline: string | null
+          deel_van_huis: string | null
           id: string
           prioriteit: Database["public"]["Enums"]["task_priority"] | null
           project_id: string
@@ -305,9 +310,11 @@ export type Database = {
           verantwoordelijke: string | null
         }
         Insert: {
+          begindatum?: string | null
           beschrijving?: string | null
           created_at?: string | null
           deadline?: string | null
+          deel_van_huis?: string | null
           id?: string
           prioriteit?: Database["public"]["Enums"]["task_priority"] | null
           project_id: string
@@ -317,9 +324,11 @@ export type Database = {
           verantwoordelijke?: string | null
         }
         Update: {
+          begindatum?: string | null
           beschrijving?: string | null
           created_at?: string | null
           deadline?: string | null
+          deel_van_huis?: string | null
           id?: string
           prioriteit?: Database["public"]["Enums"]["task_priority"] | null
           project_id?: string
