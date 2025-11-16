@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -183,6 +183,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nieuwe Kostenpost</DialogTitle>
+          <DialogDescription>
+            Voeg een nieuwe kostenpost toe door handmatig gegevens in te voeren of een factuur te uploaden.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="manual" className="w-full">
