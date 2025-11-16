@@ -6,57 +6,52 @@ import { Button } from "@/components/ui/button";
 import { Plus, Euro, Download, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import CreateCostDialog from "./CreateCostDialog";
 import EditCostDialog from "./EditCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
-
 interface ProjectCostsProps {
   projectId: string;
 }
-
 const categoryColors = {
   Materiaal: "bg-blue-500",
   Arbeid: "bg-purple-500",
   Vergunningen: "bg-orange-500",
-  Overig: "bg-gray-500",
+  Overig: "bg-gray-500"
 };
-
-const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
+const ProjectCosts = ({
+  projectId
+}: ProjectCostsProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCost, setSelectedCost] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const { data: costs, refetch } = useQuery({
+  const {
+    data: costs,
+    refetch
+  } = useQuery({
     queryKey: ["costs", projectId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("costs")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("datum", { ascending: false });
-      
+      const {
+        data,
+        error
+      } = await supabase.from("costs").select("*").eq("project_id", projectId).order("datum", {
+        ascending: false
+      });
       if (error) throw error;
       return data;
-    },
+    }
   });
-
   const handleDownloadInvoice = async (filePath: string, costId: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('invoices')
-        .download(filePath);
-
+      const {
+        data,
+        error
+      } = await supabase.storage.from('invoices').download(filePath);
       if (error) throw error;
 
       // Create download link
@@ -68,14 +63,12 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
       toast.success("Factuur gedownload");
     } catch (error: any) {
       console.error("Download error:", error);
       toast.error("Fout bij downloaden factuur");
     }
   };
-
   const handleDelete = async () => {
     if (!selectedCost) return;
     setDeleting(true);
@@ -84,10 +77,10 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
       if (selectedCost.factuur_url) {
         await supabase.storage.from("invoices").remove([selectedCost.factuur_url]);
       }
-      
-      const { error } = await supabase.from("costs").delete().eq("id", selectedCost.id);
+      const {
+        error
+      } = await supabase.from("costs").delete().eq("id", selectedCost.id);
       if (error) throw error;
-      
       toast.success("Kosten verwijderd");
       refetch();
     } catch (error: any) {
@@ -96,22 +89,17 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
       setDeleting(false);
     }
   };
-
   const totalCosts = costs?.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0) || 0;
-
   const costsByCategory = costs?.reduce((acc, cost) => {
     const category = cost.categorie;
     if (!acc[category]) acc[category] = 0;
     acc[category] += parseFloat(cost.bedrag.toString());
     return acc;
   }, {} as Record<string, number>);
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Kosten</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
+        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">Nieuwe factuur<Plus className="w-4 h-4 mr-2" />
           Nieuwe Kostenpost
         </Button>
       </div>
@@ -130,8 +118,7 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
           </CardContent>
         </Card>
 
-        {costsByCategory && Object.entries(costsByCategory).map(([category, amount]) => (
-          <Card key={category} className="shadow-card">
+        {costsByCategory && Object.entries(costsByCategory).map(([category, amount]) => <Card key={category} className="shadow-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">{category}</CardTitle>
             </CardHeader>
@@ -140,8 +127,7 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                 €{amount.toLocaleString("nl-NL")}
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
       {/* Costs Table */}
@@ -150,8 +136,7 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
           <CardTitle>Kostenposten</CardTitle>
         </CardHeader>
         <CardContent>
-          {costs && costs.length > 0 ? (
-            <Table>
+          {costs && costs.length > 0 ? <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Datum</TableHead>
@@ -164,10 +149,11 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {costs.map((cost) => (
-                  <TableRow key={cost.id}>
+                {costs.map(cost => <TableRow key={cost.id}>
                     <TableCell>
-                      {format(new Date(cost.datum), "dd MMM yyyy", { locale: nl })}
+                      {format(new Date(cost.datum), "dd MMM yyyy", {
+                  locale: nl
+                })}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{cost.categorie}</Badge>
@@ -180,17 +166,9 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                       €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
                     </TableCell>
                     <TableCell>
-                      {cost.factuur_url ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadInvoice(cost.factuur_url, cost.id)}
-                        >
+                      {cost.factuur_url ? <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(cost.factuur_url, cost.id)}>
                           <Download className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
+                        </Button> : <span className="text-muted-foreground text-sm">-</span>}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -200,75 +178,44 @@ const ProjectCosts = ({ projectId }: ProjectCostsProps) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedCost(cost);
-                              setEditDialogOpen(true);
-                            }}
-                          >
+                          <DropdownMenuItem onClick={() => {
+                      setSelectedCost(cost);
+                      setEditDialogOpen(true);
+                    }}>
                             <Edit className="w-4 h-4 mr-2" />
                             Bewerken
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedCost(cost);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-destructive"
-                          >
+                          <DropdownMenuItem onClick={() => {
+                      setSelectedCost(cost);
+                      setDeleteDialogOpen(true);
+                    }} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Verwijderen
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
+            </Table> : <p className="text-center text-muted-foreground py-8">
               Nog geen kostenposten toegevoegd
-            </p>
-          )}
+            </p>}
         </CardContent>
       </Card>
 
-      <CreateCostDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        projectId={projectId}
-        onSuccess={() => {
-          refetch();
-          toast.success("Kosten succesvol toegevoegd!");
-        }}
-      />
+      <CreateCostDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} projectId={projectId} onSuccess={() => {
+      refetch();
+      toast.success("Kosten succesvol toegevoegd!");
+    }} />
 
-      {selectedCost && (
-        <>
-          <EditCostDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
-            cost={selectedCost}
-            onSuccess={() => {
-              refetch();
-              toast.success("Kosten bijgewerkt!");
-            }}
-          />
+      {selectedCost && <>
+          <EditCostDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} cost={selectedCost} onSuccess={() => {
+        refetch();
+        toast.success("Kosten bijgewerkt!");
+      }} />
 
-          <DeleteConfirmationDialog
-            open={deleteDialogOpen}
-            onOpenChange={setDeleteDialogOpen}
-            title="Kosten Verwijderen"
-            description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig."
-            itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`}
-            onConfirm={handleDelete}
-            loading={deleting}
-          />
-        </>
-      )}
-    </div>
-  );
+          <DeleteConfirmationDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} title="Kosten Verwijderen" description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig." itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`} onConfirm={handleDelete} loading={deleting} />
+        </>}
+    </div>;
 };
-
 export default ProjectCosts;
