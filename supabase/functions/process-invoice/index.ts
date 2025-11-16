@@ -45,50 +45,15 @@ serve(async (req) => {
 
     let extractedData;
 
-    // Use Document Parse API for PDFs
+    // Use Vision API for PDFs
     if (mimeType === 'application/pdf') {
-      console.log('Processing PDF with Document Parse API...');
+      console.log('Processing PDF with Vision API...');
       
-      // Create signed URL for secure access to private file
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('invoices')
-        .createSignedUrl(filePath, 300); // 5 minutes validity
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
-      }
-
-      if (!signedUrlData?.signedUrl) {
-        throw new Error('No signed URL returned');
-      }
-
-      console.log('Created signed URL for Document Parse API');
-
-      const parseResponse = await fetch('https://api.lovable.app/document-parse', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_url: signedUrlData.signedUrl,
-          extract_tables: true,
-          extract_text: true
-        })
-      });
-
-      if (!parseResponse.ok) {
-        const errorText = await parseResponse.text();
-        console.error('Document Parse error:', parseResponse.status, errorText);
-        throw new Error('Document parsing failed');
-      }
-
-      const parseResult = await parseResponse.json();
-      console.log('Document parsed successfully');
-      
-      // Extract data from parsed document using AI
-      const analysisResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${lovableApiKey}`,
@@ -99,11 +64,18 @@ serve(async (req) => {
           messages: [
             {
               role: 'user',
-              content: `Analyseer deze factuur tekst en extraheer de volgende informatie:
-
-${parseResult.text || parseResult.content}
-
-Geef het antwoord via de extract_invoice_data functie.`
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyseer deze factuur PDF en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: dataUrl
+                  }
+                }
+              ]
             }
           ],
           tools: [
@@ -130,21 +102,21 @@ Geef het antwoord via de extract_invoice_data functie.`
         }),
       });
 
-      if (!analysisResponse.ok) {
-        const errorText = await analysisResponse.text();
-        console.error('AI Analysis error:', analysisResponse.status, errorText);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Vision API error:', response.status, errorText);
         
-        if (analysisResponse.status === 429) {
+        if (response.status === 429) {
           throw new Error('Te veel aanvragen. Probeer het later opnieuw.');
         }
-        if (analysisResponse.status === 402) {
+        if (response.status === 402) {
           throw new Error('AI credits zijn op. Voeg credits toe in Lovable.');
         }
         
-        throw new Error('AI analyse mislukt');
+        throw new Error('AI verwerking mislukt');
       }
 
-      const aiResponse = await analysisResponse.json();
+      const aiResponse = await response.json();
       const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
         throw new Error('Geen gestructureerde data ontvangen van AI');
