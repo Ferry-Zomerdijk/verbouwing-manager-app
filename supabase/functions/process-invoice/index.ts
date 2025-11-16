@@ -45,14 +45,45 @@ serve(async (req) => {
 
     let extractedData;
 
-    // Use Vision API for PDFs
+    // Use OCR.space API for PDF text extraction
     if (mimeType === 'application/pdf') {
-      console.log('Processing PDF with Vision API...');
+      console.log('Extracting text from PDF...');
       
       const arrayBuffer = await fileData.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      const dataUrl = `data:${mimeType};base64,${base64}`;
 
+      // Use OCR.space free API for PDF text extraction
+      const formData = new FormData();
+      formData.append('base64Image', `data:${mimeType};base64,${base64}`);
+      formData.append('isOverlayRequired', 'false');
+      formData.append('filetype', 'PDF');
+
+      const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        headers: {
+          'apikey': 'helloworld', // Free API key
+        },
+        body: formData,
+      });
+
+      if (!ocrResponse.ok) {
+        const errorText = await ocrResponse.text();
+        console.error('OCR error:', ocrResponse.status, errorText);
+        throw new Error('PDF text extractie mislukt');
+      }
+
+      const ocrResult = await ocrResponse.json();
+      console.log('OCR result:', JSON.stringify(ocrResult).substring(0, 200));
+
+      if (ocrResult.IsErroredOnProcessing || !ocrResult.ParsedResults?.[0]?.ParsedText) {
+        console.error('OCR processing error:', ocrResult.ErrorMessage || ocrResult.ErrorDetails);
+        throw new Error('Kon geen tekst extraheren uit PDF');
+      }
+
+      const extractedText = ocrResult.ParsedResults[0].ParsedText;
+      console.log('Extracted text length:', extractedText.length);
+
+      // Analyze extracted text with AI
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -64,18 +95,10 @@ serve(async (req) => {
           messages: [
             {
               role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `Analyseer deze factuur PDF en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: dataUrl
-                  }
-                }
-              ]
+              content: `Analyseer deze factuur tekst en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.
+
+Factuur tekst:
+${extractedText}`
             }
           ],
           tools: [
@@ -104,7 +127,7 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Vision API error:', response.status, errorText);
+        console.error('AI analysis error:', response.status, errorText);
         
         if (response.status === 429) {
           throw new Error('Te veel aanvragen. Probeer het later opnieuw.');
@@ -113,7 +136,7 @@ serve(async (req) => {
           throw new Error('AI credits zijn op. Voeg credits toe in Lovable.');
         }
         
-        throw new Error('AI verwerking mislukt');
+        throw new Error('AI analyse mislukt');
       }
 
       const aiResponse = await response.json();
