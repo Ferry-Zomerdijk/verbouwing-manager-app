@@ -2,3 +2,6 @@ project_id = "zyydltjelczdfenxvkzi"
 
 [functions.process-invoice]
 verify_jwt = true
+
+[functions.generate-project-access-token]
+verify_jwt = true
