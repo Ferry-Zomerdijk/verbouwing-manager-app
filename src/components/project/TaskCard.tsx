@@ -20,6 +20,7 @@ import { toast } from "sonner";
 interface TaskCardProps {
   task: any;
   onUpdate: () => void;
+  canDelete?: boolean;
 }
 
 const priorityColors = {
@@ -28,7 +29,7 @@ const priorityColors = {
   Hoog: "bg-red-500",
 };
 
-const TaskCard = ({ task, onUpdate }: TaskCardProps) => {
+const TaskCard = ({ task, onUpdate, canDelete = true }: TaskCardProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -93,13 +94,15 @@ const TaskCard = ({ task, onUpdate }: TaskCardProps) => {
                   <Edit className="w-4 h-4 mr-2" />
                   Bewerken
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Verwijderen
-                </DropdownMenuItem>
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Verwijderen
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

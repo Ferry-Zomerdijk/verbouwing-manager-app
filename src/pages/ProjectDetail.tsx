@@ -3,18 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 import ProjectOverview from "@/components/project/ProjectOverview";
 import ProjectTasksWithDnd from "@/components/project/ProjectTasksWithDnd";
 import ProjectCosts from "@/components/project/ProjectCosts";
 import ProjectContractors from "@/components/project/ProjectContractors";
 import ProjectDocuments from "@/components/project/ProjectDocuments";
 import ProjectPhotos from "@/components/project/ProjectPhotos";
+import { ProjectUsersManager } from "@/components/project/ProjectUsersManager";
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [usersManagerOpen, setUsersManagerOpen] = useState(false);
 
   const { data: project, isLoading, refetch } = useQuery({
     queryKey: ["project", id],
@@ -28,6 +37,24 @@ const ProjectDetail = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: isAdminOrOwner } = useQuery({
+    queryKey: ['user-admin-or-owner', project?.id],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !project) return false;
+
+      if (project.user_id === user.id) return true;
+
+      const { data } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+
+      return data || false;
+    },
+    enabled: !!project,
   });
 
   if (isLoading) {
@@ -80,9 +107,21 @@ const ProjectDetail = () => {
                 )}
               </div>
             </div>
-            <Button variant="outline" size="icon">
-              <Settings className="w-4 h-4" />
-            </Button>
+            {isAdminOrOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Gebruikers Beheren
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </header>
@@ -124,6 +163,12 @@ const ProjectDetail = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ProjectUsersManager
+        open={usersManagerOpen}
+        onOpenChange={setUsersManagerOpen}
+        projectId={id!}
+      />
     </div>
   );
 };
