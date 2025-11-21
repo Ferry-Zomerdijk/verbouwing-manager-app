@@ -25,6 +25,7 @@ import { TaskListView } from "./TaskListView";
 
 interface ProjectTasksWithDndProps {
   projectId: string;
+  isProjectUserView?: boolean;
 }
 
 const STORAGE_KEYS = {
@@ -32,7 +33,7 @@ const STORAGE_KEYS = {
   FILTERS: "tasks-filters",
 };
 
-const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
+const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTasksWithDndProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -94,6 +95,35 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
       return data as any[];
     },
   });
+
+  const { data: userRole } = useQuery({
+    queryKey: ['user-role', projectId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: isAdmin } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+
+      if (isAdmin) return 'admin';
+
+      const { data: project } = await supabase
+        .from('projects')
+        .select('user_id')
+        .eq('id', projectId)
+        .single();
+
+      if (project?.user_id === user.id) return 'owner';
+
+      return 'project_user';
+    },
+    enabled: !isProjectUserView,
+  });
+
+  const canDelete = userRole === 'admin' || userRole === 'owner';
+  const canImportExport = userRole === 'admin' || userRole === 'owner';
 
   // Save preferences to localStorage
   useEffect(() => {
@@ -292,14 +322,18 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
               Lijst
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
-            <FileDown className="w-4 h-4 mr-2" />
-            Exporteren
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            Importeren
-          </Button>
+          {!isProjectUserView && canImportExport && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exporteren
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Importeren
+              </Button>
+            </>
+          )}
           <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Nieuwe Taak
@@ -354,7 +388,7 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
                   >
                     {tasksByStatus[status].length > 0 ? (
                       tasksByStatus[status].map((task) => (
-                        <DraggableTaskCard key={task.id} task={task} onUpdate={refetch} />
+                        <DraggableTaskCard key={task.id} task={task} onUpdate={refetch} canDelete={canDelete} />
                       ))
                     ) : (
                       <p className="text-center text-sm text-muted-foreground py-8">
@@ -368,7 +402,7 @@ const ProjectTasksWithDnd = ({ projectId }: ProjectTasksWithDndProps) => {
           </div>
 
           <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} onUpdate={() => {}} /> : null}
+            {activeTask ? <TaskCard task={activeTask} onUpdate={() => {}} canDelete={canDelete} /> : null}
           </DragOverlay>
         </DndContext>
       ) : (

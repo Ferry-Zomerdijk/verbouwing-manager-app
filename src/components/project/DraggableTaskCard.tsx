@@ -5,9 +5,10 @@ import TaskCard from "./TaskCard";
 interface DraggableTaskCardProps {
   task: any;
   onUpdate: () => void;
+  canDelete?: boolean;
 }
 
-const DraggableTaskCard = ({ task, onUpdate }: DraggableTaskCardProps) => {
+const DraggableTaskCard = ({ task, onUpdate, canDelete = true }: DraggableTaskCardProps) => {
   const {
     attributes,
     listeners,
@@ -25,7 +26,7 @@ const DraggableTaskCard = ({ task, onUpdate }: DraggableTaskCardProps) => {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onUpdate={onUpdate} />
+      <TaskCard task={task} onUpdate={onUpdate} canDelete={canDelete} />
     </div>
   );
 };
