@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Edit, Trash2, Filter, X } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Edit, Trash2, Filter, X, FileSpreadsheet } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
 import EditCostDialog from "./EditCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -173,13 +174,56 @@ const ProjectCosts = ({
       fill: STATUS_CHART_COLORS[name] || "#6b7280"
     }));
   }, [filteredCosts]);
+
+  const handleExportToExcel = () => {
+    if (filteredCosts.length === 0) {
+      toast.error("Geen kostenposten om te exporteren");
+      return;
+    }
+
+    const exportData = filteredCosts.map(cost => ({
+      "Datum": format(new Date(cost.datum), "dd-MM-yyyy"),
+      "Status": cost.status || "Schatting",
+      "Categorie": cost.categorie,
+      "Deel van huis": cost.deel_van_huis || "",
+      "Leverancier": cost.leverancier || "",
+      "Beschrijving": cost.beschrijving || "",
+      "Bedrag (€)": parseFloat(cost.bedrag.toString()),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Kosten");
+    
+    // Auto-size columns
+    const colWidths = [
+      { wch: 12 }, // Datum
+      { wch: 12 }, // Status
+      { wch: 18 }, // Categorie
+      { wch: 15 }, // Deel van huis
+      { wch: 20 }, // Leverancier
+      { wch: 40 }, // Beschrijving
+      { wch: 12 }, // Bedrag
+    ];
+    worksheet["!cols"] = colWidths;
+
+    XLSX.writeFile(workbook, `kosten-export-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    toast.success(`${filteredCosts.length} kostenposten geëxporteerd`);
+  };
+
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Kosten</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuwe Kostenpost
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportToExcel} disabled={filteredCosts.length === 0}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Exporteer
+          </Button>
+          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Nieuwe Kostenpost
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
