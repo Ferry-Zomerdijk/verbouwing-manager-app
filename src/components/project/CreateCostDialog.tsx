@@ -29,6 +29,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
     leverancier: "",
     categorie: "Materiaal",
     beschrijving: "",
+    deel_van_huis: "",
   });
 
   const validateFile = (file: File): boolean => {
@@ -113,6 +114,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
           leverancier: extracted.leverancier || "",
           categorie: formData.categorie,
           beschrijving: extracted.beschrijving || "",
+          deel_van_huis: formData.deel_van_huis,
         });
 
         toast.success("Factuurgegevens succesvol ingelezen!");
@@ -154,6 +156,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
         categorie: formData.categorie as any,
         beschrijving: formData.beschrijving || null,
         factuur_url: uploadedFilePath || null,
+        deel_van_huis: formData.deel_van_huis || null,
       }]);
 
       if (error) throw error;
@@ -168,6 +171,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
         leverancier: "",
         categorie: "Materiaal",
         beschrijving: "",
+        deel_van_huis: "",
       });
       setSelectedFile(null);
       setUploadedFilePath(null);
@@ -312,9 +316,22 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
                 <SelectItem value="Materiaal">Materiaal</SelectItem>
                 <SelectItem value="Arbeid">Arbeid</SelectItem>
                 <SelectItem value="Vergunningen">Vergunningen</SelectItem>
+                <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                <SelectItem value="Decoratie">Decoratie</SelectItem>
+                <SelectItem value="Meubels">Meubels</SelectItem>
                 <SelectItem value="Overig">Overig</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="deel_van_huis">Deel van huis</Label>
+            <Input
+              id="deel_van_huis"
+              value={formData.deel_van_huis}
+              onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
+              placeholder="bijv. Keuken, Badkamer, Woonkamer..."
+            />
           </div>
 
           <div>
