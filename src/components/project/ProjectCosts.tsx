@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Edit, Trash2, Filter, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import CreateCostDialog from "./CreateCostDialog";
@@ -33,6 +34,9 @@ const ProjectCosts = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCost, setSelectedCost] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
+  
   const {
     data: costs,
     refetch
@@ -49,6 +53,32 @@ const ProjectCosts = ({
       return data;
     }
   });
+
+  // Get unique "deel van huis" values for filter
+  const uniqueDeelVanHuis = useMemo(() => {
+    if (!costs) return [];
+    const values = costs
+      .map(c => c.deel_van_huis)
+      .filter((v): v is string => !!v);
+    return [...new Set(values)].sort();
+  }, [costs]);
+
+  // Filter costs based on selected filters
+  const filteredCosts = useMemo(() => {
+    if (!costs) return [];
+    return costs.filter(cost => {
+      const matchCategory = categoryFilter === "all" || cost.categorie === categoryFilter;
+      const matchDeelVanHuis = deelVanHuisFilter === "all" || cost.deel_van_huis === deelVanHuisFilter;
+      return matchCategory && matchDeelVanHuis;
+    });
+  }, [costs, categoryFilter, deelVanHuisFilter]);
+
+  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all";
+
+  const clearFilters = () => {
+    setCategoryFilter("all");
+    setDeelVanHuisFilter("all");
+  };
   const handleDownloadInvoice = async (filePath: string, costId: string) => {
     try {
       const {
@@ -92,8 +122,8 @@ const ProjectCosts = ({
       setDeleting(false);
     }
   };
-  const totalCosts = costs?.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0) || 0;
-  const costsByCategory = costs?.reduce((acc, cost) => {
+  const totalCosts = filteredCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
+  const costsByCategory = filteredCosts.reduce((acc, cost) => {
     const category = cost.categorie;
     if (!acc[category]) acc[category] = 0;
     acc[category] += parseFloat(cost.bedrag.toString());
@@ -102,10 +132,64 @@ const ProjectCosts = ({
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Kosten</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">Nieuwe factuur<Plus className="w-4 h-4 mr-2" />
+        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
+          <Plus className="w-4 h-4 mr-2" />
           Nieuwe Kostenpost
         </Button>
       </div>
+
+      {/* Filters */}
+      <Card className="shadow-card">
+        <CardContent className="pt-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Filters:</span>
+            </div>
+            
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Categorie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle categorieën</SelectItem>
+                <SelectItem value="Materiaal">Materiaal</SelectItem>
+                <SelectItem value="Arbeid">Arbeid</SelectItem>
+                <SelectItem value="Vergunningen">Vergunningen</SelectItem>
+                <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                <SelectItem value="Decoratie">Decoratie</SelectItem>
+                <SelectItem value="Meubels">Meubels</SelectItem>
+                <SelectItem value="Overig">Overig</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={deelVanHuisFilter} onValueChange={setDeelVanHuisFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Deel van huis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle delen</SelectItem>
+                {uniqueDeelVanHuis.map(deel => (
+                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="w-4 h-4 mr-1" />
+                Wis filters
+              </Button>
+            )}
+
+            {hasActiveFilters && (
+              <span className="text-sm text-muted-foreground ml-auto">
+                {filteredCosts.length} van {costs?.length || 0} resultaten
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -139,7 +223,7 @@ const ProjectCosts = ({
           <CardTitle>Kostenposten</CardTitle>
         </CardHeader>
         <CardContent>
-          {costs && costs.length > 0 ? <Table>
+          {filteredCosts.length > 0 ? <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Datum</TableHead>
@@ -153,7 +237,7 @@ const ProjectCosts = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {costs.map(cost => <TableRow key={cost.id}>
+                {filteredCosts.map(cost => <TableRow key={cost.id}>
                     <TableCell>
                       {format(new Date(cost.datum), "dd MMM yyyy", {
                   locale: nl
