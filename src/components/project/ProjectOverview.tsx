@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import InlineEditableField from "./InlineEditableField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -39,26 +38,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     ? (project.werkelijke_kosten / project.totaal_begroting) * 100
     : 0;
 
-  const handleVoortgangUpdate = async (value: string) => {
-    const voortgang = parseInt(value);
-    if (isNaN(voortgang) || voortgang < 0 || voortgang > 100) {
-      toast.error("Voortgang moet tussen 0 en 100 zijn");
-      throw new Error("Invalid value");
-    }
-
-    const { error } = await supabase
-      .from("projects")
-      .update({ voortgang })
-      .eq("id", project.id);
-
-    if (error) {
-      toast.error("Fout bij bijwerken: " + error.message);
-      throw error;
-    }
-
-    toast.success("Voortgang bijgewerkt");
-    onUpdate?.();
-  };
+  const taskPercentage = taskStats && taskStats.total > 0
+    ? Math.round((taskStats.completed / taskStats.total) * 100)
+    : 0;
 
   const handleStatusUpdate = async (newStatus: "Gepland" | "Lopend" | "Afgerond") => {
     setStatusUpdating(true);
@@ -89,13 +71,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
             <TrendingUp className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <InlineEditableField
-              value={project.voortgang}
-              onSave={handleVoortgangUpdate}
-              type="number"
-              displayClassName="text-2xl font-bold"
-            />
-            <Progress value={project.voortgang} className="mt-2" />
+            <div className="text-2xl font-bold">{taskPercentage}%</div>
+            <Progress value={taskPercentage} className="mt-2" />
             {taskStats && taskStats.total > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
                 {taskStats.completed} van {taskStats.total} taken gereed
