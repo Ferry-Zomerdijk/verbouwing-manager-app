@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +28,13 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import AccountSettingsDialog from "@/components/AccountSettingsDialog";
 import AdminUsersDialog from "@/components/AdminUsersDialog";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -116,6 +120,20 @@ const Dashboard = () => {
     },
   });
 
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing,
+    progress,
+    shouldTrigger,
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -127,7 +145,15 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div ref={isMobile ? containerRef : undefined} className="min-h-screen bg-gradient-subtle relative">
+      {isMobile && (
+        <PullToRefreshIndicator
+          pullDistance={pullDistance}
+          isRefreshing={isRefreshing}
+          progress={progress}
+          shouldTrigger={shouldTrigger}
+        />
+      )}
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
