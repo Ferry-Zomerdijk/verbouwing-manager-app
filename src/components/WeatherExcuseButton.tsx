@@ -30,6 +30,18 @@ const getWeatherIcon = (code: number | null) => {
   return CloudLightning;
 };
 
+const getWeatherAnimation = (code: number | null): string => {
+  if (code === null) return "";
+  if (code === 0) return "animate-spin-slow text-yellow-500"; // Zon draait
+  if (code <= 3) return "animate-weather-wiggle"; // Wolken wiebelen
+  if (code <= 48) return "animate-weather-pulse text-gray-400"; // Mist pulseert
+  if (code <= 55) return "animate-weather-bounce text-blue-400"; // Motregen bounced
+  if (code <= 67) return "animate-weather-bounce text-blue-500"; // Regen bounced
+  if (code <= 77) return "animate-weather-float text-blue-200"; // Sneeuw zweeft
+  if (code <= 82) return "animate-weather-bounce text-blue-500"; // Buien bouncen
+  return "animate-weather-pulse text-yellow-400"; // Onweer flitst
+};
+
 const WeatherExcuseButton = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [excuse, setExcuse] = useState("");
@@ -65,6 +77,7 @@ const WeatherExcuseButton = () => {
   };
 
   const WeatherIcon = getWeatherIcon(weatherCode);
+  const weatherAnimation = getWeatherAnimation(weatherCode);
 
   return (
     <>
@@ -79,14 +92,14 @@ const WeatherExcuseButton = () => {
             : "Weer-excuus generator"
         }
       >
-        <WeatherIcon className="w-4 h-4" />
+        <WeatherIcon className={`w-4 h-4 ${weatherAnimation}`} />
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <WeatherIcon className="w-5 h-5" />
+              <WeatherIcon className={`w-5 h-5 ${weatherAnimation}`} />
               Officieel Weer-Excuus™
               {temperature !== null && (
                 <span className="text-sm font-normal text-muted-foreground">
