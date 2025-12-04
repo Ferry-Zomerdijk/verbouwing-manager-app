@@ -110,8 +110,10 @@ const ProjectDetail = () => {
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <WeatherExcuseButton />
-              <CoffeeBreakTimer />
+              <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+                <WeatherExcuseButton />
+                <CoffeeBreakTimer />
+              </div>
               {isAdminOrOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
