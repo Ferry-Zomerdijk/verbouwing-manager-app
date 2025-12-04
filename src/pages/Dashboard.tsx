@@ -168,7 +168,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <CoffeeBreakTimer />
                 <WeatherExcuseButton />
               </div>
