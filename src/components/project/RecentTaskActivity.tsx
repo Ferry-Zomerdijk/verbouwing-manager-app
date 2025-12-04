@@ -88,12 +88,12 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     }
   };
 
-  const formatChanges = (changes: Record<string, { van?: string; naar?: string }> | null) => {
+  const formatChanges = (changes: Record<string, { van?: string; naar?: string } | null> | null) => {
     if (!changes) return '-';
-    const entries = Object.entries(changes);
+    const entries = Object.entries(changes).filter(([_, value]) => value !== null);
     if (entries.length === 0) return '-';
     return entries.map(([key, value]) => 
-      `${key}: ${value.van || '–'} → ${value.naar || '–'}`
+      `${key}: ${value?.van || '–'} → ${value?.naar || '–'}`
     ).join(', ');
   };
 
