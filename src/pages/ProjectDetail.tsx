@@ -91,25 +91,25 @@ const ProjectDetail = () => {
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/dashboard")}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl font-bold">{project.naam}</h1>
-                  <Badge className={`${statusColors[project.status as keyof typeof statusColors]} text-white`}>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                  <h1 className="text-lg sm:text-2xl font-bold truncate">{project.naam}</h1>
+                  <Badge className={`${statusColors[project.status as keyof typeof statusColors]} text-white shrink-0 text-xs`}>
                     {project.status}
                   </Badge>
                 </div>
                 {project.type && (
-                  <p className="text-sm text-muted-foreground">{project.type}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{project.type}</p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <WeatherExcuseButton />
               <CoffeeBreakTimer />
               {isAdminOrOwner && (
@@ -133,16 +133,18 @@ const ProjectDetail = () => {
       </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="overzicht" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
-            <TabsTrigger value="taken">Taken</TabsTrigger>
-            {isAdminOrOwner && <TabsTrigger value="kosten">Kosten</TabsTrigger>}
-            <TabsTrigger value="documenten">Documenten</TabsTrigger>
-            <TabsTrigger value="fotos">Foto's</TabsTrigger>
-            <TabsTrigger value="aannemers">Aannemers</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
+            <TabsList className="inline-flex w-auto min-w-full sm:w-auto">
+              <TabsTrigger value="overzicht" className="text-xs sm:text-sm">Overzicht</TabsTrigger>
+              <TabsTrigger value="taken" className="text-xs sm:text-sm">Taken</TabsTrigger>
+              {isAdminOrOwner && <TabsTrigger value="kosten" className="text-xs sm:text-sm">Kosten</TabsTrigger>}
+              <TabsTrigger value="documenten" className="text-xs sm:text-sm">Documenten</TabsTrigger>
+              <TabsTrigger value="fotos" className="text-xs sm:text-sm">Foto's</TabsTrigger>
+              <TabsTrigger value="aannemers" className="text-xs sm:text-sm">Aannemers</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overzicht">
             <ProjectOverview project={project} onUpdate={() => refetch()} isAdminOrOwner={isAdminOrOwner} />
