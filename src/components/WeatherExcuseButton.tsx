@@ -59,7 +59,7 @@ const WeatherExcuseButton = () => {
   }, []);
 
   const generateExcuse = () => {
-    setExcuse(getRandomExcuse());
+    setExcuse(getRandomExcuse(weatherCode));
     setDialogOpen(true);
     setClickCount((prev) => prev + 1);
   };
@@ -103,7 +103,7 @@ const WeatherExcuseButton = () => {
               Excuus #{clickCount} • Gebruik met mate 😉
             </p>
             <Button
-              onClick={() => setExcuse(getRandomExcuse())}
+              onClick={() => setExcuse(getRandomExcuse(weatherCode))}
               variant="outline"
               className="w-full"
             >
