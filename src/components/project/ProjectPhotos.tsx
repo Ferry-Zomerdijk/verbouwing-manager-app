@@ -3,18 +3,29 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, X, Upload as UploadIcon } from "lucide-react";
+import { Plus, Trash2, X, Upload as UploadIcon, Image } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
 
 interface ProjectPhotosProps {
   projectId: string;
+}
+
+type PhotoPhase = "Voor" | "Tijdens" | "Na";
+
+interface PhotoUpload {
+  file: File;
+  preview: string;
+  fase: PhotoPhase;
+  notitie: string;
 }
 
 const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
@@ -25,12 +36,12 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filter, setFilter] = useState<string>("all");
-  const [formData, setFormData] = useState({
-    fase: "Voor" as any,
-    notitie: "",
-    file: null as File | null,
-    preview: "",
-  });
+  
+  // Multi-upload state
+  const [photosToUpload, setPhotosToUpload] = useState<PhotoUpload[]>([]);
+  const [defaultFase, setDefaultFase] = useState<PhotoPhase>("Voor");
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: photos, refetch } = useQuery({
     queryKey: ["photos", projectId],
@@ -50,55 +61,111 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
     filter === "all" ? true : photo.fase === filter
   );
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handleFilesSelect = (files: FileList | null) => {
+    if (!files) return;
+    
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith("image/"));
+    
+    if (imageFiles.length === 0) {
+      toast.error("Selecteer alleen afbeeldingsbestanden");
+      return;
+    }
+
+    imageFiles.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ 
-          ...formData, 
+        setPhotosToUpload(prev => [...prev, {
           file,
-          preview: reader.result as string
-        });
+          preview: reader.result as string,
+          fase: defaultFase,
+          notitie: ""
+        }]);
       };
       reader.readAsDataURL(file);
-    }
+    });
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.file) return;
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFilesSelect(e.target.files);
+    e.target.value = "";
+  };
+
+  const updatePhotoInList = (index: number, updates: Partial<PhotoUpload>) => {
+    setPhotosToUpload(prev => prev.map((photo, i) => 
+      i === index ? { ...photo, ...updates } : photo
+    ));
+  };
+
+  const removePhotoFromList = (index: number) => {
+    setPhotosToUpload(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBulkUpload = async () => {
+    if (photosToUpload.length === 0) return;
 
     setUploading(true);
-    try {
-      const fileExt = formData.file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${projectId}/photos/${fileName}`;
+    setUploadProgress({ current: 0, total: photosToUpload.length });
 
-      const { error: uploadError } = await supabase.storage
-        .from("invoices")
-        .upload(filePath, formData.file);
+    let successCount = 0;
+    let errorCount = 0;
 
-      if (uploadError) throw uploadError;
+    for (let i = 0; i < photosToUpload.length; i++) {
+      const photo = photosToUpload[i];
+      try {
+        const fileExt = photo.file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${projectId}/photos/${fileName}`;
 
-      const { error: dbError } = await supabase.from("photos").insert([{
-        project_id: projectId,
-        fase: formData.fase,
-        afbeelding_url: filePath,
-        notitie: formData.notitie || null,
-      }]);
+        const { error: uploadError } = await supabase.storage
+          .from("invoices")
+          .upload(filePath, photo.file);
 
-      if (dbError) throw dbError;
+        if (uploadError) throw uploadError;
 
-      toast.success("Foto geüpload");
-      refetch();
-      setUploadDialogOpen(false);
-      setFormData({ fase: "Voor", notitie: "", file: null, preview: "" });
-    } catch (error: any) {
-      toast.error("Fout bij uploaden: " + error.message);
-    } finally {
-      setUploading(false);
+        const { error: dbError } = await supabase.from("photos").insert([{
+          project_id: projectId,
+          fase: photo.fase,
+          afbeelding_url: filePath,
+          notitie: photo.notitie || null,
+        }]);
+
+        if (dbError) throw dbError;
+        successCount++;
+      } catch (error: any) {
+        console.error("Upload error:", error);
+        errorCount++;
+      }
+      setUploadProgress({ current: i + 1, total: photosToUpload.length });
     }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} foto('s) geüpload`);
+      refetch();
+    }
+    if (errorCount > 0) {
+      toast.error(`${errorCount} foto('s) konden niet worden geüpload`);
+    }
+
+    setUploading(false);
+    setUploadProgress({ current: 0, total: 0 });
+    setPhotosToUpload([]);
+    setUploadDialogOpen(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFilesSelect(e.dataTransfer.files);
   };
 
   const getPhotoUrl = (path: string) => {
@@ -136,7 +203,7 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
         <h2 className="text-2xl font-bold">Foto's</h2>
         <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
-          Foto Uploaden
+          Foto's Uploaden
         </Button>
       </div>
 
@@ -220,63 +287,26 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
         </Card>
       )}
 
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
+      <Dialog open={uploadDialogOpen} onOpenChange={(open) => {
+        setUploadDialogOpen(open);
+        if (!open) {
+          setPhotosToUpload([]);
+          setUploadProgress({ current: 0, total: 0 });
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Foto Uploaden</DialogTitle>
+            <DialogTitle>Foto's Uploaden</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleUpload} className="space-y-4">
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="file">Foto *</Label>
-              <div className="mt-2">
-                {formData.preview ? (
-                  <div className="relative">
-                    <img
-                      src={formData.preview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => setFormData({ ...formData, file: null, preview: "" })}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-48"
-                    onClick={() => document.getElementById("file")?.click()}
-                  >
-                    <div className="text-center">
-                      <UploadIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">Klik om foto te selecteren</p>
-                    </div>
-                  </Button>
-                )}
-                <Input
-                  id="file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="fase">Fase *</Label>
+              <Label>Standaard fase voor nieuwe foto's</Label>
               <Select
-                value={formData.fase}
-                onValueChange={(value) => setFormData({ ...formData, fase: value as any })}
+                value={defaultFase}
+                onValueChange={(value) => setDefaultFase(value as PhotoPhase)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,26 +317,122 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="notitie">Notitie</Label>
-              <Textarea
-                id="notitie"
-                value={formData.notitie}
-                onChange={(e) => setFormData({ ...formData, notitie: e.target.value })}
-                placeholder="Beschrijving van de foto..."
-                rows={3}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                isDragging 
+                  ? "border-primary bg-primary/5" 
+                  : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById("photo-upload")?.click()}
+            >
+              <UploadIcon className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-1">
+                Sleep foto's hierheen of klik om te selecteren
+              </p>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG, GIF - Meerdere bestanden mogelijk
+              </p>
+              <Input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileInputChange}
+                className="hidden"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
+            {photosToUpload.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>{photosToUpload.length} foto('s) geselecteerd</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPhotosToUpload([])}
+                  >
+                    Alles verwijderen
+                  </Button>
+                </div>
+
+                <ScrollArea className="h-64 border rounded-lg p-3">
+                  <div className="space-y-3">
+                    {photosToUpload.map((photo, index) => (
+                      <div key={index} className="flex gap-3 items-start p-2 bg-muted/50 rounded-lg">
+                        <img
+                          src={photo.preview}
+                          alt={photo.file.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <p className="text-sm font-medium truncate">{photo.file.name}</p>
+                          <div className="flex gap-2">
+                            <Select
+                              value={photo.fase}
+                              onValueChange={(value) => updatePhotoInList(index, { fase: value as PhotoPhase })}
+                            >
+                              <SelectTrigger className="h-8 w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Voor">Voor</SelectItem>
+                                <SelectItem value="Tijdens">Tijdens</SelectItem>
+                                <SelectItem value="Na">Na</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              placeholder="Notitie..."
+                              value={photo.notitie}
+                              onChange={(e) => updatePhotoInList(index, { notitie: e.target.value })}
+                              className="h-8 flex-1"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => removePhotoFromList(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {uploading && (
+              <div className="space-y-2">
+                <Progress value={(uploadProgress.current / uploadProgress.total) * 100} />
+                <p className="text-sm text-center text-muted-foreground">
+                  {uploadProgress.current} van {uploadProgress.total} geüpload
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setUploadDialogOpen(false)}
+                disabled={uploading}
+              >
                 Annuleren
               </Button>
-              <Button type="submit" disabled={uploading || !formData.file} className="gradient-primary">
-                {uploading ? "Uploaden..." : "Uploaden"}
+              <Button 
+                onClick={handleBulkUpload}
+                disabled={uploading || photosToUpload.length === 0} 
+                className="gradient-primary"
+              >
+                {uploading ? "Uploaden..." : `${photosToUpload.length} Foto('s) Uploaden`}
               </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 
