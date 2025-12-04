@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,6 +22,8 @@ interface ActivityLog {
 }
 
 const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
+  const queryClient = useQueryClient();
+  
   const { data: activities, isLoading } = useQuery({
     queryKey: ['task-activity', projectId],
     queryFn: async () => {
@@ -52,6 +55,29 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
       })) as ActivityLog[];
     },
   });
+
+  // Real-time subscription voor nieuwe activiteiten
+  useEffect(() => {
+    const channel = supabase
+      .channel(`task-activity-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'task_activity_log',
+          filter: `project_id=eq.${projectId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['task-activity', projectId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, queryClient]);
 
   const getActionIcon = (action: string) => {
     switch (action) {
