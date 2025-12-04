@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import InlineEditableField from "./InlineEditableField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProjectOverviewProps {
   project: any;
@@ -16,6 +17,23 @@ interface ProjectOverviewProps {
 
 const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const { data: taskStats } = useQuery({
+    queryKey: ['project-task-stats', project.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('status')
+        .eq('project_id', project.id);
+      
+      if (error) throw error;
+      
+      const total = data?.length || 0;
+      const completed = data?.filter(t => t.status === 'Gereed').length || 0;
+      
+      return { total, completed };
+    },
+  });
 
   const budgetPercentage = project.totaal_begroting > 0
     ? (project.werkelijke_kosten / project.totaal_begroting) * 100
@@ -78,6 +96,11 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
               displayClassName="text-2xl font-bold"
             />
             <Progress value={project.voortgang} className="mt-2" />
+            {taskStats && taskStats.total > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {taskStats.completed} van {taskStats.total} taken gereed
+              </p>
+            )}
           </CardContent>
         </Card>
 
