@@ -125,20 +125,24 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
             <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Select
-              value={project.status}
-              onValueChange={handleStatusUpdate}
-              disabled={statusUpdating}
-            >
-              <SelectTrigger className="text-2xl font-bold border-none p-0 h-auto hover:text-primary transition-smooth">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Gepland">Gepland</SelectItem>
-                <SelectItem value="Lopend">Lopend</SelectItem>
-                <SelectItem value="Afgerond">Afgerond</SelectItem>
-              </SelectContent>
-            </Select>
+            {isAdminOrOwner ? (
+              <Select
+                value={project.status}
+                onValueChange={handleStatusUpdate}
+                disabled={statusUpdating}
+              >
+                <SelectTrigger className="text-2xl font-bold border-none p-0 h-auto hover:text-primary transition-smooth">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Gepland">Gepland</SelectItem>
+                  <SelectItem value="Lopend">Lopend</SelectItem>
+                  <SelectItem value="Afgerond">Afgerond</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-2xl font-bold">{project.status}</div>
+            )}
             {project.einddatum && (
               <p className="text-xs text-muted-foreground mt-1">
                 Gepland einde: {format(new Date(project.einddatum), "dd MMM yyyy", { locale: nl })}
