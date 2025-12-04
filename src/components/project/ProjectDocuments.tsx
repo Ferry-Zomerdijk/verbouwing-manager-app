@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
   const [defaultType, setDefaultType] = useState<DocumentType>("Contract");
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const { data: documents, refetch } = useQuery({
     queryKey: ["documents", projectId],
@@ -91,6 +92,14 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
       categorie: inv.categorie,
     })),
   ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
+
+  // Get unique document types for filter
+  const availableTypes = [...new Set(allDocuments.map(doc => doc.type))];
+
+  // Filter documents by type
+  const filteredDocuments = typeFilter === "all" 
+    ? allDocuments 
+    : allDocuments.filter(doc => doc.type === typeFilter);
 
   const handleFilesSelect = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -251,17 +260,33 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold">Documenten</h2>
-        <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Documenten Uploaden
-        </Button>
+        <div className="flex items-center gap-3">
+          {availableTypes.length > 1 && (
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[160px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter op type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle types</SelectItem>
+                {availableTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Documenten Uploaden
+          </Button>
+        </div>
       </div>
 
-      {allDocuments.length > 0 ? (
+      {filteredDocuments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allDocuments.map((doc) => (
+          {filteredDocuments.map((doc) => (
             <Card key={`${doc.source}-${doc.id}`} className="shadow-card hover:shadow-hover transition-smooth">
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -317,7 +342,14 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
       ) : (
         <Card className="shadow-card">
           <CardContent className="py-16 text-center">
-            <p className="text-muted-foreground">Nog geen documenten geüpload</p>
+            <p className="text-muted-foreground">
+              {typeFilter !== "all" ? "Geen documenten gevonden met dit type" : "Nog geen documenten geüpload"}
+            </p>
+            {typeFilter !== "all" && (
+              <Button variant="link" onClick={() => setTypeFilter("all")} className="mt-2">
+                Toon alle documenten
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
