@@ -53,6 +53,43 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
     },
   });
 
+  // Fetch invoices from costs table
+  const { data: invoices } = useQuery({
+    queryKey: ["cost-invoices", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("costs")
+        .select("id, factuur_url, leverancier, beschrijving, datum, categorie")
+        .eq("project_id", projectId)
+        .not("factuur_url", "is", null)
+        .order("datum", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Combine documents and invoices into a unified list
+  const allDocuments = [
+    ...(documents || []).map(doc => ({
+      ...doc,
+      source: 'document' as const,
+    })),
+    ...(invoices || []).map(inv => ({
+      id: inv.id,
+      bestandsnaam: inv.leverancier 
+        ? `Factuur - ${inv.leverancier}` 
+        : inv.beschrijving 
+          ? `Factuur - ${inv.beschrijving.slice(0, 30)}` 
+          : 'Factuur',
+      bestand_url: inv.factuur_url!,
+      type: 'Factuur' as const,
+      upload_datum: inv.datum,
+      source: 'cost' as const,
+      categorie: inv.categorie,
+    })),
+  ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
+
   const handleFilesSelect = useCallback((files: FileList | null) => {
     if (!files) return;
     
@@ -197,6 +234,7 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
     Vergunning: "bg-orange-500",
     Handleiding: "bg-green-500",
     Garantie: "bg-teal-500",
+    Factuur: "bg-emerald-500",
     Overig: "bg-gray-500",
   };
 
@@ -218,10 +256,10 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
         </Button>
       </div>
 
-      {documents && documents.length > 0 ? (
+      {allDocuments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => (
-            <Card key={doc.id} className="shadow-card hover:shadow-hover transition-smooth">
+          {allDocuments.map((doc) => (
+            <Card key={`${doc.source}-${doc.id}`} className="shadow-card hover:shadow-hover transition-smooth">
               <CardHeader>
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-muted">
@@ -229,15 +267,22 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base truncate">{doc.bestandsnaam}</CardTitle>
-                    <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs mt-2`}>
-                      {doc.type}
-                    </Badge>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
+                        {doc.type}
+                      </Badge>
+                      {doc.source === 'cost' && (
+                        <Badge variant="outline" className="text-xs">
+                          Via Kosten
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Geüpload op {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
+                  {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -249,16 +294,18 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
                     <Download className="w-4 h-4 mr-2" />
                     Download
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDocument(doc);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {doc.source === 'document' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedDocument(doc);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
