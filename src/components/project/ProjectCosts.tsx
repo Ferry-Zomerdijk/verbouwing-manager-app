@@ -16,7 +16,10 @@ import CreateCostDialog from "./CreateCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { InlineEditableCell } from "./InlineEditableCell";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import MobileCostList from "./MobileCostList";
 import type { Database } from "@/integrations/supabase/types";
+
 interface ProjectCostsProps {
   projectId: string;
 }
@@ -48,6 +51,7 @@ const STATUS_CHART_COLORS: Record<string, string> = {
 const ProjectCosts = ({
   projectId
 }: ProjectCostsProps) => {
+  const isMobile = useIsMobile();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCost, setSelectedCost] = useState<any>(null);
@@ -268,6 +272,20 @@ const ProjectCosts = ({
     toast.success(`${filteredCosts.length} kostenposten geëxporteerd`);
   };
 
+  // Mobile view
+  if (isMobile) {
+    return (
+      <MobileCostList
+        costs={filteredCosts}
+        projectId={projectId}
+        availableDelenVanHuis={availableDelenVanHuis}
+        onUpdate={refetch}
+        onExport={handleExportToExcel}
+      />
+    );
+  }
+
+  // Desktop view
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Kosten</h2>
