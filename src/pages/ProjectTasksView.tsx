@@ -133,18 +133,19 @@ const ProjectTasksView = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-lg sm:text-2xl font-bold truncate">
               {project?.naam || 'Project Taken'}
             </h1>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleLogout}
+              className="shrink-0"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Uitloggen
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Uitloggen</span>
             </Button>
           </div>
         </div>

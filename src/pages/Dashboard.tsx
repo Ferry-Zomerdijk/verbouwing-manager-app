@@ -130,33 +130,35 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <Home className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary flex items-center justify-center">
+                <Home className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">HomeProject</h1>
-                <p className="text-sm text-muted-foreground">Jouw renovatieprojecten</p>
+                <h1 className="text-lg sm:text-2xl font-bold">HomeProject</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Jouw renovatieprojecten</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CoffeeBreakTimer />
-              <WeatherExcuseButton />
-              <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-                <Plus className="w-4 h-4 mr-2" />
-                Nieuw Project
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+                <CoffeeBreakTimer />
+                <WeatherExcuseButton />
+              </div>
+              <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nieuw Project</span>
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)}>
+              <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)} className="hidden sm:flex">
                 <Keyboard className="w-4 h-4" />
               </Button>
               
               {/* User Dropdown Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Avatar className="h-6 w-6">
+                  <Button variant="outline" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
+                    <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {userInfo.naam ? userInfo.naam[0].toUpperCase() : userInfo.email?.[0].toUpperCase() || "?"}
                       </AvatarFallback>
@@ -164,7 +166,7 @@ const Dashboard = () => {
                     <span className="hidden sm:inline max-w-24 truncate">
                       {userInfo.naam || userInfo.email?.split("@")[0] || "Account"}
                     </span>
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4 hidden sm:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover">
