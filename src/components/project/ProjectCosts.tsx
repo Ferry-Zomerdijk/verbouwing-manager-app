@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Edit, Trash2, Filter, X, FileSpreadsheet } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -13,9 +13,10 @@ import { nl } from "date-fns/locale";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
-import EditCostDialog from "./EditCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
+import { InlineEditableCell } from "./InlineEditableCell";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 interface ProjectCostsProps {
   projectId: string;
 }
@@ -48,7 +49,6 @@ const ProjectCosts = ({
   projectId
 }: ProjectCostsProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCost, setSelectedCost] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
@@ -100,6 +100,23 @@ const ProjectCosts = ({
     setDeelVanHuisFilter("all");
     setStatusFilter("all");
   };
+  const updateCost = async (costId: string, updates: Partial<Database["public"]["Tables"]["costs"]["Update"]>) => {
+    try {
+      const { error } = await supabase
+        .from("costs")
+        .update(updates)
+        .eq("id", costId);
+
+      if (error) throw error;
+      toast.success("Kostenpost bijgewerkt");
+      refetch();
+    } catch (error) {
+      toast.error("Fout bij bijwerken van kostenpost");
+      console.error(error);
+      throw error;
+    }
+  };
+
   const handleDownloadInvoice = async (filePath: string, costId: string) => {
     try {
       const {
@@ -467,28 +484,87 @@ const ProjectCosts = ({
               <TableBody>
                 {filteredCosts.map(cost => <TableRow key={cost.id}>
                     <TableCell>
-                      {format(new Date(cost.datum), "dd MMM yyyy", {
-                  locale: nl
-                })}
+                      <InlineEditableCell
+                        type="date"
+                        value={cost.datum}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { datum: value || new Date().toISOString().split('T')[0] });
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
-                      <Badge variant={cost.status === "Factuur" ? "default" : cost.status === "Offerte" ? "secondary" : "outline"}>
-                        {cost.status}
-                      </Badge>
+                      <InlineEditableCell
+                        type="select"
+                        value={cost.status}
+                        options={[
+                          { value: "Schatting", label: "Schatting" },
+                          { value: "Offerte", label: "Offerte" },
+                          { value: "Factuur", label: "Factuur" }
+                        ]}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { status: value as Database["public"]["Enums"]["cost_status"] });
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{cost.categorie}</Badge>
-                    </TableCell>
-                    <TableCell>{cost.deel_van_huis || "-"}</TableCell>
-                    <TableCell>{cost.leverancier || "-"}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {(cost as any).beschrijving || "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
+                      <InlineEditableCell
+                        type="select"
+                        value={cost.categorie}
+                        options={[
+                          { value: "Materiaal", label: "Materiaal" },
+                          { value: "Arbeid", label: "Arbeid" },
+                          { value: "Vergunningen", label: "Vergunningen" },
+                          { value: "Kluswerkzaamheden", label: "Kluswerkzaamheden" },
+                          { value: "Decoratie", label: "Decoratie" },
+                          { value: "Meubels", label: "Meubels" },
+                          { value: "Overig", label: "Overig" }
+                        ]}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { categorie: value as Database["public"]["Enums"]["cost_category"] });
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
-                      {cost.factuur_url ? <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(cost.factuur_url, cost.id)}>
+                      <InlineEditableCell
+                        value={cost.deel_van_huis}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { deel_van_huis: value });
+                        }}
+                        placeholder="-"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <InlineEditableCell
+                        value={cost.leverancier}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { leverancier: value });
+                        }}
+                        placeholder="-"
+                      />
+                    </TableCell>
+                    <TableCell className="max-w-[200px]">
+                      <InlineEditableCell
+                        value={cost.beschrijving}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { beschrijving: value });
+                        }}
+                        placeholder="-"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <InlineEditableCell
+                        value={cost.bedrag?.toString()}
+                        onSave={async (value) => {
+                          const numValue = parseFloat(value?.replace(',', '.') || '0');
+                          if (isNaN(numValue)) throw new Error("Ongeldig bedrag");
+                          await updateCost(cost.id, { bedrag: numValue });
+                        }}
+                        placeholder="0"
+                        className="text-right font-semibold"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {cost.factuur_url ? <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(cost.factuur_url!, cost.id)}>
                           <Download className="w-4 h-4" />
                         </Button> : <span className="text-muted-foreground text-sm">-</span>}
                     </TableCell>
@@ -500,13 +576,6 @@ const ProjectCosts = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                      setSelectedCost(cost);
-                      setEditDialogOpen(true);
-                    }}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Bewerken
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => {
                       setSelectedCost(cost);
                       setDeleteDialogOpen(true);
@@ -530,14 +599,9 @@ const ProjectCosts = ({
       toast.success("Kosten succesvol toegevoegd!");
     }} />
 
-      {selectedCost && <>
-          <EditCostDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} cost={selectedCost} onSuccess={() => {
-        refetch();
-        toast.success("Kosten bijgewerkt!");
-      }} />
-
-          <DeleteConfirmationDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} title="Kosten Verwijderen" description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig." itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`} onConfirm={handleDelete} loading={deleting} />
-        </>}
+      {selectedCost && (
+        <DeleteConfirmationDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} title="Kosten Verwijderen" description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig." itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`} onConfirm={handleDelete} loading={deleting} />
+      )}
     </div>;
 };
 export default ProjectCosts;
