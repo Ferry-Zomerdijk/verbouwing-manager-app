@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { History, Plus, Pencil, Trash2 } from "lucide-react";
+import { History, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import EditTaskDialog from "./EditTaskDialog";
 
 interface RecentTaskActivityProps {
   projectId: string;
@@ -13,6 +14,7 @@ interface RecentTaskActivityProps {
 
 interface ActivityLog {
   id: string;
+  task_id: string | null;
   task_title: string;
   action: string;
   changes: Record<string, { van?: string; naar?: string }> | null;
@@ -23,13 +25,15 @@ interface ActivityLog {
 
 const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
   const queryClient = useQueryClient();
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   const { data: activities, isLoading } = useQuery({
     queryKey: ['task-activity', projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('task_activity_log')
-        .select('id, task_title, action, changes, created_at, user_id')
+        .select('id, task_id, task_title, action, changes, created_at, user_id')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -97,6 +101,28 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     ).join(', ');
   };
 
+  const handleTaskClick = async (taskId: string | null) => {
+    if (!taskId) return;
+    
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', taskId)
+      .single();
+    
+    if (error || !task) {
+      return; // Task was deleted
+    }
+    
+    setSelectedTask(task);
+    setEditDialogOpen(true);
+  };
+
+  const handleTaskUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['task-activity', projectId] });
+  };
+
   return (
     <Card className="shadow-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -133,8 +159,16 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
                         {activity.action}
                       </span>
                     </TableCell>
-                    <TableCell className="font-medium max-w-[200px] truncate">
-                      {activity.task_title}
+                    <TableCell 
+                      className={`font-medium max-w-[200px] truncate ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer hover:text-primary hover:underline' : ''}`}
+                      onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
+                    >
+                      <span className="flex items-center gap-1">
+                        {activity.task_title}
+                        {activity.task_id && activity.action !== 'verwijderd' && (
+                          <ExternalLink className="w-3 h-3 opacity-50" />
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[250px] truncate">
                       {formatChanges(activity.changes)}
@@ -146,6 +180,15 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
           </div>
         )}
       </CardContent>
+
+      {selectedTask && (
+        <EditTaskDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          task={selectedTask}
+          onSuccess={handleTaskUpdate}
+        />
+      )}
     </Card>
   );
 };
