@@ -50,7 +50,7 @@ const priorityColors = {
 };
 
 export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
-  const [sortKey, setSortKey] = useState<SortKey>("deadline");
+  const [sortKey, setSortKey] = useState<SortKey>("begindatum");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -165,6 +165,9 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                 />
               </TableHead>
               <TableHead>
+                <SortButton column="begindatum" label="Begindatum" />
+              </TableHead>
+              <TableHead>
                 <SortButton column="status" label="Status" />
               </TableHead>
               <TableHead>
@@ -178,9 +181,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
               </TableHead>
               <TableHead className="hidden lg:table-cell">
                 <SortButton column="verantwoordelijke" label="Verantwoordelijke" />
-              </TableHead>
-              <TableHead className="hidden lg:table-cell">
-                <SortButton column="begindatum" label="Begindatum" />
               </TableHead>
               <TableHead>
                 <SortButton column="deadline" label="Deadline" />
@@ -209,6 +209,14 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                     <Checkbox
                       checked={selectedTasks.has(task.id)}
                       onCheckedChange={() => toggleTaskSelection(task.id)}
+                    />
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      type="date"
+                      value={task.begindatum}
+                      onSave={(value) => updateTask(task.id, { begindatum: value })}
+                      placeholder="-"
                     />
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
@@ -275,14 +283,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                       value={task.verantwoordelijke}
                       onSave={(value) => updateTask(task.id, { verantwoordelijke: value })}
                       placeholder="Verantwoordelijke"
-                    />
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
-                    <InlineEditableCell
-                      type="date"
-                      value={task.begindatum}
-                      onSave={(value) => updateTask(task.id, { begindatum: value })}
-                      placeholder="-"
                     />
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
