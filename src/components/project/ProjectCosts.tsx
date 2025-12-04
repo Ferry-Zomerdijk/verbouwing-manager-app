@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart, Line, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -409,7 +409,7 @@ const ProjectCosts = ({
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={timeSeriesData}>
+                <ComposedChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
@@ -421,7 +421,15 @@ const ProjectCosts = ({
                   <Bar dataKey="Schatting" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Offerte" fill="#60a5fa" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Line 
+                    type="monotone" 
+                    dataKey="total" 
+                    name="Totaal"
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ fill: "#ef4444", strokeWidth: 2 }}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
