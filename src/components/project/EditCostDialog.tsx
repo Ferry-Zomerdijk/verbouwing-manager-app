@@ -26,6 +26,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     beschrijving: "",
     bedrag: "",
     factuur_url: "",
+    deel_van_huis: "",
   });
 
   useEffect(() => {
@@ -37,6 +38,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         beschrijving: (cost as any).beschrijving || "",
         bedrag: cost.bedrag?.toString() || "",
         factuur_url: cost.factuur_url || "",
+        deel_van_huis: cost.deel_van_huis || "",
       });
     }
   }, [cost]);
@@ -88,6 +90,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
           beschrijving: formData.beschrijving || null,
           bedrag: parseFloat(formData.bedrag),
           factuur_url: formData.factuur_url || null,
+          deel_van_huis: formData.deel_van_huis || null,
         })
         .eq("id", cost.id);
 
@@ -136,10 +139,22 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
                   <SelectItem value="Materiaal">Materiaal</SelectItem>
                   <SelectItem value="Arbeid">Arbeid</SelectItem>
                   <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                  <SelectItem value="Apparatuur">Apparatuur</SelectItem>
-                  <SelectItem value="Anders">Anders</SelectItem>
+                  <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                  <SelectItem value="Decoratie">Decoratie</SelectItem>
+                  <SelectItem value="Meubels">Meubels</SelectItem>
+                  <SelectItem value="Overig">Overig</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="deel_van_huis">Deel van huis</Label>
+              <Input
+                id="deel_van_huis"
+                value={formData.deel_van_huis}
+                onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
+                placeholder="bijv. Keuken, Badkamer..."
+              />
             </div>
 
             <div className="col-span-2">

@@ -16,10 +16,13 @@ import { toast } from "sonner";
 interface ProjectCostsProps {
   projectId: string;
 }
-const categoryColors = {
+const categoryColors: Record<string, string> = {
   Materiaal: "bg-blue-500",
   Arbeid: "bg-purple-500",
   Vergunningen: "bg-orange-500",
+  Kluswerkzaamheden: "bg-green-500",
+  Decoratie: "bg-pink-500",
+  Meubels: "bg-amber-500",
   Overig: "bg-gray-500"
 };
 const ProjectCosts = ({
@@ -141,6 +144,7 @@ const ProjectCosts = ({
                 <TableRow>
                   <TableHead>Datum</TableHead>
                   <TableHead>Categorie</TableHead>
+                  <TableHead>Deel van huis</TableHead>
                   <TableHead>Leverancier</TableHead>
                   <TableHead>Beschrijving</TableHead>
                   <TableHead className="text-right">Bedrag</TableHead>
@@ -158,6 +162,7 @@ const ProjectCosts = ({
                     <TableCell>
                       <Badge variant="outline">{cost.categorie}</Badge>
                     </TableCell>
+                    <TableCell>{cost.deel_van_huis || "-"}</TableCell>
                     <TableCell>{cost.leverancier || "-"}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
                       {(cost as any).beschrijving || "-"}

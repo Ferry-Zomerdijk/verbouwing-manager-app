@@ -65,6 +65,7 @@ export type Database = {
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at: string | null
           datum: string
+          deel_van_huis: string | null
           factuur_url: string | null
           id: string
           koppeling_begrotingspost: string | null
@@ -78,6 +79,7 @@ export type Database = {
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
+          deel_van_huis?: string | null
           factuur_url?: string | null
           id?: string
           koppeling_begrotingspost?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           categorie?: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
+          deel_van_huis?: string | null
           factuur_url?: string | null
           id?: string
           koppeling_begrotingspost?: string | null
@@ -492,7 +495,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "project_user"
-      cost_category: "Materiaal" | "Arbeid" | "Vergunningen" | "Overig"
+      cost_category:
+        | "Materiaal"
+        | "Arbeid"
+        | "Vergunningen"
+        | "Overig"
+        | "Kluswerkzaamheden"
+        | "Decoratie"
+        | "Meubels"
       document_type:
         | "Offerte"
         | "Vergunning"
@@ -634,7 +644,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "project_user"],
-      cost_category: ["Materiaal", "Arbeid", "Vergunningen", "Overig"],
+      cost_category: [
+        "Materiaal",
+        "Arbeid",
+        "Vergunningen",
+        "Overig",
+        "Kluswerkzaamheden",
+        "Decoratie",
+        "Meubels",
+      ],
       document_type: [
         "Offerte",
         "Vergunning",
