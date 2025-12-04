@@ -15,9 +15,10 @@ interface CreateCostDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   onSuccess: () => void;
+  availableDelenVanHuis?: string[];
 }
 
-const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCostDialogProps) => {
+const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableDelenVanHuis = [] }: CreateCostDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [processingOCR, setProcessingOCR] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -349,12 +350,20 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
 
           <div>
             <Label htmlFor="deel_van_huis">Deel van huis</Label>
-            <Input
-              id="deel_van_huis"
-              value={formData.deel_van_huis}
-              onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
-              placeholder="bijv. Keuken, Badkamer, Woonkamer..."
-            />
+            <Select
+              value={formData.deel_van_huis || "none"}
+              onValueChange={(value) => setFormData({ ...formData, deel_van_huis: value === "none" ? "" : value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecteer deel van huis" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Geen selectie</SelectItem>
+                {availableDelenVanHuis.map(deel => (
+                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

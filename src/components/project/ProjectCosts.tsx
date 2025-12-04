@@ -73,14 +73,25 @@ const ProjectCosts = ({
     }
   });
 
-  // Get unique "deel van huis" values for filter
-  const uniqueDeelVanHuis = useMemo(() => {
-    if (!costs) return [];
-    const values = costs
-      .map(c => c.deel_van_huis)
-      .filter((v): v is string => !!v);
-    return [...new Set(values)].sort();
-  }, [costs]);
+  // Fetch deel_van_huis values from tasks
+  const { data: tasks } = useQuery({
+    queryKey: ["tasks-deel-van-huis", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("deel_van_huis")
+        .eq("project_id", projectId);
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Get unique "deel van huis" values combining tasks and costs
+  const availableDelenVanHuis = useMemo(() => {
+    const taskValues = tasks?.map(t => t.deel_van_huis).filter((v): v is string => !!v) || [];
+    const costValues = costs?.map(c => c.deel_van_huis).filter((v): v is string => !!v) || [];
+    return [...new Set([...taskValues, ...costValues])].sort();
+  }, [tasks, costs]);
 
   // Filter costs based on selected filters
   const filteredCosts = useMemo(() => {
@@ -298,7 +309,7 @@ const ProjectCosts = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle delen</SelectItem>
-                {uniqueDeelVanHuis.map(deel => (
+                {availableDelenVanHuis.map(deel => (
                   <SelectItem key={deel} value={deel}>{deel}</SelectItem>
                 ))}
               </SelectContent>
@@ -541,9 +552,11 @@ const ProjectCosts = ({
                     </TableCell>
                     <TableCell>
                       <InlineEditableCell
+                        type="select"
                         value={cost.deel_van_huis}
+                        options={availableDelenVanHuis.map(d => ({ value: d, label: d }))}
                         onSave={async (value) => {
-                          await updateCost(cost.id, { deel_van_huis: value });
+                          await updateCost(cost.id, { deel_van_huis: value || null });
                         }}
                         placeholder="-"
                       />
@@ -612,7 +625,7 @@ const ProjectCosts = ({
         </CardContent>
       </Card>
 
-      <CreateCostDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} projectId={projectId} onSuccess={() => {
+      <CreateCostDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} projectId={projectId} availableDelenVanHuis={availableDelenVanHuis} onSuccess={() => {
       refetch();
       toast.success("Kosten succesvol toegevoegd!");
     }} />
