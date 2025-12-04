@@ -168,6 +168,9 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                 <SortButton column="begindatum" label="Begindatum" />
               </TableHead>
               <TableHead>
+                <SortButton column="deadline" label="Deadline" />
+              </TableHead>
+              <TableHead>
                 <SortButton column="status" label="Status" />
               </TableHead>
               <TableHead>
@@ -181,9 +184,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
               </TableHead>
               <TableHead className="hidden lg:table-cell">
                 <SortButton column="verantwoordelijke" label="Verantwoordelijke" />
-              </TableHead>
-              <TableHead>
-                <SortButton column="deadline" label="Deadline" />
               </TableHead>
               <TableHead className="hidden xl:table-cell min-w-[150px]">
                 Update
@@ -217,6 +217,21 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                       value={task.begindatum}
                       onSave={(value) => updateTask(task.id, { begindatum: value })}
                       placeholder="-"
+                    />
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <InlineEditableCell
+                      type="date"
+                      value={task.deadline}
+                      onSave={(value) => updateTask(task.id, { deadline: value })}
+                      placeholder="-"
+                      className={
+                        isDeadlineOverdue(task.deadline)
+                          ? "text-red-600 dark:text-red-400 font-medium"
+                          : isDeadlineWarning(task.deadline)
+                          ? "text-orange-600 dark:text-orange-400 font-medium"
+                          : ""
+                      }
                     />
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
@@ -283,21 +298,6 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                       value={task.verantwoordelijke}
                       onSave={(value) => updateTask(task.id, { verantwoordelijke: value })}
                       placeholder="Verantwoordelijke"
-                    />
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <InlineEditableCell
-                      type="date"
-                      value={task.deadline}
-                      onSave={(value) => updateTask(task.id, { deadline: value })}
-                      placeholder="-"
-                      className={
-                        isDeadlineOverdue(task.deadline)
-                          ? "text-red-600 dark:text-red-400 font-medium"
-                          : isDeadlineWarning(task.deadline)
-                          ? "text-orange-600 dark:text-orange-400 font-medium"
-                          : ""
-                      }
                     />
                   </TableCell>
                   <TableCell className="hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
