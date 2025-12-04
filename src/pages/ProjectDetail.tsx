@@ -139,7 +139,7 @@ const ProjectDetail = () => {
           </TabsList>
 
           <TabsContent value="overzicht">
-            <ProjectOverview project={project} onUpdate={() => refetch()} />
+            <ProjectOverview project={project} onUpdate={() => refetch()} isAdminOrOwner={isAdminOrOwner} />
           </TabsContent>
 
           <TabsContent value="taken">

@@ -12,9 +12,10 @@ import { useQuery } from "@tanstack/react-query";
 interface ProjectOverviewProps {
   project: any;
   onUpdate?: () => void;
+  isAdminOrOwner?: boolean;
 }
 
-const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
+const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectOverviewProps) => {
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const { data: taskStats } = useQuery({
@@ -81,21 +82,23 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Budget Gebruikt</CardTitle>
-            <Euro className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              €{project.werkelijke_kosten.toLocaleString("nl-NL")}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              van €{project.totaal_begroting.toLocaleString("nl-NL")}
-            </p>
-            <Progress value={budgetPercentage} className="mt-2" />
-          </CardContent>
-        </Card>
+        {isAdminOrOwner && (
+          <Card className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Budget Gebruikt</CardTitle>
+              <Euro className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                €{project.werkelijke_kosten.toLocaleString("nl-NL")}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                van €{project.totaal_begroting.toLocaleString("nl-NL")}
+              </p>
+              <Progress value={budgetPercentage} className="mt-2" />
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
