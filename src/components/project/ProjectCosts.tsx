@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import CreateCostDialog from "./CreateCostDialog";
 import EditCostDialog from "./EditCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -25,6 +26,22 @@ const categoryColors: Record<string, string> = {
   Decoratie: "bg-pink-500",
   Meubels: "bg-amber-500",
   Overig: "bg-gray-500"
+};
+
+const CATEGORY_CHART_COLORS: Record<string, string> = {
+  Materiaal: "#3b82f6",
+  Arbeid: "#a855f7",
+  Vergunningen: "#f97316",
+  Kluswerkzaamheden: "#22c55e",
+  Decoratie: "#ec4899",
+  Meubels: "#f59e0b",
+  Overig: "#6b7280"
+};
+
+const STATUS_CHART_COLORS: Record<string, string> = {
+  Schatting: "#94a3b8",
+  Offerte: "#60a5fa",
+  Factuur: "#22c55e"
 };
 const ProjectCosts = ({
   projectId
@@ -132,6 +149,30 @@ const ProjectCosts = ({
     acc[category] += parseFloat(cost.bedrag.toString());
     return acc;
   }, {} as Record<string, number>);
+
+  // Chart data
+  const categoryChartData = useMemo(() => {
+    return Object.entries(costsByCategory).map(([name, value]) => ({
+      name,
+      value,
+      color: CATEGORY_CHART_COLORS[name] || "#6b7280"
+    }));
+  }, [costsByCategory]);
+
+  const statusChartData = useMemo(() => {
+    const byStatus = filteredCosts.reduce((acc, cost) => {
+      const status = cost.status || "Schatting";
+      if (!acc[status]) acc[status] = 0;
+      acc[status] += parseFloat(cost.bedrag.toString());
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return Object.entries(byStatus).map(([name, value]) => ({
+      name,
+      value,
+      fill: STATUS_CHART_COLORS[name] || "#6b7280"
+    }));
+  }, [filteredCosts]);
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Kosten</h2>
@@ -205,6 +246,63 @@ const ProjectCosts = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Charts */}
+      {filteredCosts.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-base">Kosten per Categorie</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      labelLine={false}
+                    >
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-base">Kosten per Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusChartData} layout="vertical">
+                    <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} />
+                    <YAxis type="category" dataKey="name" width={80} />
+                    <Tooltip 
+                      formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
+                    />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
