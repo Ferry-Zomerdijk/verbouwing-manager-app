@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { History, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import EditTaskDialog from "./EditTaskDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RecentTaskActivityProps {
   projectId: string;
@@ -25,6 +26,7 @@ interface ActivityLog {
 
 const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
@@ -85,9 +87,9 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'aangemaakt': return <Plus className="w-4 h-4 text-green-500" />;
-      case 'bijgewerkt': return <Pencil className="w-4 h-4 text-blue-500" />;
-      case 'verwijderd': return <Trash2 className="w-4 h-4 text-red-500" />;
+      case 'aangemaakt': return <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />;
+      case 'bijgewerkt': return <Pencil className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />;
+      case 'verwijderd': return <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />;
       default: return null;
     }
   };
@@ -123,61 +125,107 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     queryClient.invalidateQueries({ queryKey: ['task-activity', projectId] });
   };
 
+  // Mobile card layout
+  const MobileActivityList = () => (
+    <div className="space-y-2">
+      {activities?.map((activity) => (
+        <div
+          key={activity.id}
+          className={`p-3 bg-muted/30 rounded-lg ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer active:bg-muted/50' : ''}`}
+          onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {getActionIcon(activity.action)}
+              <span className="text-xs font-medium capitalize">{activity.action}</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
+            </span>
+          </div>
+          <p className="font-medium text-sm mt-1 truncate flex items-center gap-1">
+            {activity.task_title}
+            {activity.task_id && activity.action !== 'verwijderd' && (
+              <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
+            )}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] text-muted-foreground">
+              Door: {activity.user_name}
+            </span>
+          </div>
+          {activity.changes && Object.keys(activity.changes).length > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-1.5 bg-muted/50 p-1.5 rounded line-clamp-2">
+              {formatChanges(activity.changes)}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // Desktop table layout
+  const DesktopActivityTable = () => (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Wanneer</TableHead>
+            <TableHead className="w-[120px]">Wie</TableHead>
+            <TableHead className="w-[100px]">Actie</TableHead>
+            <TableHead>Taak</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {activities?.map((activity) => (
+            <TableRow key={activity.id}>
+              <TableCell className="text-xs text-muted-foreground">
+                {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
+              </TableCell>
+              <TableCell className="text-sm">{activity.user_name}</TableCell>
+              <TableCell>
+                <span className="flex items-center gap-1 text-sm">
+                  {getActionIcon(activity.action)}
+                  {activity.action}
+                </span>
+              </TableCell>
+              <TableCell 
+                className={`font-medium max-w-[200px] truncate ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer hover:text-primary hover:underline' : ''}`}
+                onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
+              >
+                <span className="flex items-center gap-1">
+                  {activity.task_title}
+                  {activity.task_id && activity.action !== 'verwijderd' && (
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  )}
+                </span>
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground max-w-[250px] truncate">
+                {formatChanges(activity.changes)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <Card className="shadow-card">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">Laatste Wijzigingen</CardTitle>
-        <History className="w-4 h-4 text-muted-foreground" />
+      <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
+        <CardTitle className="text-xs sm:text-sm font-medium">Laatste Wijzigingen</CardTitle>
+        <History className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
         {isLoading ? (
-          <p className="text-muted-foreground text-sm">Laden...</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Laden...</p>
         ) : !activities || activities.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nog geen activiteit</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Nog geen activiteit</p>
+        ) : isMobile ? (
+          <MobileActivityList />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Wanneer</TableHead>
-                  <TableHead className="w-[120px]">Wie</TableHead>
-                  <TableHead className="w-[100px]">Actie</TableHead>
-                  <TableHead>Taak</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activities.map((activity) => (
-                  <TableRow key={activity.id}>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
-                    </TableCell>
-                    <TableCell className="text-sm">{activity.user_name}</TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1 text-sm">
-                        {getActionIcon(activity.action)}
-                        {activity.action}
-                      </span>
-                    </TableCell>
-                    <TableCell 
-                      className={`font-medium max-w-[200px] truncate ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer hover:text-primary hover:underline' : ''}`}
-                      onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
-                    >
-                      <span className="flex items-center gap-1">
-                        {activity.task_title}
-                        {activity.task_id && activity.action !== 'verwijderd' && (
-                          <ExternalLink className="w-3 h-3 opacity-50" />
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[250px] truncate">
-                      {formatChanges(activity.changes)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DesktopActivityTable />
         )}
       </CardContent>
 

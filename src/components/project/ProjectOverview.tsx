@@ -70,28 +70,28 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Grid */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+      <div className={`grid grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
         <Card className={`shadow-card ${taskPercentage === 100 && taskStats && taskStats.total > 0 ? 'bg-green-500/10 border-green-500/30' : ''}`}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Voortgang</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Voortgang</CardTitle>
             {taskPercentage === 100 && taskStats && taskStats.total > 0 ? (
-              <PartyPopper className="w-4 h-4 text-green-600 animate-bounce" />
+              <PartyPopper className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 animate-bounce" />
             ) : (
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             )}
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${taskPercentage === 100 && taskStats && taskStats.total > 0 ? 'text-green-700' : ''}`}>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className={`text-xl sm:text-2xl font-bold ${taskPercentage === 100 && taskStats && taskStats.total > 0 ? 'text-green-700' : ''}`}>
               {taskPercentage}%
             </div>
             <Progress value={taskPercentage} className="mt-2" />
             {taskStats && taskStats.total > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
                 {taskPercentage === 100 
-                  ? "🎉 Alles af! Tijd voor koffie!"
-                  : `${taskStats.completed} van ${taskStats.total} taken gereed`}
+                  ? "🎉 Alles af!"
+                  : `${taskStats.completed}/${taskStats.total} gereed`}
               </p>
             )}
           </CardContent>
@@ -99,15 +99,15 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
         {isAdminOrOwner && (
           <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Budget Gebruikt</CardTitle>
-              <Euro className="w-4 h-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Budget</CardTitle>
+              <Euro className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">
                 €{project.werkelijke_kosten.toLocaleString("nl-NL")}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 van €{project.totaal_begroting.toLocaleString("nl-NL")}
               </p>
               <Progress value={budgetPercentage} className="mt-2" />
@@ -116,18 +116,18 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         )}
 
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Startdatum</CardTitle>
-            <Calendar className="w-4 h-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Startdatum</CardTitle>
+            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold">
               {project.startdatum
                 ? format(new Date(project.startdatum), "dd MMM", { locale: nl })
-                : "Niet ingesteld"}
+                : "N/A"}
             </div>
             {project.startdatum && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 {format(new Date(project.startdatum), "yyyy", { locale: nl })}
               </p>
             )}
@@ -135,18 +135,18 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Status</CardTitle>
+            <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             {isAdminOrOwner ? (
               <Select
                 value={project.status}
                 onValueChange={handleStatusUpdate}
                 disabled={statusUpdating}
               >
-                <SelectTrigger className="text-2xl font-bold border-none p-0 h-auto hover:text-primary transition-smooth">
+                <SelectTrigger className="text-xl sm:text-2xl font-bold border-none p-0 h-auto hover:text-primary transition-smooth">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -156,11 +156,11 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
                 </SelectContent>
               </Select>
             ) : (
-              <div className="text-2xl font-bold">{project.status}</div>
+              <div className="text-xl sm:text-2xl font-bold">{project.status}</div>
             )}
             {project.einddatum && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Gepland einde: {format(new Date(project.einddatum), "dd MMM yyyy", { locale: nl })}
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                Einde: {format(new Date(project.einddatum), "dd MMM", { locale: nl })}
               </p>
             )}
           </CardContent>
@@ -172,18 +172,18 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         className="shadow-card bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 cursor-pointer hover:shadow-md transition-shadow"
         onClick={refreshWisdom}
       >
-        <CardContent className="py-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">💡</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+        <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">💡</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-200">
                 Wijsheid van de dag
               </p>
-              <p className="text-sm text-amber-700/80 dark:text-amber-300/80 italic">
+              <p className="text-xs sm:text-sm text-amber-700/80 dark:text-amber-300/80 italic truncate sm:whitespace-normal">
                 "{wisdom}"
               </p>
             </div>
-            <RefreshCw className="w-4 h-4 text-amber-600/50 hover:text-amber-600 transition-colors" />
+            <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600/50 hover:text-amber-600 transition-colors shrink-0" />
           </div>
         </CardContent>
       </Card>
