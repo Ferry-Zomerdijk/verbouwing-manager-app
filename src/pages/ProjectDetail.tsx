@@ -132,7 +132,7 @@ const ProjectDetail = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
             <TabsTrigger value="taken">Taken</TabsTrigger>
-            <TabsTrigger value="kosten">Kosten</TabsTrigger>
+            {isAdminOrOwner && <TabsTrigger value="kosten">Kosten</TabsTrigger>}
             <TabsTrigger value="documenten">Documenten</TabsTrigger>
             <TabsTrigger value="fotos">Foto's</TabsTrigger>
             <TabsTrigger value="aannemers">Aannemers</TabsTrigger>
@@ -146,9 +146,11 @@ const ProjectDetail = () => {
             <ProjectTasksWithDnd projectId={project.id} />
           </TabsContent>
 
-          <TabsContent value="kosten">
-            <ProjectCosts projectId={project.id} />
-          </TabsContent>
+          {isAdminOrOwner && (
+            <TabsContent value="kosten">
+              <ProjectCosts projectId={project.id} />
+            </TabsContent>
+          )}
 
           <TabsContent value="documenten">
             <ProjectDocuments projectId={project.id} />
