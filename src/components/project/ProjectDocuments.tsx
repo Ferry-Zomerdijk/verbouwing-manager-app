@@ -21,7 +21,7 @@ interface ProjectDocumentsProps {
   isAdminOrOwner?: boolean;
 }
 
-type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Overig";
+type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Plattegrond" | "Overig";
 
 interface FileUpload {
   file: File;
@@ -236,6 +236,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
     Vergunning: "bg-orange-500",
     Handleiding: "bg-green-500",
     Garantie: "bg-teal-500",
+    Plattegrond: "bg-indigo-500",
     Factuur: "bg-emerald-500",
     Overig: "bg-gray-500",
   };
@@ -350,6 +351,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
                   <SelectItem value="Vergunning">Vergunning</SelectItem>
                   <SelectItem value="Handleiding">Handleiding</SelectItem>
                   <SelectItem value="Garantie">Garantie</SelectItem>
+                  <SelectItem value="Plattegrond">Plattegrond</SelectItem>
                   <SelectItem value="Overig">Overig</SelectItem>
                 </SelectContent>
               </Select>
@@ -415,6 +417,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
                             <SelectItem value="Vergunning">Vergunning</SelectItem>
                             <SelectItem value="Handleiding">Handleiding</SelectItem>
                             <SelectItem value="Garantie">Garantie</SelectItem>
+                            <SelectItem value="Plattegrond">Plattegrond</SelectItem>
                             <SelectItem value="Overig">Overig</SelectItem>
                           </SelectContent>
                         </Select>

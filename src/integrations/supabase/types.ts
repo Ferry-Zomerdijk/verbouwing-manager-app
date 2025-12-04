@@ -562,6 +562,7 @@ export type Database = {
         | "Garantie"
         | "Contract"
         | "Overig"
+        | "Plattegrond"
       notification_type: "Taak" | "Budget" | "Document"
       photo_phase: "Voor" | "Tijdens" | "Na"
       project_status: "Gepland" | "Lopend" | "Afgerond"
@@ -713,6 +714,7 @@ export const Constants = {
         "Garantie",
         "Contract",
         "Overig",
+        "Plattegrond",
       ],
       notification_type: ["Taak", "Budget", "Document"],
       photo_phase: ["Voor", "Tijdens", "Na"],
