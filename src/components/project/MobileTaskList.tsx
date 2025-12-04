@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Search, Plus, X, Filter, RefreshCw, ChevronDown } from "lucide-react";
+import { Search, Plus, X, Filter, RefreshCw, ChevronDown, PartyPopper, Coffee } from "lucide-react";
 import MobileTaskCard from "./MobileTaskCard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { emptyStateMessages, getRandomCompletionMessage } from "@/lib/builderJokes";
 
 interface MobileTaskListProps {
   tasks: any[];
@@ -144,19 +145,35 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         </div>
       </div>
 
-      {/* Progress Summary Card */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">Voortgang</span>
-            <span className="text-2xl font-bold">
-              {completedCount} / {totalCount}
-            </span>
-          </div>
-          <Progress value={progressPercentage} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-1 text-right">{progressPercentage}% gereed</p>
-        </CardContent>
-      </Card>
+      {/* Progress Summary Card - Special 100% Easter Egg */}
+      {progressPercentage === 100 && totalCount > 0 ? (
+        <Card className="bg-green-500/10 border-green-500/30 overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-emerald-500/10 to-green-500/5 animate-pulse" />
+          <CardContent className="py-4 relative">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <PartyPopper className="w-6 h-6 text-green-600 animate-bounce" />
+              <span className="text-2xl font-bold text-green-700">100% KLAAR!</span>
+              <PartyPopper className="w-6 h-6 text-green-600 animate-bounce" style={{ animationDelay: '0.1s' }} />
+            </div>
+            <p className="text-xs text-center text-muted-foreground">
+              {getRandomCompletionMessage()}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Voortgang</span>
+              <span className="text-2xl font-bold">
+                {completedCount} / {totalCount}
+              </span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1 text-right">{progressPercentage}% gereed</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search bar */}
       <div className="relative">
@@ -245,8 +262,18 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
             </p>
           </>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Geen taken gevonden</p>
+          <div className="text-center py-12">
+            <span className="text-4xl mb-4 block">
+              {tasks.length === 0 ? "🏗️" : "🔍"}
+            </span>
+            <p className="font-medium">
+              {tasks.length === 0 ? "Nog geen taken" : "Geen taken gevonden"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {tasks.length === 0 
+                ? emptyStateMessages.tasks.noTasks
+                : "Probeer andere filters"}
+            </p>
             {activeFilterCount > 0 && (
               <Button
                 variant="link"
@@ -254,6 +281,12 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 className="mt-2"
               >
                 Filters wissen
+              </Button>
+            )}
+            {tasks.length === 0 && (
+              <Button onClick={onCreateTask} className="mt-4 gradient-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Eerste taak toevoegen
               </Button>
             )}
           </div>

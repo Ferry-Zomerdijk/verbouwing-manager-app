@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw } from "lucide-react";
+import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, Sparkles } from "lucide-react";
+import { emptyStateMessages } from "@/lib/builderJokes";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import MobileCostCard from "./MobileCostCard";
@@ -260,10 +261,29 @@ export const MobileCostList = ({
           ))
         ) : (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              {hasActiveFilters 
-                ? "Geen kostenposten gevonden met deze filters" 
-                : "Nog geen kostenposten toegevoegd"}
+            <CardContent className="py-8 text-center">
+              <span className="text-4xl mb-3 block">
+                {hasActiveFilters ? "🔍" : "💰"}
+              </span>
+              <p className="font-medium">
+                {hasActiveFilters ? "Geen kostenposten gevonden" : "Nog geen kosten"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {hasActiveFilters 
+                  ? "Probeer andere filters"
+                  : emptyStateMessages.costs.noCosts}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="link" onClick={clearFilters} className="mt-2">
+                  Filters wissen
+                </Button>
+              )}
+              {!hasActiveFilters && (
+                <Button onClick={() => setCreateDialogOpen(true)} className="mt-4 gradient-primary">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Eerste kost toevoegen
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
