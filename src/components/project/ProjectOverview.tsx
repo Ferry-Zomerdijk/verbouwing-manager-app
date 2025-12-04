@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Euro, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Calendar, Euro, TrendingUp, CheckCircle2, PartyPopper } from "lucide-react";
 import RecentTaskActivity from "./RecentTaskActivity";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { getRandomCompletionMessage, getRandomWisdom } from "@/lib/builderJokes";
 
 interface ProjectOverviewProps {
   project: any;
@@ -67,17 +68,25 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
-        <Card className="shadow-card">
+        <Card className={`shadow-card ${taskPercentage === 100 && taskStats && taskStats.total > 0 ? 'bg-green-500/10 border-green-500/30' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Voortgang</CardTitle>
-            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            {taskPercentage === 100 && taskStats && taskStats.total > 0 ? (
+              <PartyPopper className="w-4 h-4 text-green-600 animate-bounce" />
+            ) : (
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{taskPercentage}%</div>
+            <div className={`text-2xl font-bold ${taskPercentage === 100 && taskStats && taskStats.total > 0 ? 'text-green-700' : ''}`}>
+              {taskPercentage}%
+            </div>
             <Progress value={taskPercentage} className="mt-2" />
             {taskStats && taskStats.total > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                {taskStats.completed} van {taskStats.total} taken gereed
+                {taskPercentage === 100 
+                  ? "🎉 Alles af! Tijd voor koffie!"
+                  : `${taskStats.completed} van ${taskStats.total} taken gereed`}
               </p>
             )}
           </CardContent>

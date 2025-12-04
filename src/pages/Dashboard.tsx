@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, User, Settings, Users, ChevronDown } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown } from "lucide-react";
+import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
+import WeatherExcuseButton from "@/components/WeatherExcuseButton";
+import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
 import ProjectCard from "@/components/ProjectCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateProjectDialog from "@/components/CreateProjectDialog";
@@ -139,6 +142,8 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <CoffeeBreakTimer />
+              <WeatherExcuseButton />
               <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Nieuw Project
@@ -222,8 +227,11 @@ const Dashboard = () => {
                   <Home className="w-8 h-8 text-accent-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Geen projecten gevonden</h3>
-                <p className="text-muted-foreground mb-4">
-                  Begin met het toevoegen van je eerste renovatieproject
+                <p className="text-muted-foreground mb-2">
+                  {emptyStateMessages.projects.noProjects}
+                </p>
+                <p className="text-xs text-muted-foreground italic mb-4">
+                  💡 "{getRandomWisdom()}"
                 </p>
                 <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
                   <Plus className="w-4 h-4 mr-2" />
