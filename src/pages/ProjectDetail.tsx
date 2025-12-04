@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import ProjectOverview from "@/components/project/ProjectOverview";
@@ -21,11 +21,16 @@ import ProjectContractors from "@/components/project/ProjectContractors";
 import ProjectDocuments from "@/components/project/ProjectDocuments";
 import ProjectPhotos from "@/components/project/ProjectPhotos";
 import { ProjectUsersManager } from "@/components/project/ProjectUsersManager";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [usersManagerOpen, setUsersManagerOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const { data: project, isLoading, refetch } = useQuery({
     queryKey: ["project", id],
@@ -59,6 +64,27 @@ const ProjectDetail = () => {
     enabled: !!project,
   });
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['tasks', id] }),
+      queryClient.invalidateQueries({ queryKey: ['costs', id] }),
+      queryClient.invalidateQueries({ queryKey: ['contractors', id] }),
+      queryClient.invalidateQueries({ queryKey: ['documents', id] }),
+      queryClient.invalidateQueries({ queryKey: ['photos', id] }),
+    ]);
+  }, [refetch, queryClient, id]);
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing,
+    progress,
+    shouldTrigger,
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
@@ -88,7 +114,15 @@ const ProjectDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div ref={isMobile ? containerRef : undefined} className="min-h-screen bg-gradient-subtle relative">
+      {isMobile && (
+        <PullToRefreshIndicator
+          pullDistance={pullDistance}
+          isRefreshing={isRefreshing}
+          progress={progress}
+          shouldTrigger={shouldTrigger}
+        />
+      )}
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
