@@ -25,7 +25,7 @@ interface TaskCardProps {
 
 const priorityColors = {
   Laag: "bg-blue-500",
-  Middel: "bg-yellow-500",
+  Middel: "bg-amber-500",
   Hoog: "bg-red-500",
 };
 

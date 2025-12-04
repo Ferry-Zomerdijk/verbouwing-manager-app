@@ -27,7 +27,7 @@ interface MobileTaskCardProps {
 
 const priorityConfig = {
   Laag: { color: "bg-blue-500", textColor: "text-blue-500" },
-  Middel: { color: "bg-yellow-500", textColor: "text-yellow-500" },
+  Middel: { color: "bg-amber-500", textColor: "text-amber-500" },
   Hoog: { color: "bg-red-500", textColor: "text-red-500" },
 };
 
