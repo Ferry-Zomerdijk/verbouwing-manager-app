@@ -143,13 +143,18 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
       setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          errors.push(`${bestandsnaam}: Niet ingelogd`);
+          continue;
+        }
+        
         const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${projectId}/${fileName}`;
+        const fileName = `${user.id}/${projectId}/${Date.now()}_${Math.random()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("invoices")
-          .upload(filePath, file);
+          .upload(fileName, file);
 
         if (uploadError) throw uploadError;
 
@@ -157,7 +162,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
           project_id: projectId,
           bestandsnaam,
           type,
-          bestand_url: filePath,
+          bestand_url: fileName,
         }]);
 
         if (dbError) throw dbError;
