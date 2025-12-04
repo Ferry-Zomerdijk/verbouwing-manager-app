@@ -571,6 +571,9 @@ const ProjectCosts = ({
                         }}
                         placeholder="0"
                         className="text-right font-semibold"
+                        displayRenderer={(val) => (
+                          <span className="font-semibold">€{parseFloat(val || '0').toLocaleString("nl-NL")}</span>
+                        )}
                       />
                     </TableCell>
                     <TableCell>
