@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
+import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import ProjectOverview from "@/components/project/ProjectOverview";
 import ProjectTasksWithDnd from "@/components/project/ProjectTasksWithDnd";
 import ProjectCosts from "@/components/project/ProjectCosts";
@@ -107,21 +109,25 @@ const ProjectDetail = () => {
                 )}
               </div>
             </div>
-            {isAdminOrOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Gebruikers Beheren
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <div className="flex items-center gap-2">
+              <WeatherExcuseButton />
+              <CoffeeBreakTimer />
+              {isAdminOrOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Gebruikers Beheren
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </div>
       </header>
