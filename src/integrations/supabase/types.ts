@@ -364,6 +364,38 @@ export type Database = {
         }
         Relationships: []
       }
+      task_updates: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          task_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          task_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_updates_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           begindatum: string | null

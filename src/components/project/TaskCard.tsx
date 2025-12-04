@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Calendar, User, MoreVertical, Edit, Trash2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -64,6 +64,15 @@ const TaskCard = ({ task, onUpdate, canDelete = true }: TaskCardProps) => {
     }
   };
 
+  // Get first line of latest update (truncated)
+  const getLatestUpdatePreview = () => {
+    if (!task.latest_update) return null;
+    const firstLine = task.latest_update.split("\n")[0];
+    return firstLine.length > 60 ? firstLine.substring(0, 60) + "..." : firstLine;
+  };
+
+  const latestUpdatePreview = getLatestUpdatePreview();
+
   return (
     <>
       <Card 
@@ -124,6 +133,14 @@ const TaskCard = ({ task, onUpdate, canDelete = true }: TaskCardProps) => {
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <User className="w-3 h-3" />
               <span>{task.verantwoordelijke}</span>
+            </div>
+          )}
+
+          {/* Latest Update Preview */}
+          {latestUpdatePreview && (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50">
+              <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <span className="line-clamp-1">{latestUpdatePreview}</span>
             </div>
           )}
         </div>

@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import TaskUpdatesSection from "./TaskUpdatesSection";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -70,7 +72,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess }: EditTaskDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Taak Bewerken</DialogTitle>
         </DialogHeader>
@@ -153,6 +155,13 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess }: EditTaskDialogP
               placeholder="Naam van verantwoordelijke"
             />
           </div>
+
+          <Separator className="my-4" />
+
+          {/* Updates Section */}
+          {task?.id && (
+            <TaskUpdatesSection taskId={task.id} onUpdateAdded={onSuccess} />
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
