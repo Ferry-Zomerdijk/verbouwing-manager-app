@@ -490,6 +490,11 @@ const ProjectCosts = ({
                         onSave={async (value) => {
                           await updateCost(cost.id, { datum: value || new Date().toISOString().split('T')[0] });
                         }}
+                        displayRenderer={(val) => {
+                          if (!val) return <span className="text-muted-foreground">-</span>;
+                          const date = new Date(val);
+                          return <span>{date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>;
+                        }}
                       />
                     </TableCell>
                     <TableCell>
