@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, MoreVertical, Trash2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowUpDown, MoreVertical, Trash2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -25,6 +26,7 @@ interface Task {
   begindatum: string | null;
   deadline: string | null;
   project_id: string;
+  latest_update?: string | null;
 }
 
 interface TaskListViewProps {
@@ -183,13 +185,16 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
               <TableHead>
                 <SortButton column="deadline" label="Deadline" />
               </TableHead>
+              <TableHead className="hidden xl:table-cell min-w-[150px]">
+                Update
+              </TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedTasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   Geen taken gevonden
                 </TableCell>
               </TableRow>
@@ -294,6 +299,28 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                           : ""
                       }
                     />
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
+                    {task.latest_update ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground max-w-[200px]">
+                              <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {task.latest_update.split("\n")[0].substring(0, 40)}
+                                {task.latest_update.length > 40 ? "..." : ""}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-xs">
+                            <p className="whitespace-pre-wrap">{task.latest_update}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>

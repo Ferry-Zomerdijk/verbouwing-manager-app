@@ -85,14 +85,38 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
   const { data: tasks, refetch } = useQuery({
     queryKey: ["tasks", projectId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch tasks
+      const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
         .select("*, begindatum, deel_van_huis")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
-      return data as any[];
+      if (tasksError) throw tasksError;
+
+      // Fetch latest update for each task
+      const taskIds = tasksData?.map(t => t.id) || [];
+      if (taskIds.length === 0) return tasksData as any[];
+
+      const { data: updatesData } = await supabase
+        .from("task_updates")
+        .select("task_id, content, created_at")
+        .in("task_id", taskIds)
+        .order("created_at", { ascending: false });
+
+      // Group updates by task_id and get the latest one
+      const latestUpdateByTask: Record<string, string> = {};
+      updatesData?.forEach(update => {
+        if (!latestUpdateByTask[update.task_id]) {
+          latestUpdateByTask[update.task_id] = update.content;
+        }
+      });
+
+      // Merge latest_update into tasks
+      return tasksData?.map(task => ({
+        ...task,
+        latest_update: latestUpdateByTask[task.id] || null
+      })) as any[];
     },
   });
 
