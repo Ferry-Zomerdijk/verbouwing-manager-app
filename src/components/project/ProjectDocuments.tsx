@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -18,17 +20,24 @@ interface ProjectDocumentsProps {
   projectId: string;
 }
 
+type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Overig";
+
+interface FileUpload {
+  file: File;
+  bestandsnaam: string;
+  type: DocumentType;
+}
+
 const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [formData, setFormData] = useState({
-    bestandsnaam: "",
-    type: "Contract" as any,
-    file: null as File | null,
-  });
+  const [filesToUpload, setFilesToUpload] = useState<FileUpload[]>([]);
+  const [defaultType, setDefaultType] = useState<DocumentType>("Contract");
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: documents, refetch } = useQuery({
     queryKey: ["documents", projectId],
@@ -44,69 +53,119 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
     },
   });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData({ 
-        ...formData, 
-        file,
-        bestandsnaam: file.name 
-      });
-    }
+  const handleFilesSelect = useCallback((files: FileList | null) => {
+    if (!files) return;
+    
+    const newFiles: FileUpload[] = Array.from(files).map(file => ({
+      file,
+      bestandsnaam: file.name,
+      type: defaultType,
+    }));
+    
+    setFilesToUpload(prev => [...prev, ...newFiles]);
+  }, [defaultType]);
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFilesSelect(e.target.files);
+    e.target.value = ""; // Reset input so same files can be selected again
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const updateFileInList = (index: number, updates: Partial<FileUpload>) => {
+    setFilesToUpload(prev => prev.map((f, i) => 
+      i === index ? { ...f, ...updates } : f
+    ));
+  };
+
+  const removeFileFromList = (index: number) => {
+    setFilesToUpload(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBulkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.file) return;
+    if (filesToUpload.length === 0) return;
 
     setUploading(true);
-    try {
-      const fileExt = formData.file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${projectId}/${fileName}`;
+    setUploadProgress({ current: 0, total: filesToUpload.length });
+    
+    let successCount = 0;
+    const errors: string[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("invoices")
-        .upload(filePath, formData.file);
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const { file, bestandsnaam, type } = filesToUpload[i];
+      setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
-      if (uploadError) throw uploadError;
+      try {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${projectId}/${fileName}`;
 
-      const { error: dbError } = await supabase.from("documents").insert([{
-        project_id: projectId,
-        bestandsnaam: formData.bestandsnaam,
-        type: formData.type,
-        bestand_url: filePath,
-      }]);
+        const { error: uploadError } = await supabase.storage
+          .from("invoices")
+          .upload(filePath, file);
 
-      if (dbError) throw dbError;
+        if (uploadError) throw uploadError;
 
-      toast.success("Document geüpload");
-      refetch();
-      setUploadDialogOpen(false);
-      setFormData({ bestandsnaam: "", type: "Contract", file: null });
-    } catch (error: any) {
-      toast.error("Fout bij uploaden: " + error.message);
-    } finally {
-      setUploading(false);
+        const { error: dbError } = await supabase.from("documents").insert([{
+          project_id: projectId,
+          bestandsnaam,
+          type,
+          bestand_url: filePath,
+        }]);
+
+        if (dbError) throw dbError;
+        successCount++;
+      } catch (error: any) {
+        errors.push(`${bestandsnaam}: ${error.message}`);
+      }
     }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} document${successCount > 1 ? "en" : ""} geüpload`);
+      refetch();
+    }
+    
+    if (errors.length > 0) {
+      toast.error(`${errors.length} upload${errors.length > 1 ? "s" : ""} mislukt`);
+    }
+
+    setUploadDialogOpen(false);
+    setFilesToUpload([]);
+    setUploadProgress({ current: 0, total: 0 });
+    setUploading(false);
   };
 
-  const handleDownload = async (document: any) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFilesSelect(e.dataTransfer.files);
+  }, [handleFilesSelect]);
+
+  const handleDownload = async (doc: any) => {
     try {
       const { data, error } = await supabase.storage
         .from("invoices")
-        .download(document.bestand_url);
+        .download(doc.bestand_url);
 
       if (error) throw error;
 
       const url = window.URL.createObjectURL(data);
-      const a = document.createElement("a");
+      const a = window.document.createElement("a");
       a.href = url;
-      a.download = document.bestandsnaam;
-      document.body.appendChild(a);
+      a.download = doc.bestandsnaam;
+      window.document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
 
       toast.success("Document gedownload");
     } catch (error: any) {
@@ -136,9 +195,18 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
     Contract: "bg-blue-500",
     Offerte: "bg-purple-500",
     Vergunning: "bg-orange-500",
-    Tekening: "bg-green-500",
-    Anders: "bg-gray-500",
+    Handleiding: "bg-green-500",
+    Garantie: "bg-teal-500",
+    Overig: "bg-gray-500",
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const totalSize = filesToUpload.reduce((acc, f) => acc + f.file.size, 0);
 
   return (
     <div className="space-y-6">
@@ -146,7 +214,7 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
         <h2 className="text-2xl font-bold">Documenten</h2>
         <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
-          Document Uploaden
+          Documenten Uploaden
         </Button>
       </div>
 
@@ -161,7 +229,7 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base truncate">{doc.bestandsnaam}</CardTitle>
-                    <Badge className={`${typeColors[doc.type]} text-white text-xs mt-2`}>
+                    <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs mt-2`}>
                       {doc.type}
                     </Badge>
                   </div>
@@ -204,71 +272,140 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
         </Card>
       )}
 
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
+      <Dialog open={uploadDialogOpen} onOpenChange={(open) => {
+        setUploadDialogOpen(open);
+        if (!open) {
+          setFilesToUpload([]);
+          setUploadProgress({ current: 0, total: 0 });
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Document Uploaden</DialogTitle>
+            <DialogTitle>Documenten Uploaden</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleUpload} className="space-y-4">
+          <form onSubmit={handleBulkUpload} className="space-y-4">
+            {/* Default type selector */}
             <div>
-              <Label htmlFor="file">Bestand *</Label>
-              <div className="mt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => document.getElementById("file")?.click()}
-                >
-                  <UploadIcon className="w-4 h-4 mr-2" />
-                  {formData.file ? formData.file.name : "Selecteer bestand"}
-                </Button>
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="bestandsnaam">Bestandsnaam *</Label>
-              <Input
-                id="bestandsnaam"
-                value={formData.bestandsnaam}
-                onChange={(e) => setFormData({ ...formData, bestandsnaam: e.target.value })}
-                placeholder="Document naam"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="type">Type *</Label>
+              <Label>Standaard type voor nieuwe bestanden</Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value as any })}
+                value={defaultType}
+                onValueChange={(value) => setDefaultType(value as DocumentType)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Contract">Contract</SelectItem>
                   <SelectItem value="Offerte">Offerte</SelectItem>
                   <SelectItem value="Vergunning">Vergunning</SelectItem>
-                  <SelectItem value="Tekening">Tekening</SelectItem>
-                  <SelectItem value="Anders">Anders</SelectItem>
+                  <SelectItem value="Handleiding">Handleiding</SelectItem>
+                  <SelectItem value="Garantie">Garantie</SelectItem>
+                  <SelectItem value="Overig">Overig</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Drop zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                isDragging 
+                  ? "border-primary bg-primary/5" 
+                  : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
+              onClick={() => document.getElementById("multi-file")?.click()}
+            >
+              <UploadIcon className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Sleep bestanden hierheen of <span className="text-primary font-medium">klik om te selecteren</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PDF, Word, Excel, afbeeldingen
+              </p>
+              <Input
+                id="multi-file"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                onChange={handleFileInputChange}
+                className="hidden"
+                multiple
+              />
+            </div>
+
+            {/* File list */}
+            {filesToUpload.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{filesToUpload.length} bestand{filesToUpload.length > 1 ? "en" : ""} geselecteerd</span>
+                  <span className="text-muted-foreground">{formatFileSize(totalSize)}</span>
+                </div>
+                
+                <ScrollArea className="h-[200px] border rounded-lg">
+                  <div className="p-2 space-y-2">
+                    {filesToUpload.map((fileUpload, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <Input
+                          value={fileUpload.bestandsnaam}
+                          onChange={(e) => updateFileInList(index, { bestandsnaam: e.target.value })}
+                          className="h-8 text-sm flex-1"
+                        />
+                        <Select
+                          value={fileUpload.type}
+                          onValueChange={(value) => updateFileInList(index, { type: value as DocumentType })}
+                        >
+                          <SelectTrigger className="h-8 w-[120px] text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Contract">Contract</SelectItem>
+                            <SelectItem value="Offerte">Offerte</SelectItem>
+                            <SelectItem value="Vergunning">Vergunning</SelectItem>
+                            <SelectItem value="Handleiding">Handleiding</SelectItem>
+                            <SelectItem value="Garantie">Garantie</SelectItem>
+                            <SelectItem value="Overig">Overig</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => removeFileFromList(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* Upload progress */}
+            {uploading && uploadProgress.total > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Uploaden...</span>
+                  <span>{uploadProgress.current} van {uploadProgress.total}</span>
+                </div>
+                <Progress value={(uploadProgress.current / uploadProgress.total) * 100} />
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
                 Annuleren
               </Button>
-              <Button type="submit" disabled={uploading || !formData.file} className="gradient-primary">
-                {uploading ? "Uploaden..." : "Uploaden"}
+              <Button 
+                type="submit" 
+                disabled={uploading || filesToUpload.length === 0} 
+                className="gradient-primary"
+              >
+                {uploading ? "Uploaden..." : `${filesToUpload.length} bestand${filesToUpload.length !== 1 ? "en" : ""} uploaden`}
               </Button>
             </div>
           </form>
