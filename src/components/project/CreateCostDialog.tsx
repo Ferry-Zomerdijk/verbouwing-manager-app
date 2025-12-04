@@ -30,6 +30,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
     categorie: "Materiaal",
     beschrijving: "",
     deel_van_huis: "",
+    status: "Schatting",
   });
 
   const validateFile = (file: File): boolean => {
@@ -115,6 +116,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
           categorie: formData.categorie,
           beschrijving: extracted.beschrijving || "",
           deel_van_huis: formData.deel_van_huis,
+          status: "Factuur", // Auto-set to Factuur when uploading invoice
         });
 
         toast.success("Factuurgegevens succesvol ingelezen!");
@@ -157,6 +159,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
         beschrijving: formData.beschrijving || null,
         factuur_url: uploadedFilePath || null,
         deel_van_huis: formData.deel_van_huis || null,
+        status: formData.status as any,
       }]);
 
       if (error) throw error;
@@ -172,6 +175,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
         categorie: "Materiaal",
         beschrijving: "",
         deel_van_huis: "",
+        status: "Schatting",
       });
       setSelectedFile(null);
       setUploadedFilePath(null);
@@ -303,25 +307,44 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateCo
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="categorie">Categorie *</Label>
-            <Select
-              value={formData.categorie}
-              onValueChange={(value) => setFormData({ ...formData, categorie: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Materiaal">Materiaal</SelectItem>
-                <SelectItem value="Arbeid">Arbeid</SelectItem>
-                <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-                <SelectItem value="Decoratie">Decoratie</SelectItem>
-                <SelectItem value="Meubels">Meubels</SelectItem>
-                <SelectItem value="Overig">Overig</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="categorie">Categorie *</Label>
+              <Select
+                value={formData.categorie}
+                onValueChange={(value) => setFormData({ ...formData, categorie: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Materiaal">Materiaal</SelectItem>
+                  <SelectItem value="Arbeid">Arbeid</SelectItem>
+                  <SelectItem value="Vergunningen">Vergunningen</SelectItem>
+                  <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                  <SelectItem value="Decoratie">Decoratie</SelectItem>
+                  <SelectItem value="Meubels">Meubels</SelectItem>
+                  <SelectItem value="Overig">Overig</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Schatting">Schatting</SelectItem>
+                  <SelectItem value="Offerte">Offerte</SelectItem>
+                  <SelectItem value="Factuur">Factuur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>

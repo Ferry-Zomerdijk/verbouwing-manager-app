@@ -72,6 +72,7 @@ export type Database = {
           leverancier: string | null
           ocr_herkenning: Json | null
           project_id: string
+          status: Database["public"]["Enums"]["cost_status"]
         }
         Insert: {
           bedrag: number
@@ -86,6 +87,7 @@ export type Database = {
           leverancier?: string | null
           ocr_herkenning?: Json | null
           project_id: string
+          status?: Database["public"]["Enums"]["cost_status"]
         }
         Update: {
           bedrag?: number
@@ -100,6 +102,7 @@ export type Database = {
           leverancier?: string | null
           ocr_herkenning?: Json | null
           project_id?: string
+          status?: Database["public"]["Enums"]["cost_status"]
         }
         Relationships: [
           {
@@ -503,6 +506,7 @@ export type Database = {
         | "Kluswerkzaamheden"
         | "Decoratie"
         | "Meubels"
+      cost_status: "Schatting" | "Offerte" | "Factuur"
       document_type:
         | "Offerte"
         | "Vergunning"
@@ -653,6 +657,7 @@ export const Constants = {
         "Decoratie",
         "Meubels",
       ],
+      cost_status: ["Schatting", "Offerte", "Factuur"],
       document_type: [
         "Offerte",
         "Vergunning",

@@ -27,6 +27,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     bedrag: "",
     factuur_url: "",
     deel_van_huis: "",
+    status: "Schatting",
   });
 
   useEffect(() => {
@@ -39,6 +40,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         bedrag: cost.bedrag?.toString() || "",
         factuur_url: cost.factuur_url || "",
         deel_van_huis: cost.deel_van_huis || "",
+        status: cost.status || "Schatting",
       });
     }
   }, [cost]);
@@ -91,6 +93,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
           bedrag: parseFloat(formData.bedrag),
           factuur_url: formData.factuur_url || null,
           deel_van_huis: formData.deel_van_huis || null,
+          status: formData.status as any,
         })
         .eq("id", cost.id);
 
@@ -143,6 +146,23 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
                   <SelectItem value="Decoratie">Decoratie</SelectItem>
                   <SelectItem value="Meubels">Meubels</SelectItem>
                   <SelectItem value="Overig">Overig</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Schatting">Schatting</SelectItem>
+                  <SelectItem value="Offerte">Offerte</SelectItem>
+                  <SelectItem value="Factuur">Factuur</SelectItem>
                 </SelectContent>
               </Select>
             </div>
