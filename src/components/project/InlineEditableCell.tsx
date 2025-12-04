@@ -11,6 +11,7 @@ interface InlineEditableCellProps {
   options?: { value: string; label: string }[];
   placeholder?: string;
   className?: string;
+  displayRenderer?: (value: string | null) => React.ReactNode;
 }
 
 export const InlineEditableCell = ({
@@ -20,6 +21,7 @@ export const InlineEditableCell = ({
   options = [],
   placeholder = "-",
   className = "",
+  displayRenderer,
 }: InlineEditableCellProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -68,7 +70,7 @@ export const InlineEditableCell = ({
         className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors ${className}`}
         onClick={() => setIsEditing(true)}
       >
-        {value || <span className="text-muted-foreground italic">{placeholder}</span>}
+        {displayRenderer ? displayRenderer(value) : (value || <span className="text-muted-foreground italic">{placeholder}</span>)}
       </div>
     );
   }

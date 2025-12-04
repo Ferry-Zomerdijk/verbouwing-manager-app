@@ -504,6 +504,11 @@ const ProjectCosts = ({
                         onSave={async (value) => {
                           await updateCost(cost.id, { status: value as Database["public"]["Enums"]["cost_status"] });
                         }}
+                        displayRenderer={(val) => val ? (
+                          <Badge variant={val === "Factuur" ? "default" : val === "Offerte" ? "secondary" : "outline"}>
+                            {val}
+                          </Badge>
+                        ) : null}
                       />
                     </TableCell>
                     <TableCell>
@@ -522,6 +527,11 @@ const ProjectCosts = ({
                         onSave={async (value) => {
                           await updateCost(cost.id, { categorie: value as Database["public"]["Enums"]["cost_category"] });
                         }}
+                        displayRenderer={(val) => val ? (
+                          <Badge variant="outline" className={categoryColors[val] ? `${categoryColors[val]} text-white border-0` : ""}>
+                            {val}
+                          </Badge>
+                        ) : null}
                       />
                     </TableCell>
                     <TableCell>
