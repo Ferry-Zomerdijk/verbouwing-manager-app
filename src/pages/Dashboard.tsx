@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, User, Settings, Users, ChevronDown } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateProjectDialog from "@/components/CreateProjectDialog";
@@ -15,12 +15,57 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AccountSettingsDialog from "@/components/AccountSettingsDialog";
+import AdminUsersDialog from "@/components/AdminUsersDialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
+    naam: null,
+    email: null,
+    isAdmin: false,
+  });
+
+  // Load user info
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("naam")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        setUserInfo({
+          naam: profile?.naam || null,
+          email: user.email || null,
+          isAdmin: !!adminRole,
+        });
+      }
+    };
+    loadUserInfo();
+  }, []);
 
   useKeyboardShortcuts([
     {
@@ -101,9 +146,48 @@ const Dashboard = () => {
               <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)}>
                 <Keyboard className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
-              </Button>
+              
+              {/* User Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {userInfo.naam ? userInfo.naam[0].toUpperCase() : userInfo.email?.[0].toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline max-w-24 truncate">
+                      {userInfo.naam || userInfo.email?.split("@")[0] || "Account"}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{userInfo.naam || "Onbekend"}</p>
+                    <p className="text-xs text-muted-foreground">{userInfo.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Mijn Account
+                  </DropdownMenuItem>
+                  {userInfo.isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setUsersDialogOpen(true)}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Gebruikers Beheren
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Uitloggen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -193,6 +277,16 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AccountSettingsDialog
+        open={accountDialogOpen}
+        onOpenChange={setAccountDialogOpen}
+      />
+
+      <AdminUsersDialog
+        open={usersDialogOpen}
+        onOpenChange={setUsersDialogOpen}
+      />
     </div>
   );
 };
