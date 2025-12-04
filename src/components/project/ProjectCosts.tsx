@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
 import EditCostDialog from "./EditCostDialog";
@@ -173,6 +173,30 @@ const ProjectCosts = ({
       value,
       fill: STATUS_CHART_COLORS[name] || "#6b7280"
     }));
+  }, [filteredCosts]);
+
+  // Time series data - costs per month
+  const timeSeriesData = useMemo(() => {
+    if (!filteredCosts.length) return [];
+    
+    const byMonth = filteredCosts.reduce((acc, cost) => {
+      const monthKey = format(new Date(cost.datum), "yyyy-MM");
+      if (!acc[monthKey]) {
+        acc[monthKey] = { Schatting: 0, Offerte: 0, Factuur: 0, total: 0 };
+      }
+      const status = cost.status || "Schatting";
+      const amount = parseFloat(cost.bedrag.toString());
+      acc[monthKey][status] += amount;
+      acc[monthKey].total += amount;
+      return acc;
+    }, {} as Record<string, { Schatting: number; Offerte: number; Factuur: number; total: number }>);
+
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, data]) => ({
+        month: format(new Date(month + "-01"), "MMM yyyy", { locale: nl }),
+        ...data
+      }));
   }, [filteredCosts]);
 
   const handleExportToExcel = () => {
@@ -346,6 +370,52 @@ const ProjectCosts = ({
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Time Series Chart */}
+      {timeSeriesData.length > 1 && (
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-base">Kosten over Tijd</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, ""]}
+                    labelFormatter={(label) => `Maand: ${label}`}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Schatting" 
+                    stroke="#94a3b8" 
+                    strokeWidth={2}
+                    dot={{ fill: "#94a3b8", strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Offerte" 
+                    stroke="#60a5fa" 
+                    strokeWidth={2}
+                    dot={{ fill: "#60a5fa", strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Factuur" 
+                    stroke="#22c55e" 
+                    strokeWidth={2}
+                    dot={{ fill: "#22c55e", strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Summary Cards */}
