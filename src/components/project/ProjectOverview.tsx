@@ -162,17 +162,22 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         </Card>
       </div>
 
-      {/* Description */}
-      {project.beschrijving && (
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Beschrijving</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground whitespace-pre-wrap">{project.beschrijving}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Bouwer Wijsheid */}
+      <Card className="shadow-card bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💡</span>
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Wijsheid van de dag
+              </p>
+              <p className="text-sm text-amber-700/80 dark:text-amber-300/80 italic">
+                "{getRandomWisdom()}"
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Task Activity */}
       <RecentTaskActivity projectId={project.id} />
