@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, Euro, TrendingUp, CheckCircle2 } from "lucide-react";
+import RecentTaskActivity from "./RecentTaskActivity";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,6 +164,9 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
           </CardContent>
         </Card>
       )}
+
+      {/* Recent Task Activity */}
+      <RecentTaskActivity projectId={project.id} />
     </div>
   );
 };

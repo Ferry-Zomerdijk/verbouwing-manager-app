@@ -370,6 +370,54 @@ export type Database = {
         }
         Relationships: []
       }
+      task_activity_log: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string | null
+          id: string
+          project_id: string
+          task_id: string | null
+          task_title: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          project_id: string
+          task_id?: string | null
+          task_title: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          task_id?: string | null
+          task_title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_activity_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_updates: {
         Row: {
           content: string
