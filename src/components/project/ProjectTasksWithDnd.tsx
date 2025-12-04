@@ -22,6 +22,8 @@ import { ExportTask } from "@/lib/excelImport";
 import { toast } from "sonner";
 import { TaskFilters, TaskFiltersType } from "./TaskFilters";
 import { TaskListView } from "./TaskListView";
+import { useIsMobile } from "@/hooks/use-mobile";
+import MobileTaskList from "./MobileTaskList";
 
 interface ProjectTasksWithDndProps {
   projectId: string;
@@ -59,6 +61,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
         };
   });
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -321,6 +324,32 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
     setViewMode(mode);
   };
 
+  // Mobile view
+  if (isMobile) {
+    return (
+      <>
+        <MobileTaskList
+          tasks={tasks || []}
+          projectId={projectId}
+          onUpdate={refetch}
+          canDelete={canDelete}
+          onCreateTask={() => setCreateDialogOpen(true)}
+        />
+        
+        <CreateTaskDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          projectId={projectId}
+          onSuccess={() => {
+            refetch();
+            toast.success("Taak succesvol aangemaakt!");
+          }}
+        />
+      </>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
