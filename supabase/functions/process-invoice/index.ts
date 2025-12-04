@@ -87,12 +87,18 @@ serve(async (req) => {
       const ocrResult = await ocrResponse.json();
       console.log('OCR result:', JSON.stringify(ocrResult).substring(0, 200));
 
-      if (ocrResult.IsErroredOnProcessing || !ocrResult.ParsedResults?.[0]?.ParsedText) {
+      // Check if we have any extracted text - partial success (page limit reached) is OK
+      const extractedTextResult = ocrResult.ParsedResults?.[0]?.ParsedText;
+      if (!extractedTextResult || extractedTextResult.trim().length === 0) {
         console.error('OCR processing error:', ocrResult.ErrorMessage || ocrResult.ErrorDetails);
         throw new Error('Kon geen tekst extraheren uit PDF');
       }
+      
+      if (ocrResult.ErrorMessage) {
+        console.log('OCR warning (continuing with partial text):', ocrResult.ErrorMessage);
+      }
 
-      const extractedText = ocrResult.ParsedResults[0].ParsedText;
+      const extractedText = extractedTextResult;
       console.log('Extracted text length:', extractedText.length);
 
       // Analyze extracted text with AI
