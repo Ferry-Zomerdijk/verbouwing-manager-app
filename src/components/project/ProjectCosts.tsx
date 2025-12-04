@@ -36,6 +36,7 @@ const ProjectCosts = ({
   const [deleting, setDeleting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   
   const {
     data: costs,
@@ -69,15 +70,17 @@ const ProjectCosts = ({
     return costs.filter(cost => {
       const matchCategory = categoryFilter === "all" || cost.categorie === categoryFilter;
       const matchDeelVanHuis = deelVanHuisFilter === "all" || cost.deel_van_huis === deelVanHuisFilter;
-      return matchCategory && matchDeelVanHuis;
+      const matchStatus = statusFilter === "all" || cost.status === statusFilter;
+      return matchCategory && matchDeelVanHuis && matchStatus;
     });
-  }, [costs, categoryFilter, deelVanHuisFilter]);
+  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter]);
 
-  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all";
+  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all";
 
   const clearFilters = () => {
     setCategoryFilter("all");
     setDeelVanHuisFilter("all");
+    setStatusFilter("all");
   };
   const handleDownloadInvoice = async (filePath: string, costId: string) => {
     try {
@@ -175,6 +178,18 @@ const ProjectCosts = ({
               </SelectContent>
             </Select>
 
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle statussen</SelectItem>
+                <SelectItem value="Schatting">Schatting</SelectItem>
+                <SelectItem value="Offerte">Offerte</SelectItem>
+                <SelectItem value="Factuur">Factuur</SelectItem>
+              </SelectContent>
+            </Select>
+
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="w-4 h-4 mr-1" />
@@ -227,6 +242,7 @@ const ProjectCosts = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Datum</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Categorie</TableHead>
                   <TableHead>Deel van huis</TableHead>
                   <TableHead>Leverancier</TableHead>
@@ -242,6 +258,11 @@ const ProjectCosts = ({
                       {format(new Date(cost.datum), "dd MMM yyyy", {
                   locale: nl
                 })}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={cost.status === "Factuur" ? "default" : cost.status === "Offerte" ? "secondary" : "outline"}>
+                        {cost.status}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{cost.categorie}</Badge>
