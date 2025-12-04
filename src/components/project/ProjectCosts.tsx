@@ -219,12 +219,17 @@ const ProjectCosts = ({
       return acc;
     }, {} as Record<string, { Schatting: number; Offerte: number; Factuur: number; total: number }>);
 
-    return Object.entries(byMonth)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, data]) => ({
+    const sortedMonths = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+    
+    let cumulativeTotal = 0;
+    return sortedMonths.map(([month, data]) => {
+      cumulativeTotal += data.total;
+      return {
         month: format(new Date(month + "-01"), "MMM yyyy", { locale: nl }),
-        ...data
-      }));
+        ...data,
+        cumulativeTotal
+      };
+    });
   }, [filteredCosts]);
 
   const handleExportToExcel = () => {
@@ -423,8 +428,8 @@ const ProjectCosts = ({
                   <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
                   <Line 
                     type="monotone" 
-                    dataKey="total" 
-                    name="Totaal"
+                    dataKey="cumulativeTotal" 
+                    name="Cumulatief Totaal"
                     stroke="#ef4444" 
                     strokeWidth={2}
                     dot={{ fill: "#ef4444", strokeWidth: 2 }}
