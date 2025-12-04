@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, MessageSquare, ImagePlus, X, Loader2 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Trash2, Plus, MessageSquare, ImagePlus, X, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -28,6 +29,9 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -191,6 +195,20 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
     setPreviewUrls([]);
   };
 
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const navigateLightbox = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setLightboxIndex((prev) => (prev > 0 ? prev - 1 : lightboxImages.length - 1));
+    } else {
+      setLightboxIndex((prev) => (prev < lightboxImages.length - 1 ? prev + 1 : 0));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -320,19 +338,18 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
               {update.image_urls && update.image_urls.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
                   {update.image_urls.map((url, index) => (
-                    <a
+                    <button
                       key={index}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
+                      type="button"
+                      onClick={() => openLightbox(update.image_urls!, index)}
+                      className="block focus:outline-none focus:ring-2 focus:ring-ring rounded-md"
                     >
                       <img
                         src={url}
                         alt={`Afbeelding ${index + 1}`}
-                        className="w-24 h-24 object-cover rounded-md border hover:opacity-90 transition-opacity"
+                        className="w-24 h-24 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
                       />
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -344,6 +361,53 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
           </p>
         )}
       </div>
+
+      {/* Lightbox Dialog */}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+          <div className="relative flex items-center justify-center w-full h-[90vh]">
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Navigation buttons */}
+            {lightboxImages.length > 1 && (
+              <>
+                <button
+                  onClick={() => navigateLightbox("prev")}
+                  className="absolute left-4 z-50 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                >
+                  <ChevronLeft className="h-8 w-8" />
+                </button>
+                <button
+                  onClick={() => navigateLightbox("next")}
+                  className="absolute right-4 z-50 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                >
+                  <ChevronRight className="h-8 w-8" />
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <img
+              src={lightboxImages[lightboxIndex]}
+              alt={`Afbeelding ${lightboxIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+
+            {/* Image counter */}
+            {lightboxImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full text-white text-sm">
+                {lightboxIndex + 1} / {lightboxImages.length}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
