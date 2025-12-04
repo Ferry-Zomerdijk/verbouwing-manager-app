@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronDown, ChevronUp, MapPin, User, Edit, Trash2, MessageSquare } from "lucide-react";
+import { Calendar, ChevronDown, MapPin, User, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -102,10 +102,9 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: Mo
     <>
       <Card 
         {...swipeHandlers}
-        className={`p-4 transition-all touch-pan-y ${
-          swiped === "left" ? "translate-x-[-60px] opacity-70" : 
-          swiped === "right" ? "translate-x-[60px] opacity-70" : ""
-        }`}
+        className={`p-4 transition-all duration-150 touch-pan-y ${
+          swiped === "left" ? "translate-x-[-20px] bg-destructive/5" : ""
+        } ${swiped === "right" ? "translate-x-[20px] bg-primary/5" : ""}`}
       >
         {/* Header row: Priority badge & Status selector */}
         <div className="flex items-center justify-between mb-3">
@@ -128,7 +127,7 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: Mo
           </Select>
         </div>
 
-        {/* Title */}
+        {/* Title with expand button */}
         <div 
           className="flex items-start justify-between gap-2 cursor-pointer"
           onClick={() => setExpanded(!expanded)}
@@ -136,15 +135,15 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: Mo
           <h4 className="font-semibold text-base leading-tight flex-1">
             {task.titel}
           </h4>
-          <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+            <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </Button>
         </div>
 
         {/* Deadline */}
         {task.deadline && (
           <div className={`flex items-center gap-2 text-sm mt-2 ${
-            deadlineStatus === "overdue" ? "text-red-500 font-medium" :
+            deadlineStatus === "overdue" ? "text-destructive font-medium" :
             deadlineStatus === "soon" ? "text-orange-500" :
             "text-muted-foreground"
           }`}>
@@ -192,17 +191,17 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: Mo
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 h-10"
+                className="flex-1"
                 onClick={() => setEditDialogOpen(true)}
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Pencil className="w-4 h-4 mr-2" />
                 Bewerken
               </Button>
               {canDelete && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="h-10 text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
                   <Trash2 className="w-4 h-4" />
