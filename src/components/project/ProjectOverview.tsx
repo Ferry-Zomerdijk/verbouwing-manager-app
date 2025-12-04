@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Euro, TrendingUp, CheckCircle2, PartyPopper } from "lucide-react";
+import { Calendar, Euro, TrendingUp, CheckCircle2, PartyPopper, RefreshCw } from "lucide-react";
 import RecentTaskActivity from "./RecentTaskActivity";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -19,6 +19,11 @@ interface ProjectOverviewProps {
 
 const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectOverviewProps) => {
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [wisdom, setWisdom] = useState(getRandomWisdom());
+
+  const refreshWisdom = () => {
+    setWisdom(getRandomWisdom());
+  };
 
   const { data: taskStats } = useQuery({
     queryKey: ['project-task-stats', project.id],
@@ -163,18 +168,22 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
       </div>
 
       {/* Bouwer Wijsheid */}
-      <Card className="shadow-card bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50">
+      <Card 
+        className="shadow-card bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={refreshWisdom}
+      >
         <CardContent className="py-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">💡</span>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                 Wijsheid van de dag
               </p>
               <p className="text-sm text-amber-700/80 dark:text-amber-300/80 italic">
-                "{getRandomWisdom()}"
+                "{wisdom}"
               </p>
             </div>
+            <RefreshCw className="w-4 h-4 text-amber-600/50 hover:text-amber-600 transition-colors" />
           </div>
         </CardContent>
       </Card>
