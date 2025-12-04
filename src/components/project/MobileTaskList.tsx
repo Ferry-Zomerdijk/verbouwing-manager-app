@@ -91,22 +91,30 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
   };
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      if (activeStatuses.length > 0 && !activeStatuses.includes(task.status)) {
-        return false;
-      }
-      
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          task.titel?.toLowerCase().includes(query) ||
-          task.beschrijving?.toLowerCase().includes(query) ||
-          task.verantwoordelijke?.toLowerCase().includes(query)
-        );
-      }
-      
-      return true;
-    });
+    return tasks
+      .filter(task => {
+        if (activeStatuses.length > 0 && !activeStatuses.includes(task.status)) {
+          return false;
+        }
+        
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          return (
+            task.titel?.toLowerCase().includes(query) ||
+            task.beschrijving?.toLowerCase().includes(query) ||
+            task.verantwoordelijke?.toLowerCase().includes(query)
+          );
+        }
+        
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort by begindatum ascending (old to new), tasks without date at the end
+        if (!a.begindatum && !b.begindatum) return 0;
+        if (!a.begindatum) return 1;
+        if (!b.begindatum) return -1;
+        return new Date(a.begindatum).getTime() - new Date(b.begindatum).getTime();
+      });
   }, [tasks, activeStatuses, searchQuery]);
 
   const statusCounts = useMemo(() => ({
