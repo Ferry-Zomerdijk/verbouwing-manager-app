@@ -43,6 +43,18 @@ serve(async (req) => {
     const fileSize = fileData.size;
     console.log('File info:', { mimeType, fileSize });
 
+    // Helper function to convert ArrayBuffer to base64 without stack overflow
+    const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      return btoa(binary);
+    };
+
     let extractedData;
 
     // Use OCR.space API for PDF text extraction
@@ -50,7 +62,7 @@ serve(async (req) => {
       console.log('Extracting text from PDF...');
       
       const arrayBuffer = await fileData.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const base64 = arrayBufferToBase64(arrayBuffer);
 
       // Use OCR.space free API for PDF text extraction
       const formData = new FormData();
@@ -152,7 +164,7 @@ ${extractedText}`
       console.log('Processing image with Vision API...');
       
       const arrayBuffer = await fileData.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const base64 = arrayBufferToBase64(arrayBuffer);
       const dataUrl = `data:${mimeType};base64,${base64}`;
 
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
