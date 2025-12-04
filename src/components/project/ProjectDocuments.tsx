@@ -18,6 +18,7 @@ import { nl } from "date-fns/locale";
 
 interface ProjectDocumentsProps {
   projectId: string;
+  isAdminOrOwner?: boolean;
 }
 
 type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Overig";
@@ -28,7 +29,7 @@ interface FileUpload {
   type: DocumentType;
 }
 
-const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
+const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocumentsProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
@@ -53,7 +54,7 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
     },
   });
 
-  // Fetch invoices from costs table
+  // Fetch invoices from costs table (only for admin/owner)
   const { data: invoices } = useQuery({
     queryKey: ["cost-invoices", projectId],
     queryFn: async () => {
@@ -67,6 +68,7 @@ const ProjectDocuments = ({ projectId }: ProjectDocumentsProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: isAdminOrOwner,
   });
 
   // Combine documents and invoices into a unified list

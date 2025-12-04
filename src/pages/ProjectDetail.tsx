@@ -153,7 +153,7 @@ const ProjectDetail = () => {
           )}
 
           <TabsContent value="documenten">
-            <ProjectDocuments projectId={project.id} />
+            <ProjectDocuments projectId={project.id} isAdminOrOwner={isAdminOrOwner} />
           </TabsContent>
 
           <TabsContent value="fotos">
