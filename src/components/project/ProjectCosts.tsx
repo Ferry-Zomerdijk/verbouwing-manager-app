@@ -409,7 +409,7 @@ const ProjectCosts = ({
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeSeriesData}>
+                <BarChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
@@ -418,28 +418,10 @@ const ProjectCosts = ({
                     labelFormatter={(label) => `Maand: ${label}`}
                   />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Schatting" 
-                    stroke="#94a3b8" 
-                    strokeWidth={2}
-                    dot={{ fill: "#94a3b8", strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Offerte" 
-                    stroke="#60a5fa" 
-                    strokeWidth={2}
-                    dot={{ fill: "#60a5fa", strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Factuur" 
-                    stroke="#22c55e" 
-                    strokeWidth={2}
-                    dot={{ fill: "#22c55e", strokeWidth: 2 }}
-                  />
-                </LineChart>
+                  <Bar dataKey="Schatting" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Offerte" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
