@@ -13,32 +13,42 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   onSuccess: () => void;
+  availableDelenVanHuis?: string[];
 }
 
-const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateTaskDialogProps) => {
+const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableDelenVanHuis = [] }: CreateTaskDialogProps) => {
   const [loading, setLoading] = useState(false);
+  const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
   const [formData, setFormData] = useState({
     titel: "",
     beschrijving: "",
+    begindatum: "",
     deadline: "",
     status: "Te doen",
     prioriteit: "Middel",
     verantwoordelijke: "",
+    deel_van_huis: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
+      ? customDeelVanHuis 
+      : formData.deel_van_huis;
+
     try {
       const { error } = await supabase.from("tasks").insert([{
         project_id: projectId,
         titel: formData.titel,
         beschrijving: formData.beschrijving || null,
+        begindatum: formData.begindatum || null,
         deadline: formData.deadline || null,
         status: formData.status as any,
         prioriteit: formData.prioriteit as any,
         verantwoordelijke: formData.verantwoordelijke || null,
+        deel_van_huis: finalDeelVanHuis || null,
       }]);
 
       if (error) throw error;
@@ -48,11 +58,14 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateTa
       setFormData({
         titel: "",
         beschrijving: "",
+        begindatum: "",
         deadline: "",
         status: "Te doen",
         prioriteit: "Middel",
         verantwoordelijke: "",
+        deel_van_huis: "",
       });
+      setCustomDeelVanHuis("");
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
@@ -109,6 +122,35 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateTa
             </div>
 
             <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Te doen">Te doen</SelectItem>
+                  <SelectItem value="Bezig">Bezig</SelectItem>
+                  <SelectItem value="Gereed">Gereed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="begindatum">Begindatum</Label>
+              <Input
+                id="begindatum"
+                type="date"
+                value={formData.begindatum}
+                onChange={(e) => setFormData({ ...formData, begindatum: e.target.value })}
+              />
+            </div>
+
+            <div>
               <Label htmlFor="deadline">Deadline</Label>
               <Input
                 id="deadline"
@@ -117,6 +159,33 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess }: CreateTa
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="deel_van_huis">Deel van huis</Label>
+            <Select
+              value={formData.deel_van_huis}
+              onValueChange={(value) => setFormData({ ...formData, deel_van_huis: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecteer of voer nieuw in" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Geen</SelectItem>
+                {availableDelenVanHuis.map((deel) => (
+                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                ))}
+                <SelectItem value="__custom__">+ Nieuw toevoegen...</SelectItem>
+              </SelectContent>
+            </Select>
+            {formData.deel_van_huis === "__custom__" && (
+              <Input
+                className="mt-2"
+                value={customDeelVanHuis}
+                onChange={(e) => setCustomDeelVanHuis(e.target.value)}
+                placeholder="Voer nieuw deel van huis in"
+              />
+            )}
           </div>
 
           <div>

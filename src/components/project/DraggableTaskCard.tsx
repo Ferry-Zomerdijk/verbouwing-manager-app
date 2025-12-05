@@ -6,9 +6,10 @@ interface DraggableTaskCardProps {
   task: any;
   onUpdate: () => void;
   canDelete?: boolean;
+  availableDelenVanHuis?: string[];
 }
 
-const DraggableTaskCard = ({ task, onUpdate, canDelete = true }: DraggableTaskCardProps) => {
+const DraggableTaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = [] }: DraggableTaskCardProps) => {
   const {
     attributes,
     listeners,
@@ -26,7 +27,7 @@ const DraggableTaskCard = ({ task, onUpdate, canDelete = true }: DraggableTaskCa
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onUpdate={onUpdate} canDelete={canDelete} />
+      <TaskCard task={task} onUpdate={onUpdate} canDelete={canDelete} availableDelenVanHuis={availableDelenVanHuis} />
     </div>
   );
 };

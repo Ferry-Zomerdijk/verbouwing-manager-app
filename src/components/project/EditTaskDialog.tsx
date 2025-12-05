@@ -15,35 +15,56 @@ interface EditTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   task: any;
   onSuccess: () => void;
+  availableDelenVanHuis?: string[];
 }
 
-const EditTaskDialog = ({ open, onOpenChange, task, onSuccess }: EditTaskDialogProps) => {
+const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVanHuis = [] }: EditTaskDialogProps) => {
   const [loading, setLoading] = useState(false);
+  const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
   const [formData, setFormData] = useState({
     titel: "",
     beschrijving: "",
+    begindatum: "",
     deadline: "",
     status: "Te doen",
     prioriteit: "Middel",
     verantwoordelijke: "",
+    deel_van_huis: "",
   });
 
   useEffect(() => {
     if (task) {
+      const deelVanHuis = task.deel_van_huis || "";
+      const isExisting = availableDelenVanHuis.includes(deelVanHuis);
+      
       setFormData({
         titel: task.titel || "",
         beschrijving: task.beschrijving || "",
+        begindatum: task.begindatum || "",
         deadline: task.deadline || "",
         status: task.status || "Te doen",
         prioriteit: task.prioriteit || "Middel",
         verantwoordelijke: task.verantwoordelijke || "",
+        deel_van_huis: deelVanHuis && !isExisting && deelVanHuis !== "" ? "__custom__" : deelVanHuis,
       });
+      
+      if (deelVanHuis && !isExisting && deelVanHuis !== "") {
+        setCustomDeelVanHuis(deelVanHuis);
+      } else {
+        setCustomDeelVanHuis("");
+      }
     }
-  }, [task]);
+  }, [task, availableDelenVanHuis]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
+      ? customDeelVanHuis 
+      : formData.deel_van_huis === "__none__"
+      ? null
+      : formData.deel_van_huis;
 
     try {
       const { error } = await supabase
@@ -51,10 +72,12 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess }: EditTaskDialogP
         .update({
           titel: formData.titel,
           beschrijving: formData.beschrijving || null,
+          begindatum: formData.begindatum || null,
           deadline: formData.deadline || null,
           status: formData.status as any,
           prioriteit: formData.prioriteit as any,
           verantwoordelijke: formData.verantwoordelijke || null,
+          deel_van_huis: finalDeelVanHuis || null,
         })
         .eq("id", task.id);
 
@@ -136,14 +159,53 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess }: EditTaskDialogP
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="begindatum">Begindatum</Label>
+              <Input
+                id="begindatum"
+                type="date"
+                value={formData.begindatum}
+                onChange={(e) => setFormData({ ...formData, begindatum: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="deadline">Deadline</Label>
+              <Input
+                id="deadline"
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              />
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="deadline">Deadline</Label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-            />
+            <Label htmlFor="deel_van_huis">Deel van huis</Label>
+            <Select
+              value={formData.deel_van_huis || "__none__"}
+              onValueChange={(value) => setFormData({ ...formData, deel_van_huis: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecteer of voer nieuw in" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Geen</SelectItem>
+                {availableDelenVanHuis.map((deel) => (
+                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                ))}
+                <SelectItem value="__custom__">+ Nieuw toevoegen...</SelectItem>
+              </SelectContent>
+            </Select>
+            {formData.deel_van_huis === "__custom__" && (
+              <Input
+                className="mt-2"
+                value={customDeelVanHuis}
+                onChange={(e) => setCustomDeelVanHuis(e.target.value)}
+                placeholder="Voer nieuw deel van huis in"
+              />
+            )}
           </div>
 
           <div>

@@ -21,6 +21,7 @@ interface TaskCardProps {
   task: any;
   onUpdate: () => void;
   canDelete?: boolean;
+  availableDelenVanHuis?: string[];
 }
 
 const priorityColors = {
@@ -29,7 +30,7 @@ const priorityColors = {
   Hoog: "bg-red-500",
 };
 
-const TaskCard = ({ task, onUpdate, canDelete = true }: TaskCardProps) => {
+const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = [] }: TaskCardProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -151,6 +152,7 @@ const TaskCard = ({ task, onUpdate, canDelete = true }: TaskCardProps) => {
         onOpenChange={setEditDialogOpen}
         task={task}
         onSuccess={onUpdate}
+        availableDelenVanHuis={availableDelenVanHuis}
       />
 
       <DeleteConfirmationDialog
