@@ -6,10 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUpDown, MoreVertical, Trash2, MessageSquare } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
+import EditTaskDialog from "./EditTaskDialog";
 import { TaskBulkActions } from "./TaskBulkActions";
 import { InlineEditableCell } from "./InlineEditableCell";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +55,7 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
@@ -280,11 +282,12 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                     </Select>
                   </TableCell>
                   <TableCell className="font-medium max-w-xs" onClick={(e) => e.stopPropagation()}>
-                    <InlineEditableCell
-                      value={task.titel}
-                      onSave={(value) => updateTask(task.id, { titel: value || "" })}
-                      placeholder="Titel..."
-                    />
+                    <button
+                      onClick={() => setEditTask(task)}
+                      className="text-left font-medium hover:underline hover:text-primary truncate max-w-xs"
+                    >
+                      {task.titel}
+                    </button>
                   </TableCell>
                   <TableCell className="hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                     <InlineEditableCell
@@ -330,6 +333,10 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditTask(task)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Details / Updates
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeleteTask(task)}
                           className="text-destructive"
@@ -360,6 +367,18 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
           title="Taak verwijderen"
           itemName={deleteTask.titel}
           description="Deze actie kan niet ongedaan worden gemaakt."
+        />
+      )}
+
+      {editTask && (
+        <EditTaskDialog
+          open={!!editTask}
+          onOpenChange={(open) => !open && setEditTask(null)}
+          task={editTask}
+          onSuccess={() => {
+            setEditTask(null);
+            onUpdate();
+          }}
         />
       )}
     </div>
