@@ -83,16 +83,15 @@ const WeatherExcuseButton = () => {
     <>
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         onClick={generateExcuse}
-        className="text-muted-foreground hover:text-foreground"
-        title={
-          temperature !== null
-            ? `Weer in Limmen: ${temperature}°C - Klik voor excuus`
-            : "Weer-excuus generator"
-        }
+        className="text-muted-foreground hover:text-foreground gap-1 px-2"
+        title="Klik voor weer-excuus"
       >
         <WeatherIcon className={`w-4 h-4 ${weatherAnimation}`} />
+        {temperature !== null && (
+          <span className="text-xs font-medium">{temperature}°C</span>
+        )}
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
