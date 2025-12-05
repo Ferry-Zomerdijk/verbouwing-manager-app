@@ -409,7 +409,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {(Object.keys(tasksByStatus) as Array<keyof typeof tasksByStatus>).map((status) => (
               <SortableContext
                 key={status}
