@@ -166,7 +166,14 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
                 id="begindatum"
                 type="date"
                 value={formData.begindatum}
-                onChange={(e) => setFormData({ ...formData, begindatum: e.target.value })}
+                onChange={(e) => {
+                  const newBegindatum = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    begindatum: newBegindatum,
+                    deadline: prev.deadline || newBegindatum
+                  }));
+                }}
               />
             </div>
 
