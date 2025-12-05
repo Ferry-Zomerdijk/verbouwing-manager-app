@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
+import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 
 const ProjectTasksView = () => {
   const { id: projectId } = useParams();
@@ -141,7 +142,8 @@ const ProjectTasksView = () => {
             </h1>
             <div className="flex items-center gap-1 sm:gap-2">
               <WeatherExcuseButton />
-              <Button 
+              <CoffeeBreakTimer />
+              <Button
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
