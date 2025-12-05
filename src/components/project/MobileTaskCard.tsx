@@ -141,18 +141,28 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
           </Button>
         </div>
 
-        {/* Deadline */}
-        {task.deadline && (
-          <div className={`flex items-center gap-2 text-sm mt-2 ${
-            deadlineStatus === "overdue" ? "text-destructive font-medium" :
-            deadlineStatus === "soon" ? "text-orange-500" :
-            "text-muted-foreground"
-          }`}>
-            <Calendar className="w-4 h-4" />
-            <span>
-              {deadlineStatus === "overdue" && "⚠️ "}
-              {format(new Date(task.deadline), "d MMM yyyy", { locale: nl })}
-            </span>
+        {/* Deadline & Verantwoordelijke grid */}
+        {(task.deadline || task.verantwoordelijke) && (
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {task.deadline && (
+              <div className={`flex items-center gap-2 text-sm ${
+                deadlineStatus === "overdue" ? "text-destructive font-medium" :
+                deadlineStatus === "soon" ? "text-orange-500" :
+                "text-muted-foreground"
+              }`}>
+                <Calendar className="w-4 h-4 shrink-0" />
+                <span className="truncate">
+                  {deadlineStatus === "overdue" && "⚠️ "}
+                  {format(new Date(task.deadline), "d MMM yyyy", { locale: nl })}
+                </span>
+              </div>
+            )}
+            {task.verantwoordelijke && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="w-4 h-4 shrink-0" />
+                <span className="truncate">{task.verantwoordelijke}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -171,13 +181,6 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>{task.deel_van_huis}</span>
-              </div>
-            )}
-            
-            {task.verantwoordelijke && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="w-4 h-4" />
-                <span>{task.verantwoordelijke}</span>
               </div>
             )}
 
