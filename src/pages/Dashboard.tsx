@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw } from "lucide-react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -107,7 +107,7 @@ const Dashboard = () => {
     },
   ]);
 
-  const { data: projects, isLoading, refetch } = useQuery({
+  const { data: projects, isLoading, error, refetch } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -118,6 +118,8 @@ const Dashboard = () => {
       if (error) throw error;
       return data;
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleRefresh = useCallback(async () => {
@@ -244,6 +246,20 @@ const Dashboard = () => {
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-64 bg-card rounded-xl animate-pulse" />
                 ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Fout bij laden projecten</h3>
+                <p className="text-muted-foreground mb-4">
+                  Er is een probleem met de verbinding naar de database. Probeer het opnieuw.
+                </p>
+                <Button onClick={() => refetch()} className="gradient-primary">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Opnieuw proberen
+                </Button>
               </div>
             ) : filteredProjects && filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
