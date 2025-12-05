@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, Sparkles } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle } from "lucide-react";
 import { emptyStateMessages } from "@/lib/builderJokes";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +17,7 @@ interface MobileCostListProps {
   costs: Cost[];
   projectId: string;
   availableDelenVanHuis: string[];
+  totalBudget?: number;
   onUpdate: () => void;
   onExport: () => void;
 }
@@ -37,6 +39,7 @@ export const MobileCostList = ({
   costs,
   projectId,
   availableDelenVanHuis,
+  totalBudget = 0,
   onUpdate,
   onExport
 }: MobileCostListProps) => {
@@ -120,7 +123,7 @@ export const MobileCostList = ({
       </div>
 
       {/* Total Amount Card */}
-      <Card className="bg-primary/5 border-primary/20">
+      <Card className={`${totalBudget > 0 && totalCosts > totalBudget ? 'bg-destructive/5 border-destructive/20' : 'bg-primary/5 border-primary/20'}`}>
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Totaal</span>
@@ -133,6 +136,29 @@ export const MobileCostList = ({
             <p className="text-xs text-muted-foreground mt-1">
               {filteredCosts.length} van {costs.length} kostenposten
             </p>
+          )}
+          {totalBudget > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-muted-foreground">Budget</span>
+                <span>€{totalBudget.toLocaleString("nl-NL")}</span>
+              </div>
+              <Progress 
+                value={Math.min((totalCosts / totalBudget) * 100, 100)} 
+                className={`h-2 ${totalCosts > totalBudget ? '[&>div]:bg-destructive' : ''}`}
+              />
+              {totalCosts > totalBudget && (
+                <div className="flex items-center gap-1 text-xs text-destructive mt-1.5">
+                  <AlertTriangle className="w-3 h-3" />
+                  Budget overschreden met €{(totalCosts - totalBudget).toLocaleString("nl-NL")}
+                </div>
+              )}
+              {totalCosts <= totalBudget && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Nog €{(totalBudget - totalCosts).toLocaleString("nl-NL")} beschikbaar
+                </p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
