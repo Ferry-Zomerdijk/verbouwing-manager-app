@@ -58,11 +58,11 @@ const ProjectContractors = ({ projectId }: ProjectContractorsProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Aannemers & Leveranciers</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuwe Aannemer
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold truncate">Aannemers</h2>
+        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+          <Plus className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nieuwe Aannemer</span>
         </Button>
       </div>
 

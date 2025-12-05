@@ -199,19 +199,20 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Foto's</h2>
-        <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Foto's Uploaden
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold">Foto's</h2>
+        <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+          <Plus className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Uploaden</span>
         </Button>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
         <Button
           variant={filter === "all" ? "default" : "outline"}
           size="sm"
           onClick={() => setFilter("all")}
+          className="text-xs sm:text-sm shrink-0"
         >
           Alle
         </Button>
@@ -219,6 +220,7 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
           variant={filter === "Voor" ? "default" : "outline"}
           size="sm"
           onClick={() => setFilter("Voor")}
+          className="text-xs sm:text-sm shrink-0"
         >
           Voor
         </Button>
@@ -226,6 +228,7 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
           variant={filter === "Tijdens" ? "default" : "outline"}
           size="sm"
           onClick={() => setFilter("Tijdens")}
+          className="text-xs sm:text-sm shrink-0"
         >
           Tijdens
         </Button>
@@ -233,6 +236,7 @@ const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
           variant={filter === "Na" ? "default" : "outline"}
           size="sm"
           onClick={() => setFilter("Na")}
+          className="text-xs sm:text-sm shrink-0"
         >
           Na
         </Button>
