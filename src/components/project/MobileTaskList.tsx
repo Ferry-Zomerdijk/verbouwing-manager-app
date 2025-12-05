@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Search, Plus, X, Filter, RefreshCw, ChevronDown, PartyPopper, Coffee } from "lucide-react";
 import MobileTaskCard from "./MobileTaskCard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +36,15 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
   const [activeStatuses, setActiveStatuses] = useState<StatusFilter[]>(["Te doen", "Bezig"]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedVerantwoordelijke, setSelectedVerantwoordelijke] = useState<string | null>(null);
+  const [selectedDeelVanHuis, setSelectedDeelVanHuis] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const availableVerantwoordelijken = useMemo(() => {
+    return [...new Set(tasks
+      .map(t => t.verantwoordelijke)
+      .filter(Boolean))] as string[];
+  }, [tasks]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -89,6 +99,8 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
   const clearFilters = () => {
     setActiveStatuses(["Te doen", "Bezig", "Gereed"]);
     setSearchQuery("");
+    setSelectedVerantwoordelijke(null);
+    setSelectedDeelVanHuis(null);
   };
 
   const filteredTasks = useMemo(() => {
@@ -100,11 +112,31 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
-          return (
+          if (!(
             task.titel?.toLowerCase().includes(query) ||
             task.beschrijving?.toLowerCase().includes(query) ||
             task.verantwoordelijke?.toLowerCase().includes(query)
-          );
+          )) {
+            return false;
+          }
+        }
+
+        // Verantwoordelijke filter
+        if (selectedVerantwoordelijke) {
+          if (selectedVerantwoordelijke === "none") {
+            if (task.verantwoordelijke) return false;
+          } else if (task.verantwoordelijke !== selectedVerantwoordelijke) {
+            return false;
+          }
+        }
+
+        // Deel van huis filter
+        if (selectedDeelVanHuis) {
+          if (selectedDeelVanHuis === "none") {
+            if (task.deel_van_huis) return false;
+          } else if (task.deel_van_huis !== selectedDeelVanHuis) {
+            return false;
+          }
         }
         
         return true;
@@ -116,7 +148,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         if (!b.begindatum) return -1;
         return new Date(a.begindatum).getTime() - new Date(b.begindatum).getTime();
       });
-  }, [tasks, activeStatuses, searchQuery]);
+  }, [tasks, activeStatuses, searchQuery, selectedVerantwoordelijke, selectedDeelVanHuis]);
 
   const statusCounts = useMemo(() => ({
     "Te doen": tasks.filter(t => t.status === "Te doen").length,
@@ -132,7 +164,11 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
     updateTaskStatus.mutate({ taskId, newStatus });
   };
 
-  const activeFilterCount = 3 - activeStatuses.length + (searchQuery ? 1 : 0);
+  const activeFilterCount = 
+    (3 - activeStatuses.length) + 
+    (searchQuery ? 1 : 0) + 
+    (selectedVerantwoordelijke ? 1 : 0) + 
+    (selectedDeelVanHuis ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -226,6 +262,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-3">
           <div className="space-y-3">
+            {/* Status filters */}
             <div className="flex flex-wrap gap-2">
               {(["Te doen", "Bezig", "Gereed"] as StatusFilter[]).map((status) => (
                 <Badge
@@ -242,6 +279,48 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 </Badge>
               ))}
             </div>
+
+            {/* Verantwoordelijke & Deel van huis filters */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Verantwoordelijke</Label>
+                <Select 
+                  value={selectedVerantwoordelijke || "all"} 
+                  onValueChange={(val) => setSelectedVerantwoordelijke(val === "all" ? null : val)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Alle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle</SelectItem>
+                    <SelectItem value="none">Niet toegewezen</SelectItem>
+                    {availableVerantwoordelijken.map(v => (
+                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Deel van huis</Label>
+                <Select 
+                  value={selectedDeelVanHuis || "all"} 
+                  onValueChange={(val) => setSelectedDeelVanHuis(val === "all" ? null : val)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Alle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle</SelectItem>
+                    <SelectItem value="none">Niet ingevuld</SelectItem>
+                    {availableDelenVanHuis.map(d => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
                 <X className="w-3 h-3 mr-1" />
