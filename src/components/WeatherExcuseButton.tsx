@@ -31,15 +31,15 @@ const getWeatherIcon = (code: number | null) => {
 };
 
 const getWeatherAnimation = (code: number | null): string => {
-  if (code === null) return "";
-  if (code === 0) return "animate-spin-slow text-yellow-500"; // Zon draait
-  if (code <= 3) return "animate-weather-wiggle"; // Wolken wiebelen
-  if (code <= 48) return "animate-weather-pulse text-gray-400"; // Mist pulseert
-  if (code <= 55) return "animate-weather-bounce text-blue-400"; // Motregen bounced
-  if (code <= 67) return "animate-weather-bounce text-blue-500"; // Regen bounced
-  if (code <= 77) return "animate-weather-float text-blue-200"; // Sneeuw zweeft
-  if (code <= 82) return "animate-weather-bounce text-blue-500"; // Buien bouncen
-  return "animate-weather-pulse text-yellow-400"; // Onweer flitst
+  if (code === null) return "text-foreground";
+  if (code === 0) return "animate-spin-slow text-foreground"; // Zon draait
+  if (code <= 3) return "animate-weather-wiggle text-foreground"; // Wolken wiebelen
+  if (code <= 48) return "animate-weather-pulse text-foreground"; // Mist pulseert
+  if (code <= 55) return "animate-weather-bounce text-foreground"; // Motregen bounced
+  if (code <= 67) return "animate-weather-bounce text-foreground"; // Regen bounced
+  if (code <= 77) return "animate-weather-float text-foreground"; // Sneeuw zweeft
+  if (code <= 82) return "animate-weather-bounce text-foreground"; // Buien bouncen
+  return "animate-weather-pulse text-foreground"; // Onweer flitst
 };
 
 const WeatherExcuseButton = () => {

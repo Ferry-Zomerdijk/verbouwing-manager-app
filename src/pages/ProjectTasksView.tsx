@@ -6,6 +6,7 @@ import ProjectTasksWithDnd from "@/components/project/ProjectTasksWithDnd";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
+import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 
 const ProjectTasksView = () => {
   const { id: projectId } = useParams();
@@ -138,15 +139,18 @@ const ProjectTasksView = () => {
             <h1 className="text-lg sm:text-2xl font-bold truncate">
               {project?.naam || 'Project Taken'}
             </h1>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout}
-              className="shrink-0"
-            >
-              <LogOut className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Uitloggen</span>
-            </Button>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <WeatherExcuseButton />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="shrink-0"
+              >
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Uitloggen</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
