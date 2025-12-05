@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { History, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { History, Plus, Pencil, Trash2, ExternalLink, MessageSquare } from "lucide-react";
 import EditTaskDialog from "./EditTaskDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -90,12 +90,19 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
       case 'aangemaakt': return <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />;
       case 'bijgewerkt': return <Pencil className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />;
       case 'verwijderd': return <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />;
+      case 'update toegevoegd': return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />;
       default: return null;
     }
   };
 
-  const formatChanges = (changes: Record<string, { van?: string; naar?: string } | null> | null) => {
+  const formatChanges = (changes: Record<string, any> | null) => {
     if (!changes) return '-';
+    
+    // Speciale weergave voor task updates
+    if (changes.content !== undefined) {
+      return changes.content + (changes.heeft_fotos ? ' 📷' : '');
+    }
+    
     const entries = Object.entries(changes).filter(([_, value]) => value !== null);
     if (entries.length === 0) return '-';
     return entries.map(([key, value]) => 
