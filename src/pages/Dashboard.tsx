@@ -227,14 +227,16 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">Alle Projecten</TabsTrigger>
-            <TabsTrigger value="Lopend">Lopend</TabsTrigger>
-            <TabsTrigger value="Gepland">Gepland</TabsTrigger>
-            <TabsTrigger value="Afgerond">Afgerond</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
+            <TabsList className="inline-flex w-auto min-w-full sm:w-auto">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">Alle</TabsTrigger>
+              <TabsTrigger value="Lopend" className="text-xs sm:text-sm">Lopend</TabsTrigger>
+              <TabsTrigger value="Gepland" className="text-xs sm:text-sm">Gepland</TabsTrigger>
+              <TabsTrigger value="Afgerond" className="text-xs sm:text-sm">Afgerond</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value={filter}>
             {isLoading ? (

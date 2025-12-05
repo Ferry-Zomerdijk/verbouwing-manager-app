@@ -265,26 +265,26 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocument
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-2xl font-bold">Documenten</h2>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold truncate">Documenten</h2>
+        <div className="flex items-center gap-2 shrink-0">
           {availableTypes.length > 1 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[160px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter op type" />
+              <SelectTrigger className="w-[100px] sm:w-[140px]">
+                <Filter className="w-4 h-4 shrink-0" />
+                <span className="truncate ml-1 sm:ml-2"><SelectValue placeholder="Type" /></span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle types</SelectItem>
+                <SelectItem value="all">Alle</SelectItem>
                 {availableTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
-          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Documenten Uploaden
+          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Uploaden</span>
           </Button>
         </div>
       </div>
