@@ -23,6 +23,7 @@ interface MobileTaskCardProps {
   onUpdate: () => void;
   onStatusChange: (taskId: string, newStatus: "Te doen" | "Bezig" | "Gereed") => void;
   canDelete?: boolean;
+  availableDelenVanHuis?: string[];
 }
 
 const priorityConfig = {
@@ -37,7 +38,7 @@ const statusConfig = {
   "Gereed": { color: "bg-green-500/20 text-green-700" },
 };
 
-const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: MobileTaskCardProps) => {
+const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, availableDelenVanHuis = [] }: MobileTaskCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -217,6 +218,7 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true }: Mo
         onOpenChange={setEditDialogOpen}
         task={task}
         onSuccess={onUpdate}
+        availableDelenVanHuis={availableDelenVanHuis}
       />
 
       <DeleteConfirmationDialog

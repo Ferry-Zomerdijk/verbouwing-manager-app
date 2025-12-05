@@ -18,6 +18,7 @@ interface MobileTaskListProps {
   onUpdate: () => void;
   canDelete?: boolean;
   onCreateTask: () => void;
+  availableDelenVanHuis?: string[];
 }
 
 type StatusFilter = "Te doen" | "Bezig" | "Gereed";
@@ -28,7 +29,7 @@ const statusColors: Record<StatusFilter, string> = {
   "Gereed": "bg-green-500/20 text-green-700 hover:bg-green-500/30",
 };
 
-const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask }: MobileTaskListProps) => {
+const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask, availableDelenVanHuis = [] }: MobileTaskListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeStatuses, setActiveStatuses] = useState<StatusFilter[]>(["Te doen", "Bezig"]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -262,6 +263,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 onUpdate={onUpdate}
                 onStatusChange={handleStatusChange}
                 canDelete={canDelete}
+                availableDelenVanHuis={availableDelenVanHuis}
               />
             ))}
             {/* Swipe hint */}

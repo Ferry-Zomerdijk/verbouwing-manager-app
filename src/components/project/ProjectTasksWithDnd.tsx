@@ -334,12 +334,14 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
           onUpdate={refetch}
           canDelete={canDelete}
           onCreateTask={() => setCreateDialogOpen(true)}
+          availableDelenVanHuis={availableDelenVanHuis}
         />
         
         <CreateTaskDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           projectId={projectId}
+          availableDelenVanHuis={availableDelenVanHuis}
           onSuccess={() => {
             refetch();
             toast.success("Taak succesvol aangemaakt!");
@@ -441,7 +443,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
                   >
                     {tasksByStatus[status].length > 0 ? (
                       tasksByStatus[status].map((task) => (
-                        <DraggableTaskCard key={task.id} task={task} onUpdate={refetch} canDelete={canDelete} />
+                        <DraggableTaskCard key={task.id} task={task} onUpdate={refetch} canDelete={canDelete} availableDelenVanHuis={availableDelenVanHuis} />
                       ))
                     ) : (
                       <p className="text-center text-sm text-muted-foreground py-8">
@@ -455,7 +457,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
           </div>
 
           <DragOverlay>
-            {activeTask ? <TaskCard task={activeTask} onUpdate={() => {}} canDelete={canDelete} /> : null}
+            {activeTask ? <TaskCard task={activeTask} onUpdate={() => {}} canDelete={canDelete} availableDelenVanHuis={availableDelenVanHuis} /> : null}
           </DragOverlay>
         </DndContext>
       ) : (
@@ -466,6 +468,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         projectId={projectId}
+        availableDelenVanHuis={availableDelenVanHuis}
         onSuccess={() => {
           refetch();
           toast.success("Taak succesvol aangemaakt!");
