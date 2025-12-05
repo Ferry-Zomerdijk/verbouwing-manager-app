@@ -8,6 +8,7 @@ import { Trash2, Plus, MessageSquare, ImagePlus, X, Loader2, ChevronLeft, Chevro
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TaskUpdate {
   id: string;
@@ -34,6 +35,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -78,13 +80,11 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
 
     setSelectedImages(prev => [...prev, ...validFiles]);
     
-    // Create preview URLs
     validFiles.forEach(file => {
       const url = URL.createObjectURL(file);
       setPreviewUrls(prev => [...prev, url]);
     });
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -225,6 +225,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
             placeholder="Schrijf een update..."
             rows={2}
             autoFocus
+            className="min-h-[80px]"
           />
 
           {/* Image previews */}
@@ -235,12 +236,14 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
                   <img
                     src={url}
                     alt={`Preview ${index + 1}`}
-                    className="w-20 h-20 object-cover rounded-md border"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md border"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={`absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 transition-opacity ${
+                      isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -249,7 +252,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -266,7 +269,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
               disabled={selectedImages.length >= 5 || uploading}
             >
               <ImagePlus className="h-4 w-4 mr-1" />
-              Foto's
+              <span className="hidden sm:inline">Foto's</span>
             </Button>
             <div className="flex-1" />
             <Button
@@ -285,7 +288,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  Uploaden...
+                  <span className="hidden sm:inline">Uploaden...</span>
                 </>
               ) : (
                 "Toevoegen"
@@ -323,7 +326,9 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={`h-6 w-6 transition-opacity ${
+                      isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}
                     onClick={() => deleteUpdateMutation.mutate(update.id)}
                     disabled={deleteUpdateMutation.isPending}
                   >
@@ -347,7 +352,7 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
                       <img
                         src={url}
                         alt={`Afbeelding ${index + 1}`}
-                        className="w-24 h-24 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
                       />
                     </button>
                   ))}

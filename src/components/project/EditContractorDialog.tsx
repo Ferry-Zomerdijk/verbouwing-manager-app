@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EditContractorDialogProps {
   open: boolean;
@@ -24,6 +26,8 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
     telefoon: "",
     notities: "",
   });
+
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (contractor) {
@@ -67,91 +71,123 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
     }
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="naam">Naam *</Label>
+        <Input
+          id="naam"
+          value={formData.naam}
+          onChange={(e) => setFormData({ ...formData, naam: e.target.value })}
+          placeholder="John Doe"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="bedrijf">Bedrijf</Label>
+          <Input
+            id="bedrijf"
+            value={formData.bedrijf}
+            onChange={(e) => setFormData({ ...formData, bedrijf: e.target.value })}
+            placeholder="Bouwbedrijf B.V."
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="rol">Rol</Label>
+          <Input
+            id="rol"
+            value={formData.rol}
+            onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+            placeholder="Aannemer, Loodgieter, etc."
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="john@example.com"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="telefoon">Telefoon</Label>
+          <Input
+            id="telefoon"
+            type="tel"
+            value={formData.telefoon}
+            onChange={(e) => setFormData({ ...formData, telefoon: e.target.value })}
+            placeholder="+31 6 12345678"
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="notities">Notities</Label>
+        <Textarea
+          id="notities"
+          value={formData.notities}
+          onChange={(e) => setFormData({ ...formData, notities: e.target.value })}
+          placeholder="Extra informatie..."
+          rows={3}
+        />
+      </div>
+
+      {!isMobile && (
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Annuleren
+          </Button>
+          <Button type="submit" disabled={loading} className="gradient-primary">
+            {loading ? "Opslaan..." : "Opslaan"}
+          </Button>
+        </div>
+      )}
+    </form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Aannemer Bewerken</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {formContent}
+          </div>
+          <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Annuleren
+            </Button>
+            <Button 
+              onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
+              disabled={loading} 
+              className="flex-1 gradient-primary"
+            >
+              {loading ? "Opslaan..." : "Opslaan"}
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Aannemer Bewerken</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="naam">Naam *</Label>
-            <Input
-              id="naam"
-              value={formData.naam}
-              onChange={(e) => setFormData({ ...formData, naam: e.target.value })}
-              placeholder="John Doe"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="bedrijf">Bedrijf</Label>
-              <Input
-                id="bedrijf"
-                value={formData.bedrijf}
-                onChange={(e) => setFormData({ ...formData, bedrijf: e.target.value })}
-                placeholder="Bouwbedrijf B.V."
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="rol">Rol</Label>
-              <Input
-                id="rol"
-                value={formData.rol}
-                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
-                placeholder="Aannemer, Loodgieter, etc."
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="john@example.com"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="telefoon">Telefoon</Label>
-              <Input
-                id="telefoon"
-                type="tel"
-                value={formData.telefoon}
-                onChange={(e) => setFormData({ ...formData, telefoon: e.target.value })}
-                placeholder="+31 6 12345678"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="notities">Notities</Label>
-            <Textarea
-              id="notities"
-              value={formData.notities}
-              onChange={(e) => setFormData({ ...formData, notities: e.target.value })}
-              placeholder="Extra informatie..."
-              rows={3}
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Annuleren
-            </Button>
-            <Button type="submit" disabled={loading} className="gradient-primary">
-              {loading ? "Opslaan..." : "Opslaan"}
-            </Button>
-          </div>
-        </form>
+        {formContent}
       </DialogContent>
     </Dialog>
   );

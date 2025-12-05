@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { FileDown, Download } from "lucide-react";
 import { exportTasksToExcel, ExportTask, ExportFilters } from "@/lib/excelImport";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ExportTasksDialogProps {
   open: boolean;
@@ -19,6 +21,7 @@ export const ExportTasksDialog = ({ open, onOpenChange, tasks, projectName }: Ex
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
 
+  const isMobile = useIsMobile();
   const statuses = ['Te doen', 'Bezig', 'Gereed'];
 
   const handleStatusToggle = (status: string) => {
@@ -38,15 +41,8 @@ export const ExportTasksDialog = ({ open, onOpenChange, tasks, projectName }: Ex
   };
 
   const filteredCount = useMemo(() => {
-    let count = tasks.length;
-
-    // Filter op status
-    if (selectedStatuses.length > 0 && selectedStatuses.length < statuses.length) {
-      count = tasks.filter(task => selectedStatuses.includes(task.status)).length;
-    }
-
-    // Filter op datumbereik
     let filtered = tasks;
+    
     if (selectedStatuses.length > 0 && selectedStatuses.length < statuses.length) {
       filtered = filtered.filter(task => selectedStatuses.includes(task.status));
     }
@@ -79,6 +75,113 @@ export const ExportTasksDialog = ({ open, onOpenChange, tasks, projectName }: Ex
     onOpenChange(false);
   };
 
+  const content = (
+    <div className="space-y-6 py-4">
+      {/* Status Filter */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-base font-medium">Status Filter</Label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSelectAll}
+            className="h-8 text-xs"
+          >
+            {selectedStatuses.length === statuses.length ? 'Deselecteer alles' : 'Selecteer alles'}
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {statuses.map(status => (
+            <div key={status} className="flex items-center space-x-2">
+              <Checkbox
+                id={`status-${status}`}
+                checked={selectedStatuses.includes(status)}
+                onCheckedChange={() => handleStatusToggle(status)}
+              />
+              <label
+                htmlFor={`status-${status}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                {status}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Datumbereik Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium">Datumbereik (Einddatum)</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="date-from" className="text-sm">Van</Label>
+            <Input
+              id="date-from"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date-to" className="text-sm">Tot</Label>
+            <Input
+              id="date-to"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Preview Count */}
+      <div className="rounded-lg bg-muted/50 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Taken om te exporteren:
+          </span>
+          <span className="text-lg font-semibold text-foreground">
+            {filteredCount} van {tasks.length}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-left">
+            <div className="flex items-center gap-2">
+              <FileDown className="h-5 w-5 text-primary" />
+              <DrawerTitle>Taken Exporteren</DrawerTitle>
+            </div>
+            <DrawerDescription>
+              Selecteer filters om taken te exporteren.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto flex-1">
+            {content}
+          </div>
+          <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Annuleren
+            </Button>
+            <Button 
+              onClick={handleExport}
+              disabled={filteredCount === 0}
+              className="flex-1 gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exporteren
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -91,78 +194,7 @@ export const ExportTasksDialog = ({ open, onOpenChange, tasks, projectName }: Ex
             Selecteer filters om taken te exporteren naar een Excel bestand.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* Status Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-medium">Status Filter</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSelectAll}
-                className="h-8 text-xs"
-              >
-                {selectedStatuses.length === statuses.length ? 'Deselecteer alles' : 'Selecteer alles'}
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {statuses.map(status => (
-                <div key={status} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`status-${status}`}
-                    checked={selectedStatuses.includes(status)}
-                    onCheckedChange={() => handleStatusToggle(status)}
-                  />
-                  <label
-                    htmlFor={`status-${status}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {status}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Datumbereik Filter */}
-          <div className="space-y-3">
-            <Label className="text-base font-medium">Datumbereik (Einddatum)</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date-from" className="text-sm">Van</Label>
-                <Input
-                  id="date-from"
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date-to" className="text-sm">Tot</Label>
-                <Input
-                  id="date-to"
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Preview Count */}
-          <div className="rounded-lg bg-muted/50 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                Taken om te exporteren:
-              </span>
-              <span className="text-lg font-semibold text-foreground">
-                {filteredCount} van {tasks.length}
-              </span>
-            </div>
-          </div>
-        </div>
-
+        {content}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuleren
