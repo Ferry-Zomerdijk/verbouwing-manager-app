@@ -238,6 +238,15 @@ const ProjectCosts = ({
     });
   }, [filteredCosts]);
 
+  // Calculate max Y value for chart including budget
+  const maxYValue = useMemo(() => {
+    const maxCumulative = timeSeriesData.length > 0 
+      ? Math.max(...timeSeriesData.map(d => d.cumulativeTotal))
+      : 0;
+    // Take maximum of cumulative costs and budget, with 10% padding
+    return Math.ceil(Math.max(maxCumulative, totalBudget) * 1.1);
+  }, [timeSeriesData, totalBudget]);
+
   const handleExportToExcel = () => {
     if (filteredCosts.length === 0) {
       toast.error("Geen kostenposten om te exporteren");
@@ -438,7 +447,7 @@ const ProjectCosts = ({
                 <ComposedChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, maxYValue]} tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
                   <Tooltip 
                     formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, ""]}
                     labelFormatter={(label) => `Maand: ${label}`}
