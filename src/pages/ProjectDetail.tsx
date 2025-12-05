@@ -192,7 +192,7 @@ const ProjectDetail = () => {
 
           {isAdminOrOwner && (
             <TabsContent value="kosten">
-              <ProjectCosts projectId={project.id} />
+              <ProjectCosts projectId={project.id} totalBudget={project.totaal_begroting || 0} />
             </TabsContent>
           )}
 

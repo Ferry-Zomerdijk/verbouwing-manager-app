@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart, Line, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart, Line, CartesianGrid, ReferenceLine } from "recharts";
 import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -22,6 +22,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 interface ProjectCostsProps {
   projectId: string;
+  totalBudget?: number;
 }
 const categoryColors: Record<string, string> = {
   Materiaal: "bg-blue-500",
@@ -49,7 +50,8 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   Factuur: "#22c55e"
 };
 const ProjectCosts = ({
-  projectId
+  projectId,
+  totalBudget = 0
 }: ProjectCostsProps) => {
   const isMobile = useIsMobile();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -279,6 +281,7 @@ const ProjectCosts = ({
         costs={filteredCosts}
         projectId={projectId}
         availableDelenVanHuis={availableDelenVanHuis}
+        totalBudget={totalBudget}
         onUpdate={refetch}
         onExport={handleExportToExcel}
       />
@@ -441,6 +444,21 @@ const ProjectCosts = ({
                     labelFormatter={(label) => `Maand: ${label}`}
                   />
                   <Legend />
+                  {totalBudget > 0 && (
+                    <ReferenceLine 
+                      y={totalBudget} 
+                      stroke="#f59e0b" 
+                      strokeDasharray="8 4"
+                      strokeWidth={2}
+                      label={{ 
+                        value: `Budget: €${totalBudget.toLocaleString("nl-NL")}`,
+                        position: 'insideTopRight',
+                        fill: '#f59e0b',
+                        fontSize: 12,
+                        fontWeight: 500
+                      }}
+                    />
+                  )}
                   <Bar dataKey="Schatting" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Offerte" fill="#60a5fa" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
