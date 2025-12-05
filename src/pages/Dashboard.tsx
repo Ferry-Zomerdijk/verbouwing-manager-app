@@ -240,13 +240,13 @@ const Dashboard = () => {
 
           <TabsContent value={filter}>
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-64 bg-card rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : filteredProjects && filteredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredProjects.map((project) => (
                   <ProjectCard key={project.id} project={project} onUpdate={refetch} />
                 ))}

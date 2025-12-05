@@ -368,7 +368,7 @@ const ProjectCosts = ({
 
       {/* Charts */}
       {filteredCosts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="text-base">Kosten per Categorie</CardTitle>
@@ -460,7 +460,7 @@ const ProjectCosts = ({
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
         <Card className="shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Totaal</CardTitle>
