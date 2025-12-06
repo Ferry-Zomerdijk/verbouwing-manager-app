@@ -124,16 +124,26 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
 
   const isDeadlineWarning = (deadline: string | null) => {
     if (!deadline) return false;
-    const deadlineDate = new Date(deadline);
+    // Parse de deadline als lokale datum (niet UTC)
+    const [year, month, day] = deadline.split('-').map(Number);
+    const deadlineDate = new Date(year, month - 1, day);
+    
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
     return diffDays <= 3 && diffDays >= 0;
   };
 
   const isDeadlineOverdue = (deadline: string | null) => {
     if (!deadline) return false;
-    const deadlineDate = new Date(deadline);
+    // Parse de deadline als lokale datum (niet UTC)
+    const [year, month, day] = deadline.split('-').map(Number);
+    const deadlineDate = new Date(year, month - 1, day);
+    
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     return deadlineDate < today;
   };
 
