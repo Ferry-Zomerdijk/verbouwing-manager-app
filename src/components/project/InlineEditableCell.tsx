@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { format, parseISO, isValid } from "date-fns";
+import { nl } from "date-fns/locale";
 
 interface InlineEditableCellProps {
   value: string | null;
@@ -13,6 +15,21 @@ interface InlineEditableCellProps {
   className?: string;
   displayRenderer?: (value: string | null) => React.ReactNode;
 }
+
+const formatDisplayValue = (val: string | null, fieldType: string): string | null => {
+  if (!val) return null;
+  if (fieldType === "date") {
+    try {
+      const date = parseISO(val);
+      if (isValid(date)) {
+        return format(date, "d MMM yyyy", { locale: nl });
+      }
+    } catch {
+      return val;
+    }
+  }
+  return val;
+};
 
 export const InlineEditableCell = ({
   value,
@@ -70,7 +87,10 @@ export const InlineEditableCell = ({
         className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors ${className}`}
         onClick={() => setIsEditing(true)}
       >
-        {displayRenderer ? displayRenderer(value) : (value || <span className="text-muted-foreground italic">{placeholder}</span>)}
+        {displayRenderer 
+          ? displayRenderer(value) 
+          : (formatDisplayValue(value, type) || <span className="text-muted-foreground italic">{placeholder}</span>)
+        }
       </div>
     );
   }
