@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, X, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, parseISO, isValid } from "date-fns";
 import { nl } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface InlineEditableCellProps {
   value: string | null;
@@ -125,28 +128,60 @@ export const InlineEditableCell = ({
     );
   }
 
+  // Date type met Shadcn Calendar in Popover - voorkomt auto-save bij maand navigatie
+  if (type === "date") {
+    const selectedDate = editValue ? parseISO(editValue) : undefined;
+    const validSelectedDate = selectedDate && isValid(selectedDate) ? selectedDate : undefined;
+
+    return (
+      <Popover open={isEditing} onOpenChange={(open) => !open && handleCancel()}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "h-8 w-full justify-start text-left font-normal text-sm",
+              !editValue && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {editValue && validSelectedDate
+              ? format(validSelectedDate, "d MMM yyyy", { locale: nl })
+              : placeholder}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={validSelectedDate}
+            onSelect={(date) => {
+              if (date) {
+                const formattedDate = format(date, "yyyy-MM-dd");
+                setEditValue(formattedDate);
+                setIsSaving(true);
+                onSave(formattedDate).finally(() => {
+                  setIsSaving(false);
+                  setIsEditing(false);
+                });
+              }
+            }}
+            initialFocus
+            className="pointer-events-auto"
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  // Text type
   return (
     <div className="flex items-center gap-1">
       <Input
         ref={inputRef}
-        type={type}
+        type="text"
         value={editValue}
-        onChange={(e) => {
-          const newValue = e.target.value;
-          setEditValue(newValue);
-          
-          // Auto-save voor date type zodra een datum is geselecteerd
-          if (type === "date" && newValue) {
-            setIsSaving(true);
-            onSave(newValue).finally(() => {
-              setIsSaving(false);
-              setIsEditing(false);
-            });
-          }
-        }}
+        onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => {
-          // Small timeout to allow button clicks
           setTimeout(() => {
             if (!isSaving) handleCancel();
           }, 150);
