@@ -131,7 +131,19 @@ export const InlineEditableCell = ({
         ref={inputRef}
         type={type}
         value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          setEditValue(newValue);
+          
+          // Auto-save voor date type zodra een datum is geselecteerd
+          if (type === "date" && newValue) {
+            setIsSaving(true);
+            onSave(newValue).finally(() => {
+              setIsSaving(false);
+              setIsEditing(false);
+            });
+          }
+        }}
         onKeyDown={handleKeyDown}
         onBlur={() => {
           // Small timeout to allow button clicks
