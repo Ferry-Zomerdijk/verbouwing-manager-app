@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle } from "lucide-react";
+import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { emptyStateMessages } from "@/lib/builderJokes";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -46,18 +47,32 @@ export const MobileCostList = ({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Filter costs
+  // Filter costs with search
   const filteredCosts = useMemo(() => {
     return costs.filter(cost => {
       const matchStatus = !statusFilter || cost.status === statusFilter;
       const matchCategory = !categoryFilter || cost.categorie === categoryFilter;
-      return matchStatus && matchCategory;
+      
+      // Search filter - search across all text fields
+      const query = searchQuery.toLowerCase().trim();
+      const matchSearch = !query || [
+        cost.beschrijving,
+        cost.leverancier,
+        cost.deel_van_huis,
+        cost.categorie,
+        cost.status,
+        cost.koppeling_begrotingspost,
+        cost.bedrag?.toString()
+      ].some(field => field?.toLowerCase().includes(query));
+      
+      return matchStatus && matchCategory && matchSearch;
     });
-  }, [costs, statusFilter, categoryFilter]);
+  }, [costs, statusFilter, categoryFilter, searchQuery]);
 
   const totalCosts = filteredCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
 
@@ -83,11 +98,12 @@ export const MobileCostList = ({
     setTimeout(() => setRefreshing(false), 500);
   };
 
-  const hasActiveFilters = statusFilter || categoryFilter;
+  const hasActiveFilters = statusFilter || categoryFilter || searchQuery.trim();
 
   const clearFilters = () => {
     setStatusFilter(null);
     setCategoryFilter(null);
+    setSearchQuery("");
   };
 
   return (
@@ -120,6 +136,27 @@ export const MobileCostList = ({
             <Plus className="w-4 h-4" />
           </Button>
         </div>
+      </div>
+
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Zoeken..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 pr-9"
+        />
+        {searchQuery && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={() => setSearchQuery("")}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {/* Total Amount Card */}
