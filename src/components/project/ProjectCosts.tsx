@@ -554,35 +554,33 @@ const ProjectCosts = ({
         </Collapsible>
       )}
 
-      {/* Summary Cards - All categories on one row */}
-      <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-        <div className="inline-flex gap-3 sm:gap-4 min-w-full sm:grid sm:grid-cols-7">
-          <Card className="shadow-card min-w-[140px] sm:min-w-0 flex-shrink-0">
-            <CardHeader className="pb-2 p-3 sm:p-4">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Totaal</CardTitle>
+      {/* Summary Cards - Responsive grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+        <Card className="shadow-card col-span-2 sm:col-span-1">
+          <CardHeader className="pb-1 p-3 sm:p-4 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Totaal</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+            <div className="text-base sm:text-lg font-bold flex items-center gap-1">
+              <span className="text-muted-foreground text-xs">€</span>
+              {totalCosts.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {["Arbeid", "Materiaal", "Kluswerkzaamheden", "Meubels", "Decoratie", "Overig"].map((category) => (
+          <Card key={category} className="shadow-card">
+            <CardHeader className="pb-1 p-3 sm:p-4 sm:pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground truncate">{category}</CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
               <div className="text-sm sm:text-base font-bold flex items-center gap-1">
                 <span className="text-muted-foreground text-xs">€</span>
-                {totalCosts.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(costsByCategory[category] || 0).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </CardContent>
           </Card>
-
-          {["Arbeid", "Materiaal", "Kluswerkzaamheden", "Meubels", "Decoratie", "Overig"].map((category) => (
-            <Card key={category} className="shadow-card min-w-[140px] sm:min-w-0 flex-shrink-0">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">{category}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
-                <div className="text-sm sm:text-base font-bold flex items-center gap-1">
-                  <span className="text-muted-foreground text-xs">€</span>
-                  {(costsByCategory[category] || 0).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        ))}
       </div>
 
       {/* Costs Table */}
