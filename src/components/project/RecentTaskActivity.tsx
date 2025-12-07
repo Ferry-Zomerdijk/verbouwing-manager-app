@@ -2,10 +2,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { History, Plus, Pencil, Trash2, ExternalLink, MessageSquare } from "lucide-react";
+import { History, Plus, Pencil, Trash2, ExternalLink, MessageSquare, Clock } from "lucide-react";
 import EditTaskDialog from "./EditTaskDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -85,18 +84,48 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     };
   }, [projectId, queryClient]);
 
-  const getActionIcon = (action: string) => {
+  const getActionConfig = (action: string) => {
     switch (action) {
-      case 'aangemaakt': return <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />;
-      case 'bijgewerkt': return <Pencil className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />;
-      case 'verwijderd': return <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />;
-      case 'update toegevoegd': return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />;
-      default: return null;
+      case 'aangemaakt': 
+        return { 
+          icon: <Plus className="w-3 h-3" />, 
+          color: 'bg-green-500',
+          bgColor: 'bg-green-500/10',
+          textColor: 'text-green-600 dark:text-green-400'
+        };
+      case 'bijgewerkt': 
+        return { 
+          icon: <Pencil className="w-3 h-3" />, 
+          color: 'bg-blue-500',
+          bgColor: 'bg-blue-500/10',
+          textColor: 'text-blue-600 dark:text-blue-400'
+        };
+      case 'verwijderd': 
+        return { 
+          icon: <Trash2 className="w-3 h-3" />, 
+          color: 'bg-red-500',
+          bgColor: 'bg-red-500/10',
+          textColor: 'text-red-600 dark:text-red-400'
+        };
+      case 'update toegevoegd': 
+        return { 
+          icon: <MessageSquare className="w-3 h-3" />, 
+          color: 'bg-purple-500',
+          bgColor: 'bg-purple-500/10',
+          textColor: 'text-purple-600 dark:text-purple-400'
+        };
+      default: 
+        return { 
+          icon: <History className="w-3 h-3" />, 
+          color: 'bg-muted-foreground',
+          bgColor: 'bg-muted',
+          textColor: 'text-muted-foreground'
+        };
     }
   };
 
   const formatChanges = (changes: Record<string, any> | null) => {
-    if (!changes) return '-';
+    if (!changes) return null;
     
     // Speciale weergave voor task updates
     if (changes.content !== undefined) {
@@ -104,7 +133,7 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     }
     
     const entries = Object.entries(changes).filter(([_, value]) => value !== null);
-    if (entries.length === 0) return '-';
+    if (entries.length === 0) return null;
     return entries.map(([key, value]) => 
       `${key}: ${value?.van || '–'} → ${value?.naar || '–'}`
     ).join(', ');
@@ -132,107 +161,108 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     queryClient.invalidateQueries({ queryKey: ['task-activity', projectId] });
   };
 
-  // Mobile card layout
-  const MobileActivityList = () => (
-    <div className="space-y-2">
-      {activities?.map((activity) => (
-        <div
-          key={activity.id}
-          className={`p-3 bg-muted/30 rounded-lg ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer active:bg-muted/50' : ''}`}
-          onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              {getActionIcon(activity.action)}
-              <span className="text-xs font-medium capitalize">{activity.action}</span>
+  // Timeline Layout Component
+  const TimelineActivity = () => (
+    <div className="relative">
+      {/* Vertical timeline line */}
+      <div className="absolute left-[15px] sm:left-[19px] top-2 bottom-2 w-0.5 bg-border" />
+      
+      <div className="space-y-3 sm:space-y-4">
+        {activities?.map((activity, index) => {
+          const config = getActionConfig(activity.action);
+          const isClickable = activity.task_id && activity.action !== 'verwijderd';
+          const changes = formatChanges(activity.changes);
+          
+          return (
+            <div 
+              key={activity.id} 
+              className={`relative pl-9 sm:pl-12 group ${isClickable ? 'cursor-pointer' : ''}`}
+              onClick={() => isClickable && handleTaskClick(activity.task_id)}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              {/* Timeline dot */}
+              <div className={`absolute left-0 w-[30px] sm:w-[38px] h-[30px] sm:h-[38px] rounded-full ${config.bgColor} flex items-center justify-center border-4 border-background z-10 group-hover:scale-110 transition-transform`}>
+                <div className={config.textColor}>
+                  {config.icon}
+                </div>
+              </div>
+              
+              {/* Activity content */}
+              <div className={`p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-200 ${isClickable ? 'hover:shadow-md hover:-translate-y-0.5' : ''}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-semibold capitalize ${config.textColor}`}>
+                        {activity.action}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
+                      </span>
+                    </div>
+                    <p className="font-medium text-sm mt-1 truncate flex items-center gap-1.5">
+                      {activity.task_title}
+                      {isClickable && (
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
+                      )}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                      Door {activity.user_name}
+                    </p>
+                  </div>
+                </div>
+                
+                {changes && (
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
+                      {changes}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] text-muted-foreground shrink-0">
-              {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
-            </span>
-          </div>
-          <p className="font-medium text-sm mt-1 truncate flex items-center gap-1">
-            {activity.task_title}
-            {activity.task_id && activity.action !== 'verwijderd' && (
-              <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
-            )}
-          </p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] text-muted-foreground">
-              Door: {activity.user_name}
-            </span>
-          </div>
-          {activity.changes && Object.keys(activity.changes).length > 0 && (
-            <p className="text-[10px] text-muted-foreground mt-1.5 bg-muted/50 p-1.5 rounded line-clamp-2">
-              {formatChanges(activity.changes)}
-            </p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-
-  // Desktop table layout
-  const DesktopActivityTable = () => (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Wanneer</TableHead>
-            <TableHead className="w-[120px]">Wie</TableHead>
-            <TableHead className="w-[100px]">Actie</TableHead>
-            <TableHead>Taak</TableHead>
-            <TableHead>Details</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {activities?.map((activity) => (
-            <TableRow key={activity.id}>
-              <TableCell className="text-xs text-muted-foreground">
-                {format(new Date(activity.created_at), "dd MMM HH:mm", { locale: nl })}
-              </TableCell>
-              <TableCell className="text-sm">{activity.user_name}</TableCell>
-              <TableCell>
-                <span className="flex items-center gap-1 text-sm">
-                  {getActionIcon(activity.action)}
-                  {activity.action}
-                </span>
-              </TableCell>
-              <TableCell 
-                className={`font-medium max-w-[200px] truncate ${activity.task_id && activity.action !== 'verwijderd' ? 'cursor-pointer hover:text-primary hover:underline' : ''}`}
-                onClick={() => activity.task_id && activity.action !== 'verwijderd' && handleTaskClick(activity.task_id)}
-              >
-                <span className="flex items-center gap-1">
-                  {activity.task_title}
-                  {activity.task_id && activity.action !== 'verwijderd' && (
-                    <ExternalLink className="w-3 h-3 opacity-50" />
-                  )}
-                </span>
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground max-w-[250px] truncate">
-                {formatChanges(activity.changes)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          );
+        })}
+      </div>
     </div>
   );
 
   return (
-    <Card className="shadow-card">
+    <Card className="shadow-card overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-6">
-        <CardTitle className="text-xs sm:text-sm font-medium">Laatste Wijzigingen</CardTitle>
-        <History className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-muted">
+            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-sm sm:text-base font-semibold">Laatste Wijzigingen</CardTitle>
+        </div>
+        {activities && activities.length > 0 && (
+          <span className="text-xs text-muted-foreground">{activities.length} items</span>
+        )}
       </CardHeader>
       <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
         {isLoading ? (
-          <p className="text-muted-foreground text-xs sm:text-sm">Laden...</p>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-3 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : !activities || activities.length === 0 ? (
-          <p className="text-muted-foreground text-xs sm:text-sm">Nog geen activiteit</p>
-        ) : isMobile ? (
-          <MobileActivityList />
+          <div className="text-center py-8">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+              <History className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground text-sm">Nog geen activiteit</p>
+            <p className="text-muted-foreground text-xs mt-1">Wijzigingen aan taken verschijnen hier</p>
+          </div>
         ) : (
-          <DesktopActivityTable />
+          <TimelineActivity />
         )}
       </CardContent>
 
