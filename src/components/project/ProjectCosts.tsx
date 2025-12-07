@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +67,10 @@ const ProjectCosts = ({
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [chartsOpen, setChartsOpen] = useState(() => {
+    const saved = localStorage.getItem("costs-charts-open");
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   
   const {
     data: costs,
@@ -417,112 +423,135 @@ const ProjectCosts = ({
         </CardContent>
       </Card>
 
-      {/* Charts */}
+      {/* Charts Section - Collapsible */}
       {filteredCosts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-base">Kosten per Categorie</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      labelLine={false}
-                    >
-                      {categoryChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+        <Collapsible 
+          open={chartsOpen} 
+          onOpenChange={(open) => {
+            setChartsOpen(open);
+            localStorage.setItem("costs-charts-open", JSON.stringify(open));
+          }}
+        >
+          <Card className="shadow-card overflow-hidden">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors flex flex-row items-center justify-between py-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Kosten Dashboards</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Visualisaties per categorie, status en over tijd
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown className={cn(
+                  "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                  chartsOpen && "rotate-180"
+                )} />
+              </CardHeader>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-6">
+                {/* Pie and Bar Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-medium mb-4">Kosten per Categorie</h4>
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
+                          >
+                            {categoryChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
 
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-base">Kosten per Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statusChartData} layout="vertical">
-                    <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} />
-                    <YAxis type="category" dataKey="name" width={80} />
-                    <Tooltip 
-                      formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
-                    />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-medium mb-4">Kosten per Status</h4>
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={statusChartData} layout="vertical">
+                          <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} />
+                          <YAxis type="category" dataKey="name" width={80} />
+                          <Tooltip 
+                            formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
+                          />
+                          <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Time Series Chart */}
-      {timeSeriesData.length > 1 && (
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base">Kosten over Tijd</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis domain={[0, maxYValue]} tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, ""]}
-                    labelFormatter={(label) => `Maand: ${label}`}
-                  />
-                  <Legend />
-                  {totalBudget > 0 && (
-                    <ReferenceLine 
-                      y={totalBudget} 
-                      stroke="#f59e0b" 
-                      strokeDasharray="8 4"
-                      strokeWidth={2}
-                      label={{ 
-                        value: `Budget: €${totalBudget.toLocaleString("nl-NL")}`,
-                        position: 'insideTopRight',
-                        fill: '#f59e0b',
-                        fontSize: 12,
-                        fontWeight: 500
-                      }}
-                    />
-                  )}
-                  <Bar dataKey="Schatting" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Offerte" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cumulativeTotal" 
-                    name="Cumulatief Totaal"
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    dot={{ fill: "#ef4444", strokeWidth: 2 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+                {/* Time Series Chart */}
+                {timeSeriesData.length > 1 && (
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-medium mb-4">Kosten over Tijd</h4>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={timeSeriesData}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                          <YAxis domain={[0, maxYValue]} tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 12 }} />
+                          <Tooltip 
+                            formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, ""]}
+                            labelFormatter={(label) => `Maand: ${label}`}
+                          />
+                          <Legend />
+                          {totalBudget > 0 && (
+                            <ReferenceLine 
+                              y={totalBudget} 
+                              stroke="#f59e0b" 
+                              strokeDasharray="8 4"
+                              strokeWidth={2}
+                              label={{ 
+                                value: `Budget: €${totalBudget.toLocaleString("nl-NL")}`,
+                                position: 'insideTopRight',
+                                fill: '#f59e0b',
+                                fontSize: 12,
+                                fontWeight: 500
+                              }}
+                            />
+                          )}
+                          <Bar dataKey="Schatting" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Offerte" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Factuur" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="cumulativeTotal" 
+                            name="Cumulatief Totaal"
+                            stroke="#ef4444" 
+                            strokeWidth={2}
+                            dot={{ fill: "#ef4444", strokeWidth: 2 }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       )}
 
       {/* Summary Cards - All categories on one row */}
