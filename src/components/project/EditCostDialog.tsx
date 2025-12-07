@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, FileText, ExternalLink, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EditCostDialogProps {
@@ -212,9 +212,47 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
           />
         </div>
 
-        <div>
-          <Label htmlFor="factuur">Nieuwe Factuur (optioneel)</Label>
-          <div className="flex items-center gap-2">
+        <div className="col-span-1 sm:col-span-2">
+          <Label htmlFor="factuur">Factuur (optioneel)</Label>
+          
+          {formData.factuur_url ? (
+            <div className="mt-2 p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {formData.factuur_url.split("/").pop()}
+                </p>
+                <p className="text-xs text-muted-foreground">Factuur bijgevoegd</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    const url = supabase.storage.from("invoices").getPublicUrl(formData.factuur_url).data.publicUrl;
+                    window.open(url, "_blank");
+                  }}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => setFormData({ ...formData, factuur_url: "" })}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-2 mt-2">
             <Button
               type="button"
               variant="outline"
@@ -233,11 +271,6 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
               className="hidden"
             />
           </div>
-          {formData.factuur_url && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Huidige factuur aanwezig
-            </p>
-          )}
         </div>
       </div>
 
