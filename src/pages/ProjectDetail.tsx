@@ -212,54 +212,67 @@ const ProjectDetail = () => {
       {/* Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 animate-fade-in">
         <Tabs defaultValue="overzicht" className="w-full">
-          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
-            {/* Modern Pill-style Tabs */}
-            <TabsList className="inline-flex w-auto min-w-full sm:w-auto bg-muted/50 p-1 rounded-xl gap-1">
-              <TabsTrigger 
-                value="overzicht" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
-              >
-                <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Overzicht</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="taken" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
-              >
-                <ListTodo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Taken</span>
-              </TabsTrigger>
-              {isAdminOrOwner && (
+          {/* Scrollable tabs container with fade indicators */}
+          <div className="relative mb-4 sm:mb-6">
+            {/* Left fade indicator */}
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none sm:hidden" />
+            {/* Right fade indicator */}
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none sm:hidden" />
+            
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide">
+              {/* Modern Pill-style Tabs */}
+              <TabsList className="inline-flex w-auto min-w-full sm:w-auto bg-muted/50 p-1 rounded-xl gap-1">
                 <TabsTrigger 
-                  value="kosten" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
+                  value="overzicht" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
                 >
-                  <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Kosten</span>
+                  <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="sm:hidden">Home</span>
+                  <span className="hidden sm:inline">Overzicht</span>
                 </TabsTrigger>
-              )}
-              <TabsTrigger 
-                value="documenten" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
-              >
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Documenten</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="fotos" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
-              >
-                <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Foto's</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="aannemers" 
-                className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 py-2 text-xs sm:text-sm transition-all"
-              >
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Aannemers</span>
-              </TabsTrigger>
-            </TabsList>
+                <TabsTrigger 
+                  value="taken" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                >
+                  <ListTodo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Taken</span>
+                </TabsTrigger>
+                {isAdminOrOwner && (
+                  <TabsTrigger 
+                    value="kosten" 
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  >
+                    <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="sm:hidden">€</span>
+                    <span className="hidden sm:inline">Kosten</span>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger 
+                  value="documenten" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                >
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="sm:hidden">Docs</span>
+                  <span className="hidden sm:inline">Documenten</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="fotos" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                >
+                  <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="sm:hidden">Foto</span>
+                  <span className="hidden sm:inline">Foto's</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="aannemers" 
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                >
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="sm:hidden">Team</span>
+                  <span className="hidden sm:inline">Aannemers</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
           <TabsContent value="overzicht" className="animate-fade-in">
