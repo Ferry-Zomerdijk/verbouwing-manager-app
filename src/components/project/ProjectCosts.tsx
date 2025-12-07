@@ -337,91 +337,6 @@ const ProjectCosts = ({
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="shadow-card">
-        <CardContent className="pt-4 space-y-4">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Zoek in beschrijving, leverancier, categorie..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9"
-            />
-            {searchQuery && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Filters:</span>
-            </div>
-            
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Categorie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle categorieën</SelectItem>
-                <SelectItem value="Materiaal">Materiaal</SelectItem>
-                <SelectItem value="Arbeid">Arbeid</SelectItem>
-                <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-                <SelectItem value="Decoratie">Decoratie</SelectItem>
-                <SelectItem value="Meubels">Meubels</SelectItem>
-                <SelectItem value="Overig">Overig</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={deelVanHuisFilter} onValueChange={setDeelVanHuisFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Deel van huis" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle delen</SelectItem>
-                {availableDelenVanHuis.map(deel => (
-                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle statussen</SelectItem>
-                <SelectItem value="Schatting">Schatting</SelectItem>
-                <SelectItem value="Offerte">Offerte</SelectItem>
-                <SelectItem value="Factuur">Factuur</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="w-4 h-4 mr-1" />
-                Wis filters
-              </Button>
-            )}
-
-            {hasActiveFilters && (
-              <span className="text-sm text-muted-foreground ml-auto">
-                {filteredCosts.length} van {costs?.length || 0} resultaten
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Charts Section - Collapsible */}
       {filteredCosts.length > 0 && (
@@ -585,10 +500,94 @@ const ProjectCosts = ({
 
       {/* Costs Table */}
       <Card className="shadow-card">
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Kostenposten</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Zoek in beschrijving, leverancier, categorie..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Filters:</span>
+              </div>
+              
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Categorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle categorieën</SelectItem>
+                  <SelectItem value="Materiaal">Materiaal</SelectItem>
+                  <SelectItem value="Arbeid">Arbeid</SelectItem>
+                  <SelectItem value="Vergunningen">Vergunningen</SelectItem>
+                  <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                  <SelectItem value="Decoratie">Decoratie</SelectItem>
+                  <SelectItem value="Meubels">Meubels</SelectItem>
+                  <SelectItem value="Overig">Overig</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={deelVanHuisFilter} onValueChange={setDeelVanHuisFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Deel van huis" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle delen</SelectItem>
+                  {availableDelenVanHuis.map(deel => (
+                    <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle statussen</SelectItem>
+                  <SelectItem value="Schatting">Schatting</SelectItem>
+                  <SelectItem value="Offerte">Offerte</SelectItem>
+                  <SelectItem value="Factuur">Factuur</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-1" />
+                  Wis filters
+                </Button>
+              )}
+
+              {hasActiveFilters && (
+                <span className="text-sm text-muted-foreground ml-auto">
+                  {filteredCosts.length} van {costs?.length || 0} resultaten
+                </span>
+              )}
+            </div>
+          </div>
+
           {filteredCosts.length > 0 ? <Table>
               <TableHeader>
                 <TableRow>
