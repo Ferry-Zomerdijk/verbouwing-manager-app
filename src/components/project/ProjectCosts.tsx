@@ -322,17 +322,17 @@ const ProjectCosts = ({
   }
 
   // Desktop view
-  return <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Kosten</h2>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExportToExcel} disabled={filteredCosts.length === 0}>
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            Exporteer
+  return <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold">Kosten</h2>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportToExcel} disabled={filteredCosts.length === 0} className="h-8 sm:h-9">
+            <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exporteer</span>
           </Button>
-          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Nieuwe Kostenpost
+          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary h-8 sm:h-9" size="sm">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nieuwe Kostenpost</span>
           </Button>
         </div>
       </div>
@@ -371,18 +371,18 @@ const ProjectCosts = ({
             <CollapsibleContent>
               <CardContent className="pt-0 space-y-6">
                 {/* Pie and Bar Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="border rounded-lg p-4">
-                    <h4 className="text-sm font-medium mb-4">Kosten per Categorie</h4>
-                    <div className="h-[280px]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-3 sm:p-4">
+                    <h4 className="text-sm font-medium mb-3 sm:mb-4">Kosten per Categorie</h4>
+                    <div className="h-[220px] lg:h-[280px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={categoryChartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
+                            innerRadius={50}
+                            outerRadius={80}
                             paddingAngle={2}
                             dataKey="value"
                             label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
@@ -400,13 +400,13 @@ const ProjectCosts = ({
                     </div>
                   </div>
 
-                  <div className="border rounded-lg p-4">
-                    <h4 className="text-sm font-medium mb-4">Kosten per Status</h4>
-                    <div className="h-[280px]">
+                  <div className="border rounded-lg p-3 sm:p-4">
+                    <h4 className="text-sm font-medium mb-3 sm:mb-4">Kosten per Status</h4>
+                    <div className="h-[220px] lg:h-[280px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={statusChartData} layout="vertical">
-                          <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} />
-                          <YAxis type="category" dataKey="name" width={80} />
+                          <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 11 }} />
+                          <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 11 }} />
                           <Tooltip 
                             formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
                           />
@@ -419,9 +419,9 @@ const ProjectCosts = ({
 
                 {/* Time Series Chart */}
                 {timeSeriesData.length > 1 && (
-                  <div className="border rounded-lg p-4">
-                    <h4 className="text-sm font-medium mb-4">Kosten over Tijd</h4>
-                    <div className="h-[300px]">
+                  <div className="border rounded-lg p-3 sm:p-4">
+                    <h4 className="text-sm font-medium mb-3 sm:mb-4">Kosten over Tijd</h4>
+                    <div className="h-[220px] lg:h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={timeSeriesData}>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -503,17 +503,17 @@ const ProjectCosts = ({
         <CardHeader className="pb-4">
           <CardTitle>Kostenposten</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {/* Filters */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Zoek in beschrijving, leverancier, categorie..."
+                placeholder="Zoek..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
+                className="pl-9 pr-9 h-9"
               />
               {searchQuery && (
                 <Button 
@@ -527,79 +527,82 @@ const ProjectCosts = ({
               )}
             </div>
             
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Filters:</span>
               </div>
               
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Categorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle categorieën</SelectItem>
-                  <SelectItem value="Materiaal">Materiaal</SelectItem>
-                  <SelectItem value="Arbeid">Arbeid</SelectItem>
-                  <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                  <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-                  <SelectItem value="Decoratie">Decoratie</SelectItem>
-                  <SelectItem value="Meubels">Meubels</SelectItem>
-                  <SelectItem value="Overig">Overig</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[130px] lg:w-[160px] h-8 text-xs sm:text-sm">
+                    <SelectValue placeholder="Categorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle categorieën</SelectItem>
+                    <SelectItem value="Materiaal">Materiaal</SelectItem>
+                    <SelectItem value="Arbeid">Arbeid</SelectItem>
+                    <SelectItem value="Vergunningen">Vergunningen</SelectItem>
+                    <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
+                    <SelectItem value="Decoratie">Decoratie</SelectItem>
+                    <SelectItem value="Meubels">Meubels</SelectItem>
+                    <SelectItem value="Overig">Overig</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Select value={deelVanHuisFilter} onValueChange={setDeelVanHuisFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Deel van huis" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle delen</SelectItem>
-                  {availableDelenVanHuis.map(deel => (
-                    <SelectItem key={deel} value={deel}>{deel}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={deelVanHuisFilter} onValueChange={setDeelVanHuisFilter}>
+                  <SelectTrigger className="w-[120px] lg:w-[150px] h-8 text-xs sm:text-sm">
+                    <SelectValue placeholder="Deel huis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle delen</SelectItem>
+                    {availableDelenVanHuis.map(deel => (
+                      <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle statussen</SelectItem>
-                  <SelectItem value="Schatting">Schatting</SelectItem>
-                  <SelectItem value="Offerte">Offerte</SelectItem>
-                  <SelectItem value="Factuur">Factuur</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[110px] lg:w-[130px] h-8 text-xs sm:text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle statussen</SelectItem>
+                    <SelectItem value="Schatting">Schatting</SelectItem>
+                    <SelectItem value="Offerte">Offerte</SelectItem>
+                    <SelectItem value="Factuur">Factuur</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                    <X className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline">Wis</span>
+                  </Button>
+                )}
+              </div>
 
               {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="w-4 h-4 mr-1" />
-                  Wis filters
-                </Button>
-              )}
-
-              {hasActiveFilters && (
-                <span className="text-sm text-muted-foreground ml-auto">
-                  {filteredCosts.length} van {costs?.length || 0} resultaten
+                <span className="text-xs sm:text-sm text-muted-foreground sm:ml-auto">
+                  {filteredCosts.length} van {costs?.length || 0}
                 </span>
               )}
             </div>
           </div>
 
-          {filteredCosts.length > 0 ? <Table>
+          {filteredCosts.length > 0 ? <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <Table className="min-w-[700px] sm:min-w-0">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Datum</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Categorie</TableHead>
-                  <TableHead>Deel van huis</TableHead>
-                  <TableHead>Leverancier</TableHead>
-                  <TableHead>Beschrijving</TableHead>
-                  <TableHead className="text-right">Bedrag</TableHead>
-                  <TableHead className="w-[100px]">Factuur</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
+                  <TableHead className="whitespace-nowrap">Datum</TableHead>
+                  <TableHead className="whitespace-nowrap">Status</TableHead>
+                  <TableHead className="whitespace-nowrap">Categorie</TableHead>
+                  <TableHead className="hidden lg:table-cell whitespace-nowrap">Deel van huis</TableHead>
+                  <TableHead className="hidden md:table-cell whitespace-nowrap">Leverancier</TableHead>
+                  <TableHead className="hidden lg:table-cell">Beschrijving</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Bedrag</TableHead>
+                  <TableHead className="w-[80px] sm:w-[100px]">Factuur</TableHead>
+                  <TableHead className="w-[50px] sm:w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -660,7 +663,7 @@ const ProjectCosts = ({
                         ) : null}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <InlineEditableCell
                         type="select"
                         value={cost.deel_van_huis}
@@ -671,7 +674,7 @@ const ProjectCosts = ({
                         placeholder="-"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <InlineEditableCell
                         value={cost.leverancier}
                         onSave={async (value) => {
@@ -680,7 +683,7 @@ const ProjectCosts = ({
                         placeholder="-"
                       />
                     </TableCell>
-                    <TableCell className="max-w-[200px]">
+                    <TableCell className="hidden lg:table-cell max-w-[200px]">
                       <InlineEditableCell
                         value={cost.beschrijving}
                         onSave={async (value) => {
@@ -736,7 +739,8 @@ const ProjectCosts = ({
                     </TableCell>
                   </TableRow>)}
               </TableBody>
-            </Table> : <p className="text-center text-muted-foreground py-8">
+            </Table>
+          </div> : <p className="text-center text-muted-foreground py-8">
               Nog geen kostenposten toegevoegd
             </p>}
         </CardContent>
