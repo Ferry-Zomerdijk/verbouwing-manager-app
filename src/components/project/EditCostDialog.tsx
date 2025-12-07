@@ -55,9 +55,15 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
 
     setUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Niet ingelogd");
+        setUploading(false);
+        return;
+      }
+
       const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("invoices")
@@ -65,11 +71,9 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
 
       if (uploadError) throw uploadError;
 
+      // Verwijder oude factuur indien aanwezig
       if (formData.factuur_url) {
-        const oldPath = formData.factuur_url.split("/").pop();
-        if (oldPath) {
-          await supabase.storage.from("invoices").remove([oldPath]);
-        }
+        await supabase.storage.from("invoices").remove([formData.factuur_url]);
       }
 
       setFormData({ ...formData, factuur_url: filePath });
