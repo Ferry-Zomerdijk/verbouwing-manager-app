@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import * as XLSX from "xlsx";
 import CreateCostDialog from "./CreateCostDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
+import EditCostDialog from "./EditCostDialog";
 import { InlineEditableCell } from "./InlineEditableCell";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -57,6 +58,7 @@ const ProjectCosts = ({
   const isMobile = useIsMobile();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCost, setSelectedCost] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -685,9 +687,16 @@ const ProjectCosts = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => {
-                      setSelectedCost(cost);
-                      setDeleteDialogOpen(true);
-                    }} className="text-destructive">
+                            setSelectedCost(cost);
+                            setEditDialogOpen(true);
+                          }}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Bewerken
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedCost(cost);
+                            setDeleteDialogOpen(true);
+                          }} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Verwijderen
                           </DropdownMenuItem>
@@ -708,7 +717,26 @@ const ProjectCosts = ({
     }} />
 
       {selectedCost && (
-        <DeleteConfirmationDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} title="Kosten Verwijderen" description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig." itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`} onConfirm={handleDelete} loading={deleting} />
+        <>
+          <EditCostDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            cost={selectedCost}
+            onSuccess={() => {
+              refetch();
+              setEditDialogOpen(false);
+            }}
+          />
+          <DeleteConfirmationDialog 
+            open={deleteDialogOpen} 
+            onOpenChange={setDeleteDialogOpen} 
+            title="Kosten Verwijderen" 
+            description="Dit zal ook de bijbehorende factuur verwijderen indien aanwezig." 
+            itemName={`€${parseFloat(selectedCost.bedrag.toString()).toLocaleString("nl-NL")}`} 
+            onConfirm={handleDelete} 
+            loading={deleting} 
+          />
+        </>
       )}
     </div>;
 };
