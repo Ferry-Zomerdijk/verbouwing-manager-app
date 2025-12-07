@@ -575,8 +575,9 @@ const ProjectCosts = ({
                 <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">{category}</CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
-                <div className="text-lg sm:text-xl font-bold">
-                  €{(costsByCategory[category] || 0).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className="text-sm sm:text-base font-bold flex items-center gap-1">
+                  <span className="text-muted-foreground text-xs">€</span>
+                  {(costsByCategory[category] || 0).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
