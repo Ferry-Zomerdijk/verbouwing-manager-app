@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -61,6 +62,7 @@ const ProjectCosts = ({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   
   const {
     data: costs,
@@ -99,23 +101,37 @@ const ProjectCosts = ({
     return [...new Set([...taskValues, ...costValues])].sort();
   }, [tasks, costs]);
 
-  // Filter costs based on selected filters
+  // Filter costs based on selected filters and search query
   const filteredCosts = useMemo(() => {
     if (!costs) return [];
     return costs.filter(cost => {
       const matchCategory = categoryFilter === "all" || cost.categorie === categoryFilter;
       const matchDeelVanHuis = deelVanHuisFilter === "all" || cost.deel_van_huis === deelVanHuisFilter;
       const matchStatus = statusFilter === "all" || cost.status === statusFilter;
-      return matchCategory && matchDeelVanHuis && matchStatus;
+      
+      // Search filter - search across all text fields
+      const query = searchQuery.toLowerCase().trim();
+      const matchSearch = !query || [
+        cost.beschrijving,
+        cost.leverancier,
+        cost.deel_van_huis,
+        cost.categorie,
+        cost.status,
+        cost.koppeling_begrotingspost,
+        cost.bedrag?.toString()
+      ].some(field => field?.toLowerCase().includes(query));
+      
+      return matchCategory && matchDeelVanHuis && matchStatus && matchSearch;
     });
-  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter]);
+  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, searchQuery]);
 
-  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all";
+  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || searchQuery.trim() !== "";
 
   const clearFilters = () => {
     setCategoryFilter("all");
     setDeelVanHuisFilter("all");
     setStatusFilter("all");
+    setSearchQuery("");
   };
   const updateCost = async (costId: string, updates: Partial<Database["public"]["Tables"]["costs"]["Update"]>) => {
     try {
@@ -315,7 +331,28 @@ const ProjectCosts = ({
 
       {/* Filters */}
       <Card className="shadow-card">
-        <CardContent className="pt-4">
+        <CardContent className="pt-4 space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoek in beschrijving, leverancier, categorie..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-muted-foreground" />
