@@ -525,30 +525,34 @@ const ProjectCosts = ({
         </Card>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Totaal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-1">
-              <Euro className="w-5 h-5" />
-              {totalCosts.toLocaleString("nl-NL")}
-            </div>
-          </CardContent>
-        </Card>
-
-        {costsByCategory && Object.entries(costsByCategory).map(([category, amount]) => <Card key={category} className="shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{category}</CardTitle>
+      {/* Summary Cards - All categories on one row */}
+      <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+        <div className="inline-flex gap-3 sm:gap-4 min-w-full sm:grid sm:grid-cols-7">
+          <Card className="shadow-card min-w-[140px] sm:min-w-0 flex-shrink-0">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Totaal</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">
-                €{amount.toLocaleString("nl-NL")}
+            <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+              <div className="text-lg sm:text-xl font-bold flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">€</span>
+                {totalCosts.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </CardContent>
-          </Card>)}
+          </Card>
+
+          {["Arbeid", "Materiaal", "Kluswerkzaamheden", "Meubels", "Decoratie", "Overig"].map((category) => (
+            <Card key={category} className="shadow-card min-w-[140px] sm:min-w-0 flex-shrink-0">
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">{category}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-lg sm:text-xl font-bold">
+                  €{(costsByCategory[category] || 0).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Costs Table */}
