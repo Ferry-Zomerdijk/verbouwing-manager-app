@@ -215,13 +215,13 @@ const ProjectDetail = () => {
           {/* Scrollable tabs container with fade indicators */}
           <div className="relative mb-4 sm:mb-6">
             {/* Left fade indicator */}
-            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none sm:hidden" />
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-background to-transparent pointer-events-none sm:hidden" />
             {/* Right fade indicator */}
-            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none sm:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
             
-            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide">
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide relative z-10">
               {/* Modern Pill-style Tabs */}
-              <TabsList className="inline-flex w-auto min-w-full sm:w-auto bg-muted/50 p-1 rounded-xl gap-1">
+              <TabsList className="inline-flex w-max bg-muted/50 p-1 rounded-xl gap-1">
                 <TabsTrigger 
                   value="overzicht" 
                   className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
