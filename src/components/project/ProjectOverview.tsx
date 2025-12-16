@@ -82,12 +82,13 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
       <div className={`grid grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
         
         {/* Progress Card */}
-        <Card className={`shadow-card overflow-hidden relative group hover:shadow-hover transition-all duration-300 ${isComplete ? 'bg-green-500/5 border-green-500/20' : ''}`}>
+        <Card className={`shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-muted/20 border-border/50 ${isComplete ? 'from-green-500/5 to-green-500/10 border-green-500/30' : ''}`}>
           {/* Background decoration */}
-          <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors duration-300" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-primary/5 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-500" />
+          <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-primary/3 group-hover:bg-primary/8 transition-all duration-300" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Voortgang</CardTitle>
-            <div className={`p-1.5 sm:p-2 rounded-lg ${isComplete ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+            <div className={`p-1.5 sm:p-2 rounded-lg shadow-sm group-hover:shadow transition-shadow ${isComplete ? 'bg-green-500/15' : 'bg-primary/10'}`}>
               {isComplete ? (
                 <PartyPopper className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 animate-bounce" />
               ) : (
@@ -112,11 +113,12 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
         {/* Budget Card - Only for Admin/Owner */}
         {isAdminOrOwner && (
-          <Card className="shadow-card overflow-hidden relative group hover:shadow-hover transition-all duration-300">
-            <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors duration-300" />
+          <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-blue-500/5 border-border/50">
+            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 group-hover:scale-110 transition-all duration-500" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-blue-500/3 group-hover:bg-blue-500/8 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Budget</CardTitle>
-              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/15 shadow-sm group-hover:shadow transition-shadow">
                 <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
               </div>
             </CardHeader>
@@ -136,12 +138,13 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         )}
 
         {/* Start Date Card */}
-        <Card className="shadow-card overflow-hidden relative group hover:shadow-hover transition-all duration-300">
-          <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors duration-300" />
+        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-indigo-500/5 border-border/50">
+          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-indigo-500/5 group-hover:bg-indigo-500/10 group-hover:scale-110 transition-all duration-500" />
+          <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-indigo-500/3 group-hover:bg-indigo-500/8 transition-all duration-300" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Startdatum</CardTitle>
-            <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
+            <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500/15 shadow-sm group-hover:shadow transition-shadow">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 relative z-10">
@@ -159,12 +162,13 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         </Card>
 
         {/* Status Card */}
-        <Card className="shadow-card overflow-hidden relative group hover:shadow-hover transition-all duration-300">
-          <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-green-500/5 group-hover:bg-green-500/10 transition-colors duration-300" />
+        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-emerald-500/5 border-border/50">
+          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-emerald-500/5 group-hover:bg-emerald-500/10 group-hover:scale-110 transition-all duration-500" />
+          <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-emerald-500/3 group-hover:bg-emerald-500/8 transition-all duration-300" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Status</CardTitle>
-            <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
-              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
+            <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/15 shadow-sm group-hover:shadow transition-shadow">
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 relative z-10">
@@ -198,24 +202,24 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
       {/* Bouwer Wijsheid - Modern Card */}
       <Card 
-        className="shadow-card overflow-hidden cursor-pointer hover:shadow-hover transition-all duration-300 group border-gray-200/50 dark:border-gray-700/50"
+        className="shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group border-border/50 bg-gradient-to-br from-background via-muted/10 to-muted/30"
         onClick={refreshWisdom}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-slate-50 to-gray-50 dark:from-gray-900/30 dark:via-slate-900/20 dark:to-gray-900/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-500/3 via-transparent to-slate-500/3 dark:from-slate-400/5 dark:to-slate-400/5" />
         <CardContent className="py-3 sm:py-4 px-3 sm:px-6 relative">
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-gray-500 to-slate-600 shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
               <span className="text-lg sm:text-2xl">💡</span>
             </div>
             <div className={`flex-1 min-w-0 transition-opacity duration-150 ${wisdomAnimating ? 'opacity-0' : 'opacity-100'}`}>
-              <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <p className="text-xs sm:text-sm font-semibold text-foreground/90">
                 Wijsheid van de dag
               </p>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 italic line-clamp-2">
+              <p className="text-xs sm:text-sm text-muted-foreground italic line-clamp-2">
                 "{wisdom}"
               </p>
             </div>
-            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 group-hover:rotate-180 transition-all duration-500 shrink-0" />
+            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:rotate-180 transition-all duration-500 shrink-0" />
           </div>
         </CardContent>
       </Card>
