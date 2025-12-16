@@ -103,13 +103,13 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
     <>
       <Card 
         {...swipeHandlers}
-        className={`p-4 transition-all duration-150 touch-pan-y ${
+        className={`p-4 transition-all duration-150 touch-pan-y active:bg-muted/50 ${
           swiped === "left" ? "translate-x-[-20px] bg-destructive/5" : ""
         } ${swiped === "right" ? "translate-x-[20px] bg-primary/5" : ""}`}
       >
         {/* Header row: Priority badge & Status selector */}
         <div className="flex items-center justify-between mb-3">
-          <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-2 py-0.5`}>
+          <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
             {task.prioriteit || "Geen"}
           </Badge>
           
@@ -117,7 +117,7 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
             value={task.status}
             onValueChange={(value) => onStatusChange(task.id, value as "Te doen" | "Bezig" | "Gereed")}
           >
-            <SelectTrigger className={`w-auto h-8 text-xs font-medium border-0 ${statusConfig[task.status as keyof typeof statusConfig]?.color || ""}`}>
+            <SelectTrigger className={`w-auto h-10 text-sm font-medium border-0 px-3 ${statusConfig[task.status as keyof typeof statusConfig]?.color || ""}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -130,14 +130,14 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
 
         {/* Title with expand button */}
         <div 
-          className="flex items-start justify-between gap-2 cursor-pointer"
+          className="flex items-start justify-between gap-2 cursor-pointer min-h-[44px]"
           onClick={() => setExpanded(!expanded)}
         >
-          <h4 className="font-semibold text-base leading-tight flex-1">
+          <h4 className="font-semibold text-base leading-tight flex-1 py-2">
             {task.titel}
           </h4>
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-            <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
+            <ChevronDown className={`w-5 h-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </Button>
         </div>
 
@@ -191,11 +191,10 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 mt-3 pt-2">
+            <div className="flex gap-3 mt-3 pt-2">
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1"
+                className="flex-1 h-11"
                 onClick={() => setEditDialogOpen(true)}
               >
                 <Pencil className="w-4 h-4 mr-2" />
@@ -204,8 +203,8 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
               {canDelete && (
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  className="text-destructive hover:text-destructive"
+                  size="icon"
+                  className="text-destructive hover:text-destructive h-11 w-11"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
                   <Trash2 className="w-4 h-4" />

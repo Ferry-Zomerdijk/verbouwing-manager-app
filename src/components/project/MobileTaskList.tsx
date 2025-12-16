@@ -263,12 +263,12 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         <CollapsibleContent className="pt-3">
           <div className="space-y-3">
             {/* Status filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {(["Te doen", "Bezig", "Gereed"] as StatusFilter[]).map((status) => (
                 <Badge
                   key={status}
                   variant="outline"
-                  className={`cursor-pointer transition-colors ${
+                  className={`cursor-pointer transition-colors min-h-[40px] px-4 py-2 text-sm ${
                     activeStatuses.includes(status) 
                       ? statusColors[status]
                       : "bg-transparent text-muted-foreground"
@@ -282,13 +282,13 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
 
             {/* Verantwoordelijke & Deel van huis filters */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Verantwoordelijke</Label>
                 <Select 
                   value={selectedVerantwoordelijke || "all"} 
                   onValueChange={(val) => setSelectedVerantwoordelijke(val === "all" ? null : val)}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Alle" />
                   </SelectTrigger>
                   <SelectContent>
@@ -301,13 +301,13 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 </Select>
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Deel van huis</Label>
                 <Select 
                   value={selectedDeelVanHuis || "all"} 
                   onValueChange={(val) => setSelectedDeelVanHuis(val === "all" ? null : val)}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Alle" />
                   </SelectTrigger>
                   <SelectContent>
@@ -322,8 +322,8 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
             </div>
 
             {activeFilterCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
-                <X className="w-3 h-3 mr-1" />
+              <Button variant="ghost" onClick={clearFilters} className="h-10 text-sm">
+                <X className="w-4 h-4 mr-1" />
                 Wis filters
               </Button>
             )}

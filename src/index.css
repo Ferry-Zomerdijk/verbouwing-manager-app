@@ -234,4 +234,25 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Touch-optimized tap targets - minimum 44x44px */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Touch feedback animation */
+  .touch-feedback {
+    @apply active:scale-[0.97] active:opacity-90 transition-transform;
+  }
+
+  /* Faster touch response - disable 300ms tap delay */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    @apply gap-3;
+  }
 }
