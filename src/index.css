@@ -11,13 +11,13 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 60 4% 95%;
+    --background: 0 0% 98%;
     --foreground: 24 9% 10%;
 
-    --card: 60 9% 97%;
+    --card: 0 0% 100%;
     --card-foreground: 24 9% 10%;
 
-    --popover: 20 5% 90%;
+    --popover: 0 0% 96%;
     --popover-foreground: 24 9% 10%;
 
     --primary: 37 92% 50%;
