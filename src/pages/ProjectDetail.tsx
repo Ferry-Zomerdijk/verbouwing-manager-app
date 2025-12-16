@@ -3,15 +3,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import AccountSettingsDialog from "@/components/AccountSettingsDialog";
+import AdminUsersDialog from "@/components/AdminUsersDialog";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import ProjectOverview from "@/components/project/ProjectOverview";
@@ -37,8 +41,48 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [usersManagerOpen, setUsersManagerOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [adminUsersDialogOpen, setAdminUsersDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
+    naam: null,
+    email: null,
+    isAdmin: false,
+  });
+
+  // Load user info
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("naam")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        setUserInfo({
+          naam: profile?.naam || null,
+          email: user.email || null,
+          isAdmin: !!adminRole,
+        });
+      }
+    };
+    loadUserInfo();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
 
   const { data: project, isLoading, refetch } = useQuery({
     queryKey: ["project", id],
@@ -189,21 +233,54 @@ const ProjectDetail = () => {
                 <WeatherExcuseButton />
                 <CoffeeBreakTimer />
               </div>
-              {isAdminOrOwner && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="hover:border-primary/50 transition-colors">
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="animate-scale-in">
-                    <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 hover:bg-accent/50 transition-colors px-2 sm:px-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        {userInfo.naam?.charAt(0)?.toUpperCase() || userInfo.email?.charAt(0)?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline text-sm font-medium truncate max-w-[100px]">
+                      {userInfo.naam || "Gebruiker"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 animate-scale-in">
+                  <div className="px-3 py-2 border-b">
+                    <p className="font-medium text-sm">{userInfo.naam || "Gebruiker"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{userInfo.email}</p>
+                  </div>
+                  <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Mijn Account
+                  </DropdownMenuItem>
+                  {userInfo.isAdmin && (
+                    <DropdownMenuItem onClick={() => setAdminUsersDialogOpen(true)}>
+                      <Users className="w-4 h-4 mr-2" />
                       Gebruikers Beheren
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                  {isAdminOrOwner && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Project Gebruikers
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Uitloggen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -307,6 +384,16 @@ const ProjectDetail = () => {
         open={usersManagerOpen}
         onOpenChange={setUsersManagerOpen}
         projectId={id!}
+      />
+
+      <AccountSettingsDialog
+        open={accountDialogOpen}
+        onOpenChange={setAccountDialogOpen}
+      />
+
+      <AdminUsersDialog
+        open={adminUsersDialogOpen}
+        onOpenChange={setAdminUsersDialogOpen}
       />
     </div>
   );
