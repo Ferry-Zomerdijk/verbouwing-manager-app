@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, Eye, EyeOff } from "lucide-react";
+import { Home, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<"login" | "register" | "forgot-password">("login");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,14 +38,14 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         toast.success("Succesvol ingelogd!");
-      } else {
+      } else if (mode === "register") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -66,6 +66,32 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+      if (error) throw error;
+      toast.success("Wachtwoord reset email verzonden! Check je inbox.");
+      setMode("login");
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case "login": return "Log in op je account";
+      case "register": return "Maak een nieuw account aan";
+      case "forgot-password": return "Wachtwoord vergeten";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-card">
@@ -74,75 +100,120 @@ const Auth = () => {
             <Home className="w-10 h-10 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">HomeProject</CardTitle>
-          <CardDescription>
-            {isLogin ? "Log in op je account" : "Maak een nieuw account aan"}
-          </CardDescription>
+          <CardDescription>{getTitle()}</CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          {mode === "forgot-password" ? (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
-                <Label htmlFor="naam">Naam</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="naam"
-                  value={naam}
-                  onChange={(e) => setNaam(e.target.value)}
-                  placeholder="Jouw naam"
-                  required={!isLogin}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jouw@email.nl"
+                  required
                 />
               </div>
-            )}
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jouw@email.nl"
-                required
-              />
-            </div>
+              <p className="text-sm text-muted-foreground">
+                Voer je email adres in en we sturen je een link om je wachtwoord te resetten.
+              </p>
 
-            <div>
-              <Label htmlFor="password">Wachtwoord</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  className="pr-10"
-                />
+              <Button type="submit" className="w-full gradient-primary" disabled={loading}>
+                {loading ? "Bezig..." : "Verstuur reset link"}
+              </Button>
+
+              <div className="text-center">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMode("login")}
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <ArrowLeft className="w-3 h-3" />
+                  Terug naar inloggen
                 </button>
               </div>
-            </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {mode === "register" && (
+                <div>
+                  <Label htmlFor="naam">Naam</Label>
+                  <Input
+                    id="naam"
+                    value={naam}
+                    onChange={(e) => setNaam(e.target.value)}
+                    placeholder="Jouw naam"
+                    required={mode === "register"}
+                  />
+                </div>
+              )}
 
-            <Button type="submit" className="w-full gradient-primary" disabled={loading}>
-              {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
-            </Button>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jouw@email.nl"
+                  required
+                />
+              </div>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-primary hover:underline"
-              >
-                {isLogin ? "Nog geen account? Registreer hier" : "Heb je al een account? Log in"}
-              </button>
-            </div>
-          </form>
+              <div>
+                <Label htmlFor="password">Wachtwoord</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {mode === "login" && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setMode("forgot-password")}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Wachtwoord vergeten?
+                  </button>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full gradient-primary" disabled={loading}>
+                {loading ? "Bezig..." : mode === "login" ? "Inloggen" : "Registreren"}
+              </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {mode === "login" ? "Nog geen account? Registreer hier" : "Heb je al een account? Log in"}
+                </button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
