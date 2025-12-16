@@ -82,7 +82,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
       <div className={`grid grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
         
         {/* Progress Card */}
-        <Card className={`shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-muted/20 border-border/50 ${isComplete ? 'from-green-500/5 to-green-500/10 border-green-500/30' : ''}`}>
+        <Card className={`shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-muted/20 border-border/50 ${isComplete ? 'from-green-500/5 to-green-500/10 border-green-500/30' : ''}`}>
           {/* Background decoration */}
           <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-primary/5 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-500" />
           <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-primary/3 group-hover:bg-primary/8 transition-all duration-300" />
@@ -113,7 +113,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
         {/* Budget Card - Only for Admin/Owner */}
         {isAdminOrOwner && (
-          <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-blue-500/5 border-border/50">
+          <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-blue-500/5 border-border/50">
             <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 group-hover:scale-110 transition-all duration-500" />
             <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-blue-500/3 group-hover:bg-blue-500/8 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
@@ -138,7 +138,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         )}
 
         {/* Start Date Card */}
-        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-indigo-500/5 border-border/50">
+        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-indigo-500/5 border-border/50">
           <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-indigo-500/5 group-hover:bg-indigo-500/10 group-hover:scale-110 transition-all duration-500" />
           <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-indigo-500/3 group-hover:bg-indigo-500/8 transition-all duration-300" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
@@ -162,7 +162,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         </Card>
 
         {/* Status Card */}
-        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 hover:-translate-y-0.5 bg-gradient-to-br from-background via-background to-emerald-500/5 border-border/50">
+        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-emerald-500/5 border-border/50">
           <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-emerald-500/5 group-hover:bg-emerald-500/10 group-hover:scale-110 transition-all duration-500" />
           <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-emerald-500/3 group-hover:bg-emerald-500/8 transition-all duration-300" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
@@ -202,7 +202,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
       {/* Bouwer Wijsheid - Modern Card */}
       <Card 
-        className="shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group border-border/50 bg-gradient-to-br from-background via-muted/10 to-muted/30"
+        className="shadow-sm hover:shadow-md overflow-hidden cursor-pointer transition-all duration-300 group border-border/50 bg-gradient-to-br from-background via-muted/10 to-muted/30"
         onClick={refreshWisdom}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-slate-500/3 via-transparent to-slate-500/3 dark:from-slate-400/5 dark:to-slate-400/5" />
