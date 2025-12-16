@@ -77,13 +77,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
   const isComplete = taskPercentage === 100 && taskStats && taskStats.total > 0;
 
   return (
-    <div className="space-y-4 sm:space-y-6 relative">
-      {/* Decoratieve achtergrond gradient blobs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-chart-1/3 rounded-full blur-[100px] opacity-20" />
-      </div>
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Grid with Modern Cards */}
       <div className={`grid grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
         
