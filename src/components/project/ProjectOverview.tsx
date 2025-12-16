@@ -113,11 +113,11 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
         {/* Budget Card - Only for Admin/Owner */}
         {isAdminOrOwner && (
           <Card className="shadow-card overflow-hidden relative group hover:shadow-hover transition-all duration-300">
-            <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-chart-1/5 group-hover:bg-chart-1/10 transition-colors duration-300" />
+            <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors duration-300" />
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Budget</CardTitle>
-              <div className="p-1.5 sm:p-2 rounded-lg bg-chart-1/10">
-                <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-chart-1" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
+                <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
               </div>
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 relative z-10">
@@ -198,24 +198,24 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectO
 
       {/* Bouwer Wijsheid - Modern Card */}
       <Card 
-        className="shadow-card overflow-hidden cursor-pointer hover:shadow-hover transition-all duration-300 group border-amber-200/30 dark:border-amber-800/30"
+        className="shadow-card overflow-hidden cursor-pointer hover:shadow-hover transition-all duration-300 group border-gray-200/50 dark:border-gray-700/50"
         onClick={refreshWisdom}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-yellow-50/80 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-yellow-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-slate-50 to-gray-50 dark:from-gray-900/30 dark:via-slate-900/20 dark:to-gray-900/30" />
         <CardContent className="py-3 sm:py-4 px-3 sm:px-6 relative">
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-gray-500 to-slate-600 shadow-lg group-hover:scale-110 transition-transform duration-300">
               <span className="text-lg sm:text-2xl">💡</span>
             </div>
             <div className={`flex-1 min-w-0 transition-opacity duration-150 ${wisdomAnimating ? 'opacity-0' : 'opacity-100'}`}>
-              <p className="text-xs sm:text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                 Wijsheid van de dag
               </p>
-              <p className="text-xs sm:text-sm text-amber-700/80 dark:text-amber-300/80 italic line-clamp-2">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 italic line-clamp-2">
                 "{wisdom}"
               </p>
             </div>
-            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600/40 group-hover:text-amber-600 group-hover:rotate-180 transition-all duration-500 shrink-0" />
+            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-gray-600 group-hover:rotate-180 transition-all duration-500 shrink-0" />
           </div>
         </CardContent>
       </Card>
