@@ -221,53 +221,53 @@ const ProjectDetail = () => {
             
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide relative z-10">
               {/* Modern Pill-style Tabs */}
-              <TabsList className="inline-flex w-max bg-muted/50 p-1 rounded-xl gap-1">
+              <TabsList className="inline-flex w-max bg-muted/50 p-1.5 rounded-xl gap-1">
                 <TabsTrigger 
                   value="overzicht" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <LayoutGrid className="w-4 h-4" />
                   <span className="sm:hidden">Home</span>
                   <span className="hidden sm:inline">Overzicht</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="taken" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <ListTodo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <ListTodo className="w-4 h-4" />
                   <span>Taken</span>
                 </TabsTrigger>
                 {isAdminOrOwner && (
                   <TabsTrigger 
                     value="kosten" 
-                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                   >
-                    <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <Euro className="w-4 h-4" />
                     <span className="sm:hidden">€</span>
                     <span className="hidden sm:inline">Kosten</span>
                   </TabsTrigger>
                 )}
                 <TabsTrigger 
                   value="documenten" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <FileText className="w-4 h-4" />
                   <span className="sm:hidden">Docs</span>
                   <span className="hidden sm:inline">Documenten</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="fotos" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <Image className="w-4 h-4" />
                   <span className="sm:hidden">Foto</span>
                   <span className="hidden sm:inline">Foto's</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="aannemers" 
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 text-[10px] sm:text-sm transition-all whitespace-nowrap"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <Users className="w-4 h-4" />
                   <span className="sm:hidden">Team</span>
                   <span className="hidden sm:inline">Aannemers</span>
                 </TabsTrigger>

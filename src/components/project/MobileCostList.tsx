@@ -220,12 +220,12 @@ export const MobileCostList = ({
           {/* Status Filter Chips */}
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-2">Status</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {statusOptions.map(status => (
                 <Badge
                   key={status}
                   variant={statusFilter === status ? "default" : "outline"}
-                  className="cursor-pointer"
+                  className="cursor-pointer min-h-[40px] px-4 py-2 text-sm"
                   onClick={() => setStatusFilter(statusFilter === status ? null : status)}
                 >
                   {status}
@@ -237,12 +237,12 @@ export const MobileCostList = ({
           {/* Category Filter Chips */}
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-2">Categorie</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {categoryOptions.map(category => (
                 <Badge
                   key={category}
                   variant={categoryFilter === category ? "default" : "outline"}
-                  className="cursor-pointer text-xs"
+                  className="cursor-pointer min-h-[40px] px-4 py-2 text-sm"
                   onClick={() => setCategoryFilter(categoryFilter === category ? null : category)}
                 >
                   {category}
@@ -252,7 +252,7 @@ export const MobileCostList = ({
           </div>
 
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full">
+            <Button variant="ghost" onClick={clearFilters} className="w-full h-11">
               Wis filters
             </Button>
           )}

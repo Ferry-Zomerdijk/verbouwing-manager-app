@@ -104,7 +104,7 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
     <>
       <Card
         {...swipeHandlers}
-        className={`p-4 transition-all duration-150 touch-pan-y ${
+        className={`p-4 transition-all duration-150 touch-pan-y active:bg-muted/50 ${
           swipeState === "left" ? "translate-x-[-20px] bg-destructive/5" : ""
         } ${swipeState === "right" ? "translate-x-[20px] bg-primary/5" : ""}`}
         onClick={() => setExpanded(!expanded)}
@@ -117,7 +117,7 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
               <span className="text-xl font-bold">
                 €{parseFloat(cost.bedrag.toString()).toLocaleString("nl-NL")}
               </span>
-              <Badge className={statusColors[cost.status] || "bg-muted"}>
+              <Badge className={`${statusColors[cost.status] || "bg-muted"} px-3 py-1`}>
                 {cost.status}
               </Badge>
             </div>
@@ -126,7 +126,7 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
             <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant="outline" 
-                className={`${categoryColors[cost.categorie]} text-white border-0 text-xs`}
+                className={`${categoryColors[cost.categorie]} text-white border-0 text-xs px-3 py-1`}
               >
                 {cost.categorie}
               </Badge>
@@ -145,11 +145,11 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
           </div>
 
           {/* Expand Button */}
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+          <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
             {expanded ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-5 w-5" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-5 w-5" />
             )}
           </Button>
         </div>
@@ -172,11 +172,11 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-3 pt-2">
               {cost.factuur_url && (
                 <Button 
                   variant="outline" 
-                  size="sm" 
+                  className="h-11"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDownloadInvoice();
@@ -188,7 +188,7 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
               )}
               <Button
                 variant="outline"
-                size="sm"
+                className="h-11"
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditDialogOpen(true);
@@ -199,8 +199,8 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
-                className="text-destructive hover:text-destructive"
+                size="icon"
+                className="text-destructive hover:text-destructive h-11 w-11"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDeleteDialogOpen(true);
