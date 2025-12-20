@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, EyeOff, Check, X } from "lucide-react";
 
 const AcceptInvite = () => {
   const { token } = useParams<{ token: string }>();
@@ -23,6 +23,22 @@ const AcceptInvite = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Password validation
+  const passwordCriteria = useMemo(() => ({
+    minLength: password.length >= 8,
+    hasLowercase: /[a-z]/.test(password),
+    hasUppercase: /[A-Z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password),
+  }), [password]);
+
+  const isPasswordValid = useMemo(() => 
+    Object.values(passwordCriteria).every(Boolean),
+    [passwordCriteria]
+  );
+
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
   useEffect(() => {
     validateToken();
   }, [token]);
@@ -35,7 +51,6 @@ const AcceptInvite = () => {
     }
 
     try {
-      // We need to check if token exists via edge function since RLS blocks direct access
       const { data, error } = await supabase.functions.invoke('validate-invitation-token', {
         body: { token }
       });
@@ -58,13 +73,13 @@ const AcceptInvite = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
-      toast.error("Wachtwoorden komen niet overeen");
+    if (!isPasswordValid) {
+      toast.error("Wachtwoord voldoet niet aan alle vereisten");
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Wachtwoord moet minimaal 6 tekens zijn");
+    if (!passwordsMatch) {
+      toast.error("Wachtwoorden komen niet overeen");
       return;
     }
 
@@ -86,16 +101,13 @@ const AcceptInvite = () => {
       toast.success("Account aangemaakt! Je wordt doorgestuurd...");
 
       if (data.autoSignIn && data.session) {
-        // Set the session
         await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
         
-        // Navigate to project tasks
         navigate(`/project-tasks/${data.projectId}`);
       } else {
-        // Redirect to login
         navigate('/auth');
       }
     } catch (err: any) {
@@ -140,6 +152,19 @@ const AcceptInvite = () => {
     );
   }
 
+  const CriteriaItem = ({ met, label }: { met: boolean; label: string }) => (
+    <div className="flex items-center gap-2 text-sm">
+      {met ? (
+        <Check className="h-4 w-4 text-green-600" />
+      ) : (
+        <X className="h-4 w-4 text-muted-foreground" />
+      )}
+      <span className={met ? "text-green-600" : "text-muted-foreground"}>
+        {label}
+      </span>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -165,6 +190,7 @@ const AcceptInvite = () => {
                 placeholder="Voer je naam in"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
               />
             </div>
 
@@ -174,9 +200,10 @@ const AcceptInvite = () => {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Minimaal 6 tekens"
+                  placeholder="Kies een sterk wachtwoord"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   required
                 />
                 <Button
@@ -189,6 +216,17 @@ const AcceptInvite = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              
+              {/* Password criteria checklist */}
+              {password.length > 0 && (
+                <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1.5">
+                  <CriteriaItem met={passwordCriteria.minLength} label="Minimaal 8 tekens" />
+                  <CriteriaItem met={passwordCriteria.hasLowercase} label="Minimaal 1 kleine letter (a-z)" />
+                  <CriteriaItem met={passwordCriteria.hasUppercase} label="Minimaal 1 hoofdletter (A-Z)" />
+                  <CriteriaItem met={passwordCriteria.hasNumber} label="Minimaal 1 cijfer (0-9)" />
+                  <CriteriaItem met={passwordCriteria.hasSpecial} label="Minimaal 1 speciaal teken (!@#$%...)" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -199,14 +237,18 @@ const AcceptInvite = () => {
                 placeholder="Herhaal je wachtwoord"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
+              {confirmPassword.length > 0 && !passwordsMatch && (
+                <p className="text-sm text-destructive">Wachtwoorden komen niet overeen</p>
+              )}
             </div>
 
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={submitting}
+              disabled={submitting || !isPasswordValid || !passwordsMatch}
             >
               {submitting ? (
                 <>
