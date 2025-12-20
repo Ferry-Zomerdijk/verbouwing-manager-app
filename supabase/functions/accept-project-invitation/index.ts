@@ -29,8 +29,21 @@ serve(async (req) => {
       throw new Error('Token en wachtwoord zijn verplicht');
     }
 
-    if (password.length < 6) {
-      throw new Error('Wachtwoord moet minimaal 6 tekens zijn');
+    // Validate password strength on server side
+    if (password.length < 8) {
+      throw new Error('Wachtwoord moet minimaal 8 tekens zijn');
+    }
+    if (!/[a-z]/.test(password)) {
+      throw new Error('Wachtwoord moet minimaal 1 kleine letter bevatten');
+    }
+    if (!/[A-Z]/.test(password)) {
+      throw new Error('Wachtwoord moet minimaal 1 hoofdletter bevatten');
+    }
+    if (!/[0-9]/.test(password)) {
+      throw new Error('Wachtwoord moet minimaal 1 cijfer bevatten');
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) {
+      throw new Error('Wachtwoord moet minimaal 1 speciaal teken bevatten');
     }
 
     console.log('Accepting invitation with token:', token.substring(0, 8) + '...');
@@ -66,7 +79,11 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Error updating password:', updateError);
-      throw new Error('Kon wachtwoord niet instellen');
+      // Return more specific error message
+      if (updateError.message?.includes('weak') || updateError.message?.includes('pwned')) {
+        throw new Error('Dit wachtwoord is te zwak of komt voor in bekende datalekken. Kies een ander wachtwoord.');
+      }
+      throw new Error('Kon wachtwoord niet instellen: ' + updateError.message);
     }
 
     // 4. Update profile name if provided
