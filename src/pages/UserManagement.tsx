@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
+import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -28,6 +29,8 @@ const UserManagement = () => {
   const queryClient = useQueryClient();
   
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedProjectUser, setSelectedProjectUser] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -391,13 +394,28 @@ const UserManagement = () => {
                               </p>
                             </div>
                           </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRemoveProjectUser(pu.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProjectUser(pu);
+                                setEditDialogOpen(true);
+                              }}
+                              title="Bewerken"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveProjectUser(pu.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Verwijderen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -581,11 +599,25 @@ const UserManagement = () => {
       </main>
 
       {projectId && (
-        <InviteProjectUserDialog
-          open={inviteDialogOpen}
-          onOpenChange={setInviteDialogOpen}
-          projectId={projectId}
-        />
+        <>
+          <InviteProjectUserDialog
+            open={inviteDialogOpen}
+            onOpenChange={(open) => {
+              setInviteDialogOpen(open);
+              if (!open) {
+                // Refresh invitations when dialog closes
+                refetchInvitations();
+              }
+            }}
+            projectId={projectId}
+          />
+          <EditProjectUserDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            projectUser={selectedProjectUser}
+            projectId={projectId}
+          />
+        </>
       )}
     </div>
   );
