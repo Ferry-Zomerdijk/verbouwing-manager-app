@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import {
@@ -92,6 +93,25 @@ const UserManagement = () => {
     enabled: !!projectId,
   });
 
+  // Fetch pending invitations for this project
+  const { data: pendingInvitations, isLoading: loadingInvitations, refetch: refetchInvitations } = useQuery({
+    queryKey: ["pending-invitations", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("project_invitations")
+        .select("*")
+        .eq("project_id", projectId)
+        .is("accepted_at", null)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
   // Fetch all platform users (admin only)
   const { data: platformUsers, isLoading: loadingPlatformUsers, refetch: refetchPlatformUsers } = useQuery({
     queryKey: ["platform-users"],
@@ -138,6 +158,25 @@ const UserManagement = () => {
     } catch (error: any) {
       console.error("Error removing user:", error);
       toast.error("Kon gebruiker niet verwijderen");
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (!confirm("Weet je zeker dat je deze uitnodiging wilt annuleren?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("project_invitations")
+        .delete()
+        .eq("id", invitationId);
+
+      if (error) throw error;
+
+      toast.success("Uitnodiging geannuleerd");
+      refetchInvitations();
+    } catch (error: any) {
+      console.error("Error canceling invitation:", error);
+      toast.error("Kon uitnodiging niet annuleren");
     }
   };
 
@@ -325,6 +364,73 @@ const UserManagement = () => {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       Nog geen projectgebruikers toegevoegd
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Pending Invitations Card */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="w-5 h-5" />
+                    Openstaande Uitnodigingen
+                  </CardTitle>
+                  <CardDescription>
+                    Uitnodigingen die nog niet zijn geaccepteerd
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingInvitations ? (
+                    <div className="text-center py-8 text-muted-foreground">Laden...</div>
+                  ) : pendingInvitations && pendingInvitations.length > 0 ? (
+                    <div className="space-y-2">
+                      {pendingInvitations.map((invitation) => {
+                        const expiresAt = new Date(invitation.expires_at);
+                        const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        
+                        return (
+                          <div 
+                            key={invitation.id}
+                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-muted text-muted-foreground">
+                                  <Mail className="w-4 h-4" />
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{invitation.email}</p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Clock className="w-3 h-3" />
+                                  <span>
+                                    Verzonden: {new Date(invitation.created_at!).toLocaleDateString("nl-NL")}
+                                  </span>
+                                  <Badge 
+                                    variant={daysLeft <= 2 ? "destructive" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {daysLeft > 0 ? `Verloopt over ${daysLeft} ${daysLeft === 1 ? 'dag' : 'dagen'}` : 'Bijna verlopen'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancelInvitation(invitation.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Geen openstaande uitnodigingen
                     </div>
                   )}
                 </CardContent>
