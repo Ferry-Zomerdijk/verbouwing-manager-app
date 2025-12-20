@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import {
@@ -69,26 +69,35 @@ const UserManagement = () => {
     enabled: !!projectId,
   });
 
-  // Fetch project users
+  // Fetch project users - separate queries since no FK relationship
   const { data: projectUsers, isLoading: loadingProjectUsers, refetch: refetchProjectUsers } = useQuery({
     queryKey: ["project-users", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await supabase
+      
+      // First get project_users
+      const { data: puData, error: puError } = await supabase
         .from("project_users")
-        .select(`
-          id,
-          user_id,
-          created_at,
-          profiles!user_id (
-            email,
-            naam
-          )
-        `)
+        .select("id, user_id, created_at")
         .eq("project_id", projectId);
 
-      if (error) throw error;
-      return data;
+      if (puError) throw puError;
+      if (!puData || puData.length === 0) return [];
+
+      // Then get profiles for those users
+      const userIds = puData.map(pu => pu.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, naam")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      return puData.map(pu => ({
+        ...pu,
+        profiles: profilesData?.find(p => p.id === pu.user_id) || null
+      }));
     },
     enabled: !!projectId,
   });
@@ -448,6 +457,19 @@ const UserManagement = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const inviteUrl = `${window.location.origin}/accept-invite/${invitation.invite_token}`;
+                                  navigator.clipboard.writeText(inviteUrl);
+                                  toast.success("Uitnodigingslink gekopieerd naar klembord");
+                                }}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                title="Kopieer link"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
