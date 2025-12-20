@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import {
@@ -177,6 +177,37 @@ const UserManagement = () => {
     } catch (error: any) {
       console.error("Error canceling invitation:", error);
       toast.error("Kon uitnodiging niet annuleren");
+    }
+  };
+
+  const [resending, setResending] = useState<string | null>(null);
+
+  const handleResendInvitation = async (invitation: { id: string; email: string }) => {
+    if (!projectId) return;
+    
+    setResending(invitation.id);
+    try {
+      // Delete the old invitation first
+      await supabase
+        .from("project_invitations")
+        .delete()
+        .eq("id", invitation.id);
+
+      // Create a new invitation
+      const { data, error } = await supabase.functions.invoke('create-project-invitation', {
+        body: { projectId, email: invitation.email }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(`Nieuwe uitnodiging verstuurd naar ${invitation.email}`);
+      refetchInvitations();
+    } catch (error: any) {
+      console.error("Error resending invitation:", error);
+      toast.error("Kon uitnodiging niet opnieuw versturen: " + error.message);
+    } finally {
+      setResending(null);
     }
   };
 
@@ -416,14 +447,27 @@ const UserManagement = () => {
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCancelInvitation(invitation.id)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleResendInvitation(invitation)}
+                                disabled={resending === invitation.id}
+                                className="text-primary hover:text-primary hover:bg-primary/10"
+                                title="Opnieuw versturen"
+                              >
+                                <RefreshCw className={`w-4 h-4 ${resending === invitation.id ? 'animate-spin' : ''}`} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCancelInvitation(invitation.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Annuleren"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         );
                       })}
