@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -519,6 +519,20 @@ const UserManagement = () => {
                                 title="Kopieer link"
                               >
                                 <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const inviteUrl = `${window.location.origin}/accept-invite/${invitation.invite_token}`;
+                                  const message = `Hoi! Je bent uitgenodigd voor het project "${project?.naam || 'een project'}". Klik hier om toegang te krijgen: ${inviteUrl}`;
+                                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                                  window.open(whatsappUrl, '_blank');
+                                }}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="Delen via WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
