@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -223,6 +223,26 @@ const UserManagement = () => {
     }
   };
 
+  const [sendingResetLink, setSendingResetLink] = useState<string | null>(null);
+
+  const handleSendPasswordResetLink = async (email: string, userId: string) => {
+    setSendingResetLink(userId);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success(`Wachtwoord reset link verstuurd naar ${email}`);
+    } catch (error: any) {
+      console.error("Error sending reset link:", error);
+      toast.error("Kon reset link niet versturen: " + error.message);
+    } finally {
+      setSendingResetLink(null);
+    }
+  };
+
   const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean) => {
     if (userId === currentUserId) {
       toast.error("Je kunt je eigen admin rol niet wijzigen");
@@ -406,6 +426,18 @@ const UserManagement = () => {
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            {pu.profiles?.email && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSendPasswordResetLink(pu.profiles.email!, pu.user_id)}
+                                disabled={sendingResetLink === pu.user_id}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                title="Wachtwoord reset link versturen"
+                              >
+                                <KeyRound className={`w-4 h-4 ${sendingResetLink === pu.user_id ? 'animate-pulse' : ''}`} />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
