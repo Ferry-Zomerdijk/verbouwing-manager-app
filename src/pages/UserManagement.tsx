@@ -1,0 +1,422 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home } from "lucide-react";
+import { toast } from "sonner";
+import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+
+const UserManagement = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get("project");
+  const queryClient = useQueryClient();
+  
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(projectId ? "project" : "platform");
+
+  // Load current user info
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        
+        setIsAdmin(!!adminRole);
+      }
+    };
+    loadUserInfo();
+  }, []);
+
+  // Fetch project details if projectId is provided
+  const { data: project } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, naam")
+        .eq("id", projectId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  // Fetch project users
+  const { data: projectUsers, isLoading: loadingProjectUsers, refetch: refetchProjectUsers } = useQuery({
+    queryKey: ["project-users", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("project_users")
+        .select(`
+          id,
+          user_id,
+          created_at,
+          profiles!user_id (
+            email,
+            naam
+          )
+        `)
+        .eq("project_id", projectId);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  // Fetch all platform users (admin only)
+  const { data: platformUsers, isLoading: loadingPlatformUsers, refetch: refetchPlatformUsers } = useQuery({
+    queryKey: ["platform-users"],
+    queryFn: async () => {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, naam, email")
+        .order("naam");
+
+      if (profilesError) throw profilesError;
+
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (rolesError) throw rolesError;
+
+      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+      return (profiles || []).map(profile => ({
+        id: profile.id,
+        naam: profile.naam,
+        email: profile.email,
+        isAdmin: adminUserIds.has(profile.id),
+      }));
+    },
+    enabled: isAdmin,
+  });
+
+  const handleRemoveProjectUser = async (projectUserId: string) => {
+    if (!confirm("Weet je zeker dat je deze gebruiker wilt verwijderen van dit project?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("project_users")
+        .delete()
+        .eq("id", projectUserId);
+
+      if (error) throw error;
+
+      toast.success("Gebruiker verwijderd van project");
+      refetchProjectUsers();
+    } catch (error: any) {
+      console.error("Error removing user:", error);
+      toast.error("Kon gebruiker niet verwijderen");
+    }
+  };
+
+  const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean) => {
+    if (userId === currentUserId) {
+      toast.error("Je kunt je eigen admin rol niet wijzigen");
+      return;
+    }
+
+    setUpdating(userId);
+    try {
+      if (isCurrentlyAdmin) {
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", "admin");
+
+        if (error) throw error;
+        toast.success("Admin rol verwijderd");
+      } else {
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: "admin" });
+
+        if (error) throw error;
+        toast.success("Admin rol toegevoegd");
+      }
+
+      refetchPlatformUsers();
+    } catch (error: any) {
+      toast.error("Fout bij wijzigen rol: " + error.message);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const getInitials = (naam: string | null, email: string | null) => {
+    if (naam) {
+      return naam.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (email) {
+      return email[0].toUpperCase();
+    }
+    return "?";
+  };
+
+  const handleBack = () => {
+    if (projectId) {
+      navigate(`/project/${projectId}`);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-subtle">
+      {/* Header */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          {/* Breadcrumb */}
+          <Breadcrumb className="mb-2 hidden sm:flex">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  <Home className="w-3 h-3" />
+                  Dashboard
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {project && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink 
+                      className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                      onClick={() => navigate(`/project/${projectId}`)}
+                    >
+                      {project.naam}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-xs font-medium">
+                  Gebruikers Beheren
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors" 
+              onClick={handleBack}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+                Gebruikers Beheren
+              </h1>
+              {project && (
+                <p className="text-xs sm:text-sm text-muted-foreground">{project.naam}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-6">
+            {projectId && (
+              <TabsTrigger value="project" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Project Gebruikers
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="platform" className="gap-2">
+                <Shield className="w-4 h-4" />
+                Platform Gebruikers
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Project Users Tab */}
+          {projectId && (
+            <TabsContent value="project">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Projectgebruikers</span>
+                    <Button onClick={() => setInviteDialogOpen(true)} size="sm">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Uitnodigen
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    Gebruikers die toegang hebben tot dit project
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingProjectUsers ? (
+                    <div className="text-center py-8 text-muted-foreground">Laden...</div>
+                  ) : projectUsers && projectUsers.length > 0 ? (
+                    <div className="space-y-2">
+                      {projectUsers.map((pu: any) => (
+                        <div 
+                          key={pu.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {getInitials(pu.profiles?.naam, pu.profiles?.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{pu.profiles?.naam || "Naamloos"}</p>
+                              <p className="text-sm text-muted-foreground">{pu.profiles?.email}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Toegevoegd: {new Date(pu.created_at).toLocaleDateString("nl-NL")}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveProjectUser(pu.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nog geen projectgebruikers toegevoegd
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Platform Users Tab */}
+          {isAdmin && (
+            <TabsContent value="platform">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Gebruikers</CardTitle>
+                  <CardDescription>
+                    Beheer admin rechten voor alle gebruikers op het platform
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingPlatformUsers ? (
+                    <div className="text-center py-8 text-muted-foreground">Laden...</div>
+                  ) : platformUsers && platformUsers.length > 0 ? (
+                    <div className="space-y-2">
+                      {platformUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {getInitials(user.naam, user.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium flex items-center gap-2">
+                                {user.naam || "Onbekend"}
+                                {user.id === currentUserId && (
+                                  <span className="text-xs text-muted-foreground">(jij)</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{user.email}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Label 
+                              htmlFor={`admin-${user.id}`} 
+                              className="flex items-center gap-1 text-sm cursor-pointer"
+                            >
+                              <Shield className={`w-4 h-4 ${user.isAdmin ? "text-primary" : "text-muted-foreground"}`} />
+                              Admin
+                            </Label>
+                            <Switch
+                              id={`admin-${user.id}`}
+                              checked={user.isAdmin}
+                              onCheckedChange={() => handleToggleAdmin(user.id, user.isAdmin)}
+                              disabled={updating === user.id || user.id === currentUserId}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Geen gebruikers gevonden
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
+
+        {/* Show message if no access */}
+        {!projectId && !isAdmin && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Je hebt geen toegang tot gebruikersbeheer.
+            </CardContent>
+          </Card>
+        )}
+      </main>
+
+      {projectId && (
+        <InviteProjectUserDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          projectId={projectId}
+        />
+      )}
+    </div>
+  );
+};
+
+export default UserManagement;

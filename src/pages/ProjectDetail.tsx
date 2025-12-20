@@ -15,7 +15,6 @@ import {
 import { useState, useCallback, useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import AccountSettingsDialog from "@/components/AccountSettingsDialog";
-import AdminUsersDialog from "@/components/AdminUsersDialog";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import ProjectOverview from "@/components/project/ProjectOverview";
@@ -24,7 +23,6 @@ import ProjectCosts from "@/components/project/ProjectCosts";
 import ProjectContractors from "@/components/project/ProjectContractors";
 import ProjectDocuments from "@/components/project/ProjectDocuments";
 import ProjectPhotos from "@/components/project/ProjectPhotos";
-import { ProjectUsersManager } from "@/components/project/ProjectUsersManager";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,9 +38,7 @@ import {
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [usersManagerOpen, setUsersManagerOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
-  const [adminUsersDialogOpen, setAdminUsersDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
@@ -256,18 +252,12 @@ const ProjectDetail = () => {
                     <Settings className="w-4 h-4 mr-2" />
                     Mijn Account
                   </DropdownMenuItem>
-                  {userInfo.isAdmin && (
-                    <DropdownMenuItem onClick={() => setAdminUsersDialogOpen(true)}>
-                      <Users className="w-4 h-4 mr-2" />
-                      Gebruikers Beheren
-                    </DropdownMenuItem>
-                  )}
-                  {isAdminOrOwner && (
+                  {(userInfo.isAdmin || isAdminOrOwner) && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setUsersManagerOpen(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Project Gebruikers
+                      <DropdownMenuItem onClick={() => navigate(`/users?project=${id}`)}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Gebruikers Beheren
                       </DropdownMenuItem>
                     </>
                   )}
@@ -380,20 +370,9 @@ const ProjectDetail = () => {
         </Tabs>
       </main>
 
-      <ProjectUsersManager
-        open={usersManagerOpen}
-        onOpenChange={setUsersManagerOpen}
-        projectId={id!}
-      />
-
       <AccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
-      />
-
-      <AdminUsersDialog
-        open={adminUsersDialogOpen}
-        onOpenChange={setAdminUsersDialogOpen}
       />
     </div>
   );

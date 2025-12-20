@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import AccountSettingsDialog from "@/components/AccountSettingsDialog";
-import AdminUsersDialog from "@/components/AdminUsersDialog";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -38,7 +37,6 @@ const Dashboard = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
-  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
@@ -210,7 +208,7 @@ const Dashboard = () => {
                   {userInfo.isAdmin && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setUsersDialogOpen(true)}>
+                      <DropdownMenuItem onClick={() => navigate("/users")}>
                         <Users className="w-4 h-4 mr-2" />
                         Gebruikers Beheren
                       </DropdownMenuItem>
@@ -335,11 +333,6 @@ const Dashboard = () => {
       <AccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
-      />
-
-      <AdminUsersDialog
-        open={usersDialogOpen}
-        onOpenChange={setUsersDialogOpen}
       />
     </div>
   );
