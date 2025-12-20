@@ -5,3 +5,12 @@ verify_jwt = true
 
 [functions.generate-project-access-token]
 verify_jwt = true
+
+[functions.create-project-invitation]
+verify_jwt = true
+
+[functions.accept-project-invitation]
+verify_jwt = false
+
+[functions.validate-invitation-token]
+verify_jwt = false

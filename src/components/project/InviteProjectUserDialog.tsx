@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Mail } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InviteProjectUserDialogProps {
@@ -21,6 +21,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   const isMobile = useIsMobile();
 
@@ -38,18 +39,20 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-project-access-token', {
+      const { data, error } = await supabase.functions.invoke('create-project-invitation', {
         body: { projectId, userEmail: email }
       });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-      setGeneratedUrl(data.accessUrl);
+      setGeneratedUrl(data.inviteUrl);
       setExpiresAt(data.expiresAt);
-      toast.success("Toegangslink gegenereerd!");
+      setIsNewUser(data.isNewUser);
+      toast.success("Uitnodigingslink gegenereerd!");
     } catch (error: any) {
       console.error('Error generating link:', error);
-      toast.error("Kon geen toegangslink genereren");
+      toast.error(error.message || "Kon geen uitnodigingslink genereren");
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
     setGeneratedUrl(null);
     setExpiresAt(null);
     setCopied(false);
+    setIsNewUser(false);
     onOpenChange(false);
   };
 
@@ -110,15 +114,15 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
               disabled={loading}
               className="w-full"
             >
-              {loading ? "Genereren..." : "Genereer Toegangslink"}
+              {loading ? "Genereren..." : "Genereer Uitnodigingslink"}
             </Button>
           )}
         </>
       ) : (
         <>
           <div className="space-y-2">
-            <Label>Toegangslink</Label>
-            <div className="p-3 bg-muted rounded-md break-all text-sm">
+            <Label>Uitnodigingslink</Label>
+            <div className="p-3 bg-muted rounded-md break-all text-sm font-mono">
               {generatedUrl}
             </div>
           </div>
@@ -158,11 +162,20 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
             </div>
           )}
 
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-md">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              💡 Deel deze link met <strong>{email}</strong>. 
-              Ze kunnen direct inloggen en toegang krijgen tot de takenlijst.
-            </p>
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+            <div className="flex items-start gap-2">
+              <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  Deel deze link met {email}
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  {isNewUser 
+                    ? "Via deze link kan de gebruiker een wachtwoord aanmaken en direct toegang krijgen tot het project."
+                    : "De gebruiker heeft al een account en krijgt via deze link direct toegang tot het project."}
+                </p>
+              </div>
+            </div>
           </div>
         </>
       )}
@@ -176,7 +189,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
           <DrawerHeader className="text-left">
             <DrawerTitle>Projectgebruiker Uitnodigen</DrawerTitle>
             <DrawerDescription>
-              Genereer een toegangslink. De link is 7 dagen geldig.
+              Genereer een uitnodigingslink. De ontvanger kan zelf een wachtwoord instellen.
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto flex-1">
@@ -228,7 +241,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
         <DialogHeader>
           <DialogTitle>Projectgebruiker Uitnodigen</DialogTitle>
           <DialogDescription>
-            Genereer een toegangslink voor een projectgebruiker. De link is 7 dagen geldig.
+            Genereer een uitnodigingslink. De ontvanger kan zelf een wachtwoord instellen en krijgt direct toegang tot het project.
           </DialogDescription>
         </DialogHeader>
         {content}
