@@ -398,10 +398,17 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
           open={!!deleteTask}
           onOpenChange={(open) => !open && setDeleteTask(null)}
           onConfirm={async () => {
-            const { supabase } = await import("@/integrations/supabase/client");
-            await supabase.from("tasks").delete().eq("id", deleteTask.id);
-            setDeleteTask(null);
-            onUpdate();
+            try {
+              const { error } = await supabase.from("tasks").delete().eq("id", deleteTask.id);
+              if (error) throw error;
+              toast.success("Taak verwijderd");
+              setDeleteTask(null);
+              onUpdate();
+            } catch (error) {
+              console.error("Delete task error:", error);
+              toast.error("Fout bij verwijderen van taak");
+              throw error;
+            }
           }}
           title="Taak verwijderen"
           itemName={deleteTask.titel}
