@@ -461,7 +461,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
           </DragOverlay>
         </DndContext>
       ) : (
-        <TaskListView tasks={filteredTasks} onUpdate={refetch} />
+        <TaskListView tasks={filteredTasks} onUpdate={refetch} availableDelenVanHuis={availableDelenVanHuis} />
       )}
 
       <CreateTaskDialog

@@ -33,6 +33,7 @@ interface Task {
 interface TaskListViewProps {
   tasks: Task[];
   onUpdate: () => void;
+  availableDelenVanHuis?: string[];
 }
 
 type SortKey = "titel" | "status" | "prioriteit" | "verantwoordelijke" | "deel_van_huis" | "begindatum" | "deadline";
@@ -50,7 +51,7 @@ const priorityColors = {
   Laag: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
 };
 
-export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
+export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskListViewProps) => {
   const [sortKey, setSortKey] = useState<SortKey>("begindatum");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
@@ -413,6 +414,7 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
           open={!!editTask}
           onOpenChange={(open) => !open && setEditTask(null)}
           task={editTask}
+          availableDelenVanHuis={availableDelenVanHuis}
           onSuccess={() => {
             setEditTask(null);
             onUpdate();
