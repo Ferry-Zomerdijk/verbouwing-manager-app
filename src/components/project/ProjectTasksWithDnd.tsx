@@ -199,28 +199,22 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTa
         return false;
       }
 
-      // Verantwoordelijke filter
-      if (filters.verantwoordelijke === "none" && task.verantwoordelijke) {
-        return false;
-      }
-      if (
-        filters.verantwoordelijke &&
-        filters.verantwoordelijke !== "none" &&
-        task.verantwoordelijke !== filters.verantwoordelijke
-      ) {
-        return false;
+      // Verantwoordelijke filter - partial match
+      if (filters.verantwoordelijke) {
+        const searchTerm = filters.verantwoordelijke.toLowerCase();
+        const taskVerantwoordelijke = task.verantwoordelijke?.toLowerCase() || "";
+        if (!taskVerantwoordelijke.includes(searchTerm)) {
+          return false;
+        }
       }
 
-      // Deel van huis filter
-      if (filters.deelVanHuis === "none" && task.deel_van_huis) {
-        return false;
-      }
-      if (
-        filters.deelVanHuis &&
-        filters.deelVanHuis !== "none" &&
-        task.deel_van_huis !== filters.deelVanHuis
-      ) {
-        return false;
+      // Deel van huis filter - partial match
+      if (filters.deelVanHuis) {
+        const searchTerm = filters.deelVanHuis.toLowerCase();
+        const taskDeelVanHuis = task.deel_van_huis?.toLowerCase() || "";
+        if (!taskDeelVanHuis.includes(searchTerm)) {
+          return false;
+        }
       }
 
       // Begindatum range filter

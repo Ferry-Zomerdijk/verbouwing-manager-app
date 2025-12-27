@@ -162,55 +162,31 @@ export const TaskFilters = ({
               {/* Verantwoordelijke */}
               <div className="space-y-2">
                 <Label>Verantwoordelijke</Label>
-                <Select
-                  value={filters.verantwoordelijke || "all"}
-                  onValueChange={(value) =>
+                <Input
+                  placeholder="Zoek op naam..."
+                  value={filters.verantwoordelijke || ""}
+                  onChange={(e) =>
                     onFiltersChange({
                       ...filters,
-                      verantwoordelijke: value === "all" ? null : value,
+                      verantwoordelijke: e.target.value || null,
                     })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Alle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle</SelectItem>
-                    <SelectItem value="none">Niet toegewezen</SelectItem>
-                    {availableVerantwoordelijken.map((v) => (
-                      <SelectItem key={v} value={v}>
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               {/* Deel van huis */}
               <div className="space-y-2">
                 <Label>Deel van huis</Label>
-                <Select
-                  value={filters.deelVanHuis || "all"}
-                  onValueChange={(value) =>
+                <Input
+                  placeholder="Zoek op locatie..."
+                  value={filters.deelVanHuis || ""}
+                  onChange={(e) =>
                     onFiltersChange({
                       ...filters,
-                      deelVanHuis: value === "all" ? null : value,
+                      deelVanHuis: e.target.value || null,
                     })
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Alle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle</SelectItem>
-                    <SelectItem value="none">Niet ingevuld</SelectItem>
-                    {availableDelenVanHuis.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               {/* Begindatum */}
