@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,17 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
+  useEffect(() => {
+    if (open && titleInputRef.current) {
+      const timer = setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
   const [formData, setFormData] = useState({
     titel: "",
     beschrijving: "",
@@ -107,6 +119,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Label htmlFor="titel">Titel *</Label>
         <Input
           id="titel"
+          ref={titleInputRef}
           value={formData.titel}
           onChange={(e) => setFormData({ ...formData, titel: e.target.value })}
           placeholder="Taak titel"
@@ -260,9 +273,12 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+      <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>Taak Bewerken</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
+            </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto">
             {formContent}
@@ -275,9 +291,12 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   // Desktop: use Dialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Taak Bewerken</DialogTitle>
+          <DialogDescription className="sr-only">
+            Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
+          </DialogDescription>
         </DialogHeader>
         {formContent}
       </DialogContent>
