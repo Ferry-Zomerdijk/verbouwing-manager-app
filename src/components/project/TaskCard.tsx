@@ -99,14 +99,20 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => setEditDialogOpen(true), 10);
+                }}>
                   <Edit className="w-4 h-4 mr-2" />
                   Bewerken
                 </DropdownMenuItem>
                 {canDelete && (
                   <DropdownMenuItem
-                    onClick={() => setDeleteDialogOpen(true)}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setTimeout(() => setDeleteDialogOpen(true), 10);
+                    }}
                     className="text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />

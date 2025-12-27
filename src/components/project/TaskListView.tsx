@@ -342,13 +342,19 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                        <DropdownMenuItem onClick={() => setEditTask(task)}>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={(e) => {
+                          e.preventDefault();
+                          setTimeout(() => setEditTask(task), 10);
+                        }}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Details / Updates
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => setDeleteTask(task)}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setTimeout(() => setDeleteTask(task), 10);
+                          }}
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
