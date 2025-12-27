@@ -47,6 +47,7 @@ export const InlineEditableCell = ({
   const [editValue, setEditValue] = useState(value || "");
   const [localValue, setLocalValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync localValue met prop wanneer die verandert (bijv. na refetch)
@@ -72,6 +73,7 @@ export const InlineEditableCell = ({
     setIsSaving(true);
     try {
       await onSave(editValue || null);
+      setLocalValue(editValue || null);
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving:", error);
@@ -89,6 +91,20 @@ export const InlineEditableCell = ({
     if (e.key === "Enter") {
       handleSave();
     } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
+
+  // Handle blur: only cancel if focus leaves the container entirely
+  const handleContainerBlur = (e: React.FocusEvent) => {
+    // Check if the new focus target is still within our container
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (containerRef.current && relatedTarget && containerRef.current.contains(relatedTarget)) {
+      // Focus is still within container, don't cancel
+      return;
+    }
+    // Focus left the container, cancel editing (unless we're saving)
+    if (!isSaving) {
       handleCancel();
     }
   };
@@ -184,20 +200,19 @@ export const InlineEditableCell = ({
     );
   }
 
-  // Text type
+  // Text type - use container ref for blur handling
   return (
-    <div className="flex items-center gap-1">
+    <div 
+      ref={containerRef} 
+      className="flex items-center gap-1"
+      onBlur={handleContainerBlur}
+    >
       <Input
         ref={inputRef}
         type="text"
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={() => {
-          setTimeout(() => {
-            if (!isSaving) handleCancel();
-          }, 150);
-        }}
         className="h-8 text-sm"
         disabled={isSaving}
       />
