@@ -550,6 +550,39 @@ export type Database = {
           },
         ]
       }
+      user_pins: {
+        Row: {
+          created_at: string | null
+          encrypted_password: string
+          failed_attempts: number | null
+          id: string
+          locked_until: string | null
+          pin_hash: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_password: string
+          failed_attempts?: number | null
+          id?: string
+          locked_until?: string | null
+          pin_hash: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_password?: string
+          failed_attempts?: number | null
+          id?: string
+          locked_until?: string | null
+          pin_hash?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
