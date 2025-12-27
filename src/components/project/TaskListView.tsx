@@ -242,7 +242,14 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                     <InlineEditableCell
                       type="date"
                       value={task.deadline}
-                      onSave={(value) => updateTask(task.id, { deadline: value })}
+                      onSave={async (value) => {
+                        // Valideer dat deadline niet voor begindatum ligt
+                        if (value && task.begindatum && value < task.begindatum) {
+                          toast.error("Deadline kan niet voor begindatum liggen");
+                          return;
+                        }
+                        await updateTask(task.id, { deadline: value });
+                      }}
                       placeholder="-"
                       className={
                         isDeadlineOverdue(task.deadline)
