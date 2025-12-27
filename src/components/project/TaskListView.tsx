@@ -307,12 +307,19 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                     </Select>
                   </TableCell>
                   <TableCell className="font-medium max-w-xs" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => setEditTask({ ...task })}
-                      className="text-left font-medium hover:underline hover:text-primary truncate max-w-xs"
-                    >
-                      {task.titel}
-                    </button>
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={() => setEditTask({ ...task })}
+                        className="text-left font-medium hover:underline hover:text-primary truncate max-w-xs"
+                      >
+                        {task.titel}
+                      </button>
+                      {task.beschrijving && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                          {task.beschrijving}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                     <InlineEditableCell
