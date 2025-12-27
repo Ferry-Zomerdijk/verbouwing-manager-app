@@ -151,8 +151,8 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
     if (error || !task) {
       return; // Task was deleted
     }
-    
-    setSelectedTask(task);
+
+    setSelectedTask({ ...task });
     setEditDialogOpen(true);
   };
 
