@@ -30,7 +30,8 @@ const DeleteConfirmationDialog = ({
   cascadeInfo,
   loading = false,
 }: DeleteConfirmationDialogProps) => {
-  const handleConfirm = async () => {
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault();
     await onConfirm();
     onOpenChange(false);
   };
