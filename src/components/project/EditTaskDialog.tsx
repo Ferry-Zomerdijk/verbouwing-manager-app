@@ -344,7 +344,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
       {/* Updates Section */}
       {task?.id && (
-        <TaskUpdatesSection taskId={task.id} onUpdateAdded={onSuccess} />
+        <TaskUpdatesSection taskId={task.id} />
       )}
 
       {/* Buttons - sticky on mobile */}
