@@ -28,6 +28,23 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
   const isMobile = useIsMobile();
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Fetch available "delen van huis" from project tasks
+  const { data: availableDelenVanHuis } = useQuery({
+    queryKey: ['available-delen-van-huis', projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('deel_van_huis')
+        .eq('project_id', projectId)
+        .not('deel_van_huis', 'is', null);
+      
+      if (error) throw error;
+      
+      const unique = new Set(data?.map(t => t.deel_van_huis).filter(Boolean) as string[]);
+      return Array.from(unique).sort();
+    },
+  });
   
   const { data: activities, isLoading } = useQuery({
     queryKey: ['task-activity', projectId],
@@ -271,6 +288,7 @@ const RecentTaskActivity = ({ projectId }: RecentTaskActivityProps) => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           task={selectedTask}
+          availableDelenVanHuis={availableDelenVanHuis}
           onSuccess={handleTaskUpdate}
         />
       )}
