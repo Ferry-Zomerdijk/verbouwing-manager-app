@@ -52,72 +52,73 @@ export const InlineEditableCell = ({
 
   // Sync localValue met prop wanneer die verandert (bijv. na refetch)
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && !isSaving) {
       setLocalValue(value);
       setEditValue(value || "");
     }
-  }, [value, isEditing]);
+  }, [value, isEditing, isSaving]);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
+    if (isEditing && inputRef.current && type === "text") {
       inputRef.current.focus();
+      inputRef.current.select();
     }
-  }, [isEditing]);
+  }, [isEditing, type]);
 
   const handleSave = async () => {
-    if (editValue === (value || "")) {
+    const newValue = editValue.trim() || null;
+    if (newValue === (value || null)) {
       setIsEditing(false);
       return;
     }
 
     setIsSaving(true);
     try {
-      await onSave(editValue || null);
-      setLocalValue(editValue || null);
+      await onSave(newValue);
+      setLocalValue(newValue);
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving:", error);
+      // Blijf in edit mode bij error
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setEditValue(value || "");
+    setEditValue(localValue || "");
     setIsEditing(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleSave();
     } else if (e.key === "Escape") {
+      e.preventDefault();
       handleCancel();
     }
   };
 
-  // Handle blur: only cancel if focus leaves the container entirely
-  const handleContainerBlur = (e: React.FocusEvent) => {
-    // Check if the new focus target is still within our container
-    const relatedTarget = e.relatedTarget as Node | null;
-    if (containerRef.current && relatedTarget && containerRef.current.contains(relatedTarget)) {
-      // Focus is still within container, don't cancel
-      return;
-    }
-    // Focus left the container, cancel editing (unless we're saving)
-    if (!isSaving) {
-      handleCancel();
+  const startEditing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing && !isSaving) {
+      setEditValue(localValue || "");
+      setIsEditing(true);
     }
   };
 
+  // Display mode
   if (!isEditing) {
     return (
       <div
-        className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors ${className}`}
-        onPointerDownCapture={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsEditing(true);
-        }}
+        className={cn(
+          "cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors min-h-[28px] flex items-center",
+          className
+        )}
+        onClick={startEditing}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {displayRenderer 
           ? displayRenderer(localValue) 
@@ -127,23 +128,33 @@ export const InlineEditableCell = ({
     );
   }
 
+  // Select type
   if (type === "select") {
     return (
-      <div onPointerDownCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div 
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Select
-          value={editValue}
+          value={editValue || "none"}
           onValueChange={(newValue) => {
             const saveValue = newValue === "none" ? null : newValue;
-            setEditValue(newValue);
-            setLocalValue(saveValue);
             setIsSaving(true);
-            onSave(saveValue).finally(() => {
-              setIsSaving(false);
-              setIsEditing(false);
-            });
+            onSave(saveValue)
+              .then(() => {
+                setLocalValue(saveValue);
+                setEditValue(newValue);
+                setIsEditing(false);
+              })
+              .catch((err) => console.error("Save error:", err))
+              .finally(() => setIsSaving(false));
           }}
-          open={isEditing}
-          onOpenChange={(open) => !open && handleCancel()}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open && !isSaving) {
+              setIsEditing(false);
+            }
+          }}
         >
           <SelectTrigger className="h-8 w-full">
             <SelectValue />
@@ -161,14 +172,24 @@ export const InlineEditableCell = ({
     );
   }
 
-  // Date type met Shadcn Calendar in Popover - voorkomt auto-save bij maand navigatie
+  // Date type
   if (type === "date") {
     const selectedDate = editValue ? parseISO(editValue) : undefined;
     const validSelectedDate = selectedDate && isValid(selectedDate) ? selectedDate : undefined;
 
     return (
-      <div onPointerDownCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-        <Popover open={isEditing} onOpenChange={(open) => !open && handleCancel()}>
+      <div 
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Popover 
+          open={true} 
+          onOpenChange={(open) => {
+            if (!open && !isSaving) {
+              setIsEditing(false);
+            }
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -190,13 +211,15 @@ export const InlineEditableCell = ({
               onSelect={(date) => {
                 if (date) {
                   const formattedDate = format(date, "yyyy-MM-dd");
-                  setEditValue(formattedDate);
-                  setLocalValue(formattedDate);
                   setIsSaving(true);
-                  onSave(formattedDate).finally(() => {
-                    setIsSaving(false);
-                    setIsEditing(false);
-                  });
+                  onSave(formattedDate)
+                    .then(() => {
+                      setLocalValue(formattedDate);
+                      setEditValue(formattedDate);
+                      setIsEditing(false);
+                    })
+                    .catch((err) => console.error("Save error:", err))
+                    .finally(() => setIsSaving(false));
                 }
               }}
               initialFocus
@@ -208,14 +231,13 @@ export const InlineEditableCell = ({
     );
   }
 
-  // Text type - use container ref for blur handling
+  // Text type
   return (
     <div 
       ref={containerRef} 
       className="flex items-center gap-1"
-      onPointerDownCapture={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      onBlur={handleContainerBlur}
     >
       <Input
         ref={inputRef}
@@ -229,18 +251,28 @@ export const InlineEditableCell = ({
       <Button
         size="icon"
         variant="ghost"
-        className="h-8 w-8 text-green-600"
-        onClick={handleSave}
+        className="h-8 w-8 shrink-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSave();
+        }}
         disabled={isSaving}
+        type="button"
       >
         <Check className="h-4 w-4" />
       </Button>
       <Button
         size="icon"
         variant="ghost"
-        className="h-8 w-8 text-red-600"
-        onClick={handleCancel}
+        className="h-8 w-8 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleCancel();
+        }}
         disabled={isSaving}
+        type="button"
       >
         <X className="h-4 w-4" />
       </Button>
