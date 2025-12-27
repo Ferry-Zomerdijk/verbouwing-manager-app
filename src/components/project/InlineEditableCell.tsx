@@ -45,8 +45,17 @@ export const InlineEditableCell = ({
 }: InlineEditableCellProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
+  const [localValue, setLocalValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync localValue met prop wanneer die verandert (bijv. na refetch)
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalValue(value);
+      setEditValue(value || "");
+    }
+  }, [value, isEditing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -91,8 +100,8 @@ export const InlineEditableCell = ({
         onClick={() => setIsEditing(true)}
       >
         {displayRenderer 
-          ? displayRenderer(value) 
-          : (formatDisplayValue(value, type) || <span className="text-muted-foreground italic">{placeholder}</span>)
+          ? displayRenderer(localValue) 
+          : (formatDisplayValue(localValue, type) || <span className="text-muted-foreground italic">{placeholder}</span>)
         }
       </div>
     );
@@ -103,9 +112,11 @@ export const InlineEditableCell = ({
       <Select
         value={editValue}
         onValueChange={(newValue) => {
+          const saveValue = newValue === "none" ? null : newValue;
           setEditValue(newValue);
+          setLocalValue(saveValue);
           setIsSaving(true);
-          onSave(newValue === "none" ? null : newValue).finally(() => {
+          onSave(saveValue).finally(() => {
             setIsSaving(false);
             setIsEditing(false);
           });
@@ -157,6 +168,7 @@ export const InlineEditableCell = ({
               if (date) {
                 const formattedDate = format(date, "yyyy-MM-dd");
                 setEditValue(formattedDate);
+                setLocalValue(formattedDate);
                 setIsSaving(true);
                 onSave(formattedDate).finally(() => {
                   setIsSaving(false);

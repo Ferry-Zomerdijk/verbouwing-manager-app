@@ -227,7 +227,14 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                     <InlineEditableCell
                       type="date"
                       value={task.begindatum}
-                      onSave={(value) => updateTask(task.id, { begindatum: value })}
+                      onSave={async (value) => {
+                        // Auto-fill deadline als die leeg is
+                        if (value && !task.deadline) {
+                          await updateTask(task.id, { begindatum: value, deadline: value });
+                        } else {
+                          await updateTask(task.id, { begindatum: value });
+                        }
+                      }}
                       placeholder="-"
                     />
                   </TableCell>
