@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Search, X, ChevronDown } from "lucide-react";
+import { AutocompleteInput } from "./AutocompleteInput";
 
 export interface TaskFiltersType {
   search: string;
@@ -162,30 +162,32 @@ export const TaskFilters = ({
               {/* Verantwoordelijke */}
               <div className="space-y-2">
                 <Label>Verantwoordelijke</Label>
-                <Input
+                <AutocompleteInput
                   placeholder="Zoek op naam..."
                   value={filters.verantwoordelijke || ""}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     onFiltersChange({
                       ...filters,
-                      verantwoordelijke: e.target.value || null,
+                      verantwoordelijke: value || null,
                     })
                   }
+                  suggestions={availableVerantwoordelijken}
                 />
               </div>
 
               {/* Deel van huis */}
               <div className="space-y-2">
                 <Label>Deel van huis</Label>
-                <Input
+                <AutocompleteInput
                   placeholder="Zoek op locatie..."
                   value={filters.deelVanHuis || ""}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     onFiltersChange({
                       ...filters,
-                      deelVanHuis: e.target.value || null,
+                      deelVanHuis: value || null,
                     })
                   }
+                  suggestions={availableDelenVanHuis}
                 />
               </div>
 
