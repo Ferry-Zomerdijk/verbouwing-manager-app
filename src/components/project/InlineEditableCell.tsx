@@ -113,7 +113,11 @@ export const InlineEditableCell = ({
     return (
       <div
         className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors ${className}`}
-        onClick={() => setIsEditing(true)}
+        onPointerDownCapture={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsEditing(true);
+        }}
       >
         {displayRenderer 
           ? displayRenderer(localValue) 
@@ -125,33 +129,35 @@ export const InlineEditableCell = ({
 
   if (type === "select") {
     return (
-      <Select
-        value={editValue}
-        onValueChange={(newValue) => {
-          const saveValue = newValue === "none" ? null : newValue;
-          setEditValue(newValue);
-          setLocalValue(saveValue);
-          setIsSaving(true);
-          onSave(saveValue).finally(() => {
-            setIsSaving(false);
-            setIsEditing(false);
-          });
-        }}
-        open={isEditing}
-        onOpenChange={(open) => !open && handleCancel()}
-      >
-        <SelectTrigger className="h-8 w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Niet ingevuld</SelectItem>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div onPointerDownCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={editValue}
+          onValueChange={(newValue) => {
+            const saveValue = newValue === "none" ? null : newValue;
+            setEditValue(newValue);
+            setLocalValue(saveValue);
+            setIsSaving(true);
+            onSave(saveValue).finally(() => {
+              setIsSaving(false);
+              setIsEditing(false);
+            });
+          }}
+          open={isEditing}
+          onOpenChange={(open) => !open && handleCancel()}
+        >
+          <SelectTrigger className="h-8 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Niet ingevuld</SelectItem>
+            {options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     );
   }
 
@@ -161,42 +167,44 @@ export const InlineEditableCell = ({
     const validSelectedDate = selectedDate && isValid(selectedDate) ? selectedDate : undefined;
 
     return (
-      <Popover open={isEditing} onOpenChange={(open) => !open && handleCancel()}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "h-8 w-full justify-start text-left font-normal text-sm",
-              !editValue && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {editValue && validSelectedDate
-              ? format(validSelectedDate, "d MMM yyyy", { locale: nl })
-              : placeholder}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={validSelectedDate}
-            onSelect={(date) => {
-              if (date) {
-                const formattedDate = format(date, "yyyy-MM-dd");
-                setEditValue(formattedDate);
-                setLocalValue(formattedDate);
-                setIsSaving(true);
-                onSave(formattedDate).finally(() => {
-                  setIsSaving(false);
-                  setIsEditing(false);
-                });
-              }
-            }}
-            initialFocus
-            className="pointer-events-auto"
-          />
-        </PopoverContent>
-      </Popover>
+      <div onPointerDownCapture={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+        <Popover open={isEditing} onOpenChange={(open) => !open && handleCancel()}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "h-8 w-full justify-start text-left font-normal text-sm",
+                !editValue && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {editValue && validSelectedDate
+                ? format(validSelectedDate, "d MMM yyyy", { locale: nl })
+                : placeholder}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={validSelectedDate}
+              onSelect={(date) => {
+                if (date) {
+                  const formattedDate = format(date, "yyyy-MM-dd");
+                  setEditValue(formattedDate);
+                  setLocalValue(formattedDate);
+                  setIsSaving(true);
+                  onSave(formattedDate).finally(() => {
+                    setIsSaving(false);
+                    setIsEditing(false);
+                  });
+                }
+              }}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     );
   }
 
@@ -205,6 +213,8 @@ export const InlineEditableCell = ({
     <div 
       ref={containerRef} 
       className="flex items-center gap-1"
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       onBlur={handleContainerBlur}
     >
       <Input
