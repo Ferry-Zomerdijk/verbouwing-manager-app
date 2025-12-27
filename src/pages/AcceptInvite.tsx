@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, XCircle, Eye, EyeOff, Check, X } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Check, X } from "lucide-react";
 
 const AcceptInvite = () => {
   const { token } = useParams<{ token: string }>();
@@ -19,25 +20,12 @@ const AcceptInvite = () => {
   const [inviteEmail, setInviteEmail] = useState<string | null>(null);
   
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
 
-  // Password validation
-  const passwordCriteria = useMemo(() => ({
-    minLength: password.length >= 8,
-    hasLowercase: /[a-z]/.test(password),
-    hasUppercase: /[A-Z]/.test(password),
-    hasNumber: /[0-9]/.test(password),
-    hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password),
-  }), [password]);
-
-  const isPasswordValid = useMemo(() => 
-    Object.values(passwordCriteria).every(Boolean),
-    [passwordCriteria]
-  );
-
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  // PIN validation
+  const isPinValid = pin.length === 6 && /^\d{6}$/.test(pin);
+  const pinsMatch = pin === confirmPin && confirmPin.length === 6;
 
   useEffect(() => {
     validateToken();
@@ -73,13 +61,13 @@ const AcceptInvite = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isPasswordValid) {
-      toast.error("Wachtwoord voldoet niet aan alle vereisten");
+    if (!isPinValid) {
+      toast.error("Pincode moet 6 cijfers zijn");
       return;
     }
 
-    if (!passwordsMatch) {
-      toast.error("Wachtwoorden komen niet overeen");
+    if (!pinsMatch) {
+      toast.error("Pincodes komen niet overeen");
       return;
     }
 
@@ -87,7 +75,7 @@ const AcceptInvite = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('accept-project-invitation', {
-        body: { token, password, name: name || undefined }
+        body: { token, pin, name: name || undefined }
       });
 
       if (error) {
@@ -152,19 +140,6 @@ const AcceptInvite = () => {
     );
   }
 
-  const CriteriaItem = ({ met, label }: { met: boolean; label: string }) => (
-    <div className="flex items-center gap-2 text-sm">
-      {met ? (
-        <Check className="h-4 w-4 text-green-600" />
-      ) : (
-        <X className="h-4 w-4 text-muted-foreground" />
-      )}
-      <span className={met ? "text-green-600" : "text-muted-foreground"}>
-        {label}
-      </span>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -181,7 +156,7 @@ const AcceptInvite = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Je naam (optioneel)</Label>
               <Input
@@ -194,61 +169,76 @@ const AcceptInvite = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Wachtwoord</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Kies een sterk wachtwoord"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
+            <div className="space-y-3">
+              <Label>Kies een 6-cijferige pincode</Label>
+              <p className="text-sm text-muted-foreground">
+                Je gebruikt deze pincode om in te loggen
+              </p>
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={pin} 
+                  onChange={setPin}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
-              
-              {/* Password criteria checklist */}
-              {password.length > 0 && (
-                <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1.5">
-                  <CriteriaItem met={passwordCriteria.minLength} label="Minimaal 8 tekens" />
-                  <CriteriaItem met={passwordCriteria.hasLowercase} label="Minimaal 1 kleine letter (a-z)" />
-                  <CriteriaItem met={passwordCriteria.hasUppercase} label="Minimaal 1 hoofdletter (A-Z)" />
-                  <CriteriaItem met={passwordCriteria.hasNumber} label="Minimaal 1 cijfer (0-9)" />
-                  <CriteriaItem met={passwordCriteria.hasSpecial} label="Minimaal 1 speciaal teken (!@#$%...)" />
+              {pin.length > 0 && pin.length < 6 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Nog {6 - pin.length} cijfer{6 - pin.length === 1 ? '' : 's'}
+                </p>
+              )}
+              {isPinValid && (
+                <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                  <Check className="h-4 w-4" />
+                  <span>Pincode ingevuld</span>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Bevestig wachtwoord</Label>
-              <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                placeholder="Herhaal je wachtwoord"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-              />
-              {confirmPassword.length > 0 && !passwordsMatch && (
-                <p className="text-sm text-destructive">Wachtwoorden komen niet overeen</p>
+            <div className="space-y-3">
+              <Label>Bevestig je pincode</Label>
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={confirmPin} 
+                  onChange={setConfirmPin}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              {confirmPin.length === 6 && !pinsMatch && (
+                <div className="flex items-center justify-center gap-2 text-sm text-destructive">
+                  <X className="h-4 w-4" />
+                  <span>Pincodes komen niet overeen</span>
+                </div>
+              )}
+              {pinsMatch && (
+                <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                  <Check className="h-4 w-4" />
+                  <span>Pincodes komen overeen</span>
+                </div>
               )}
             </div>
 
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={submitting || !isPasswordValid || !passwordsMatch}
+              disabled={submitting || !isPinValid || !pinsMatch}
             >
               {submitting ? (
                 <>

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,8 +9,47 @@ const corsHeaders = {
 
 interface RequestBody {
   token: string;
-  password: string;
+  pin: string;
   name?: string;
+}
+
+// Generate a cryptographically secure random password
+function generateSecurePassword(length: number = 32): string {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  return Array.from(randomValues, (v) => charset[v % charset.length]).join('');
+}
+
+// Encrypt password using AES-GCM
+async function encryptPassword(password: string, encryptionKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  
+  // Create key from encryption key
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32)),
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  // Generate IV
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  // Encrypt
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    keyMaterial,
+    encoder.encode(password)
+  );
+  
+  // Combine IV + encrypted data and encode as base64
+  const combined = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
 }
 
 serve(async (req) => {
@@ -23,27 +63,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { token, password, name }: RequestBody = await req.json();
+    const { token, pin, name }: RequestBody = await req.json();
 
-    if (!token || !password) {
-      throw new Error('Token en wachtwoord zijn verplicht');
+    if (!token || !pin) {
+      throw new Error('Token en pincode zijn verplicht');
     }
 
-    // Validate password strength on server side
-    if (password.length < 8) {
-      throw new Error('Wachtwoord moet minimaal 8 tekens zijn');
-    }
-    if (!/[a-z]/.test(password)) {
-      throw new Error('Wachtwoord moet minimaal 1 kleine letter bevatten');
-    }
-    if (!/[A-Z]/.test(password)) {
-      throw new Error('Wachtwoord moet minimaal 1 hoofdletter bevatten');
-    }
-    if (!/[0-9]/.test(password)) {
-      throw new Error('Wachtwoord moet minimaal 1 cijfer bevatten');
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) {
-      throw new Error('Wachtwoord moet minimaal 1 speciaal teken bevatten');
+    // Validate PIN: must be exactly 6 digits
+    if (!/^\d{6}$/.test(pin)) {
+      throw new Error('Pincode moet exact 6 cijfers zijn');
     }
 
     console.log('Accepting invitation with token:', token.substring(0, 8) + '...');
@@ -68,25 +96,56 @@ serve(async (req) => {
 
     console.log('Found valid invitation for:', invitation.email);
 
-    // 3. Update user password
+    // 3. Generate a secure random password for Supabase Auth
+    const generatedPassword = generateSecurePassword(32);
+    console.log('Generated secure password for auth');
+
+    // 4. Hash the PIN using bcrypt
+    const pinHash = await bcrypt.hash(pin);
+    console.log('PIN hashed successfully');
+
+    // 5. Encrypt the generated password
+    const encryptionKey = Deno.env.get('PIN_ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new Error('PIN_ENCRYPTION_KEY niet geconfigureerd');
+    }
+    
+    const encryptedPassword = await encryptPassword(generatedPassword, encryptionKey);
+    console.log('Password encrypted successfully');
+
+    // 6. Update user password in Supabase Auth
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       invitation.user_id,
       { 
-        password,
-        user_metadata: { needs_password: false }
+        password: generatedPassword,
+        user_metadata: { needs_password: false, uses_pin: true }
       }
     );
 
     if (updateError) {
       console.error('Error updating password:', updateError);
-      // Return more specific error message
-      if (updateError.message?.includes('weak') || updateError.message?.includes('pwned')) {
-        throw new Error('Dit wachtwoord is te zwak of komt voor in bekende datalekken. Kies een ander wachtwoord.');
-      }
-      throw new Error('Kon wachtwoord niet instellen: ' + updateError.message);
+      throw new Error('Kon account niet instellen: ' + updateError.message);
     }
 
-    // 4. Update profile name if provided
+    // 7. Store PIN hash and encrypted password in user_pins table
+    const { error: pinError } = await supabaseAdmin
+      .from('user_pins')
+      .upsert({
+        user_id: invitation.user_id,
+        pin_hash: pinHash,
+        encrypted_password: encryptedPassword,
+        failed_attempts: 0,
+        locked_until: null,
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (pinError) {
+      console.error('Error storing PIN:', pinError);
+      throw new Error('Kon pincode niet opslaan');
+    }
+
+    // 8. Update profile name if provided
     if (name) {
       await supabaseAdmin
         .from('profiles')
@@ -94,7 +153,7 @@ serve(async (req) => {
         .eq('id', invitation.user_id);
     }
 
-    // 5. Add user to project_users
+    // 9. Add user to project_users
     const { error: projectUserError } = await supabaseAdmin
       .from('project_users')
       .upsert({ 
@@ -110,27 +169,26 @@ serve(async (req) => {
       throw projectUserError;
     }
 
-    // 6. Mark invitation as accepted
+    // 10. Mark invitation as accepted
     await supabaseAdmin
       .from('project_invitations')
       .update({ accepted_at: new Date().toISOString() })
       .eq('id', invitation.id);
 
-    // 7. Sign in the user and get session
+    // 11. Sign in the user and get session
     const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
       email: invitation.email,
-      password: password,
+      password: generatedPassword,
     });
 
     if (signInError) {
       console.error('Error signing in:', signInError);
-      // User is set up but couldn't auto-sign in, they can sign in manually
       return new Response(
         JSON.stringify({ 
           success: true, 
           projectId: invitation.project_id,
           email: invitation.email,
-          message: 'Account aangemaakt! Je kunt nu inloggen.',
+          message: 'Account aangemaakt! Je kunt nu inloggen met je pincode.',
           autoSignIn: false,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
