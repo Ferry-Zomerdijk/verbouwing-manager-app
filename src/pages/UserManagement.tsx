@@ -13,6 +13,7 @@ import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, Refre
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
+import { EditPlatformUserDialog } from "@/components/EditPlatformUserDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,6 +23,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+interface PlatformUser {
+  id: string;
+  naam: string | null;
+  email: string | null;
+  isAdmin: boolean;
+}
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -30,10 +38,13 @@ const UserManagement = () => {
   
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editPlatformUserDialogOpen, setEditPlatformUserDialogOpen] = useState(false);
   const [selectedProjectUser, setSelectedProjectUser] = useState<any>(null);
+  const [selectedPlatformUser, setSelectedPlatformUser] = useState<PlatformUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(projectId ? "project" : "platform");
 
   // Load current user info
@@ -275,6 +286,40 @@ const UserManagement = () => {
     } finally {
       setUpdating(null);
     }
+  };
+
+  const handleDeletePlatformUser = async (userId: string) => {
+    if (userId === currentUserId) {
+      toast.error("Je kunt jezelf niet verwijderen");
+      return;
+    }
+
+    if (!confirm("Weet je zeker dat je deze gebruiker wilt verwijderen? Dit verwijdert ook alle gekoppelde data.")) {
+      return;
+    }
+
+    setDeletingUser(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Gebruiker verwijderd");
+      refetchPlatformUsers();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error("Kon gebruiker niet verwijderen: " + error.message);
+    } finally {
+      setDeletingUser(null);
+    }
+  };
+
+  const handleEditPlatformUser = (user: PlatformUser) => {
+    setSelectedPlatformUser(user);
+    setEditPlatformUserDialogOpen(true);
   };
 
   const getInitials = (naam: string | null, email: string | null) => {
@@ -605,20 +650,52 @@ const UserManagement = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <Label 
-                              htmlFor={`admin-${user.id}`} 
-                              className="flex items-center gap-1 text-sm cursor-pointer"
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPlatformUser(user)}
+                              title="Bewerken"
                             >
-                              <Shield className={`w-4 h-4 ${user.isAdmin ? "text-primary" : "text-muted-foreground"}`} />
-                              Admin
-                            </Label>
-                            <Switch
-                              id={`admin-${user.id}`}
-                              checked={user.isAdmin}
-                              onCheckedChange={() => handleToggleAdmin(user.id, user.isAdmin)}
-                              disabled={updating === user.id || user.id === currentUserId}
-                            />
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            {user.email && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSendPasswordResetLink(user.email!, user.id)}
+                                disabled={sendingResetLink === user.id}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                title="Wachtwoord reset link versturen"
+                              >
+                                <KeyRound className={`w-4 h-4 ${sendingResetLink === user.id ? 'animate-pulse' : ''}`} />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePlatformUser(user.id)}
+                              disabled={deletingUser === user.id || user.id === currentUserId}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Verwijderen"
+                            >
+                              <Trash2 className={`w-4 h-4 ${deletingUser === user.id ? 'animate-pulse' : ''}`} />
+                            </Button>
+                            <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+                              <Label 
+                                htmlFor={`admin-${user.id}`} 
+                                className="flex items-center gap-1 text-sm cursor-pointer"
+                              >
+                                <Shield className={`w-4 h-4 ${user.isAdmin ? "text-primary" : "text-muted-foreground"}`} />
+                                Admin
+                              </Label>
+                              <Switch
+                                id={`admin-${user.id}`}
+                                checked={user.isAdmin}
+                                onCheckedChange={() => handleToggleAdmin(user.id, user.isAdmin)}
+                                disabled={updating === user.id || user.id === currentUserId}
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -665,6 +742,12 @@ const UserManagement = () => {
           />
         </>
       )}
+
+      <EditPlatformUserDialog
+        open={editPlatformUserDialogOpen}
+        onOpenChange={setEditPlatformUserDialogOpen}
+        user={selectedPlatformUser}
+      />
     </div>
   );
 };
