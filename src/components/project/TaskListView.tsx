@@ -308,7 +308,7 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                   </TableCell>
                   <TableCell className="font-medium max-w-xs" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => setEditTask(task)}
+                      onClick={() => setEditTask({ ...task })}
                       className="text-left font-medium hover:underline hover:text-primary truncate max-w-xs"
                     >
                       {task.titel}
@@ -357,14 +357,14 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={(e) => {
-                          e.preventDefault();
-                          setTimeout(() => setEditTask(task), 10);
-                        }}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Details / Updates
-                        </DropdownMenuItem>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={(e) => {
+                            e.preventDefault();
+                            setTimeout(() => setEditTask({ ...task }), 10);
+                          }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Details / Updates
+                          </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => {
                             e.preventDefault();

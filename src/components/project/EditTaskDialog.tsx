@@ -41,6 +41,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       return () => clearTimeout(timer);
     }
   }, [open]);
+
   const [formData, setFormData] = useState({
     titel: "",
     beschrijving: "",
@@ -52,29 +53,48 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     deel_van_huis: "",
   });
 
+  const lastInitializedTaskIdRef = useRef<string | null>(null);
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (task) {
-      const deelVanHuis = task.deel_van_huis || "";
-      const isExisting = availableDelenVanHuis.includes(deelVanHuis);
-      
-      setFormData({
-        titel: task.titel || "",
-        beschrijving: task.beschrijving || "",
-        begindatum: task.begindatum || "",
-        deadline: task.deadline || "",
-        status: task.status || "Te doen",
-        prioriteit: task.prioriteit || "Middel",
-        verantwoordelijke: task.verantwoordelijke || "",
-        deel_van_huis: deelVanHuis && !isExisting && deelVanHuis !== "" ? "__custom__" : deelVanHuis,
-      });
-      
-      if (deelVanHuis && !isExisting && deelVanHuis !== "") {
-        setCustomDeelVanHuis(deelVanHuis);
-      } else {
-        setCustomDeelVanHuis("");
-      }
+    // Initialiseer form state alleen bij (1) openen, of (2) andere task.
+    // Dit voorkomt dat background refetch (of een nieuwe array reference) het formulier reset tijdens typen.
+    if (!open || !task?.id) {
+      wasOpenRef.current = open;
+      return;
     }
-  }, [task, availableDelenVanHuis]);
+
+    const isFirstOpen = !wasOpenRef.current && open;
+    const isNewTask = lastInitializedTaskIdRef.current !== task.id;
+
+    if (!isFirstOpen && !isNewTask) {
+      wasOpenRef.current = open;
+      return;
+    }
+
+    const deelVanHuis = task.deel_van_huis || "";
+    const isExisting = availableDelenVanHuis.includes(deelVanHuis);
+
+    setFormData({
+      titel: task.titel || "",
+      beschrijving: task.beschrijving || "",
+      begindatum: task.begindatum || "",
+      deadline: task.deadline || "",
+      status: task.status || "Te doen",
+      prioriteit: task.prioriteit || "Middel",
+      verantwoordelijke: task.verantwoordelijke || "",
+      deel_van_huis: deelVanHuis && !isExisting && deelVanHuis !== "" ? "__custom__" : deelVanHuis,
+    });
+
+    if (deelVanHuis && !isExisting && deelVanHuis !== "") {
+      setCustomDeelVanHuis(deelVanHuis);
+    } else {
+      setCustomDeelVanHuis("");
+    }
+
+    lastInitializedTaskIdRef.current = task.id;
+    wasOpenRef.current = open;
+  }, [open, task?.id]);
 
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
@@ -86,11 +106,12 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     }
     setLoading(true);
 
-    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
-      ? customDeelVanHuis 
-      : formData.deel_van_huis === "__none__"
-      ? null
-      : formData.deel_van_huis;
+    const finalDeelVanHuis =
+      formData.deel_van_huis === "__custom__"
+        ? customDeelVanHuis
+        : formData.deel_van_huis === "__none__"
+          ? null
+          : formData.deel_van_huis;
 
     try {
       const { error } = await supabase
@@ -113,7 +134,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message || "Er is een fout opgetreden");
+      toast.error(error?.message || error?.error_description || "Er is een fout opgetreden");
     } finally {
       setLoading(false);
     }
@@ -127,7 +148,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           id="titel"
           ref={titleInputRef}
           value={formData.titel}
-          onChange={(e) => setFormData({ ...formData, titel: e.target.value })}
+          onChange={(e) => setFormData((prev) => ({ ...prev, titel: e.target.value }))}
           placeholder="Taak titel"
           required
         />
@@ -139,7 +160,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           id="beschrijving"
           name="beschrijving"
           value={formData.beschrijving}
-          onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
+          onChange={(e) => setFormData((prev) => ({ ...prev, beschrijving: e.target.value }))}
           placeholder="Taak beschrijving..."
           rows={3}
         />
@@ -150,7 +171,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <Label htmlFor="prioriteit">Prioriteit</Label>
           <Select
             value={formData.prioriteit}
-            onValueChange={(value) => setFormData({ ...formData, prioriteit: value })}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, prioriteit: value }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -167,7 +188,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <Label htmlFor="status">Status</Label>
           <Select
             value={formData.status}
-            onValueChange={(value) => setFormData({ ...formData, status: value })}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -190,10 +211,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
             value={formData.begindatum}
             onChange={(e) => {
               const newBegindatum = e.target.value;
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
                 begindatum: newBegindatum,
-                deadline: prev.deadline || newBegindatum
+                deadline: prev.deadline || newBegindatum,
               }));
             }}
           />
@@ -206,7 +227,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
             type="date"
             value={formData.deadline}
             min={formData.begindatum || undefined}
-            onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, deadline: e.target.value }))}
           />
           {formData.begindatum && formData.deadline && formData.deadline < formData.begindatum && (
             <p className="text-sm text-destructive mt-1">Deadline kan niet voor begindatum liggen</p>
@@ -218,7 +239,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Label htmlFor="deel_van_huis">Deel van huis</Label>
         <Select
           value={formData.deel_van_huis || "__none__"}
-          onValueChange={(value) => setFormData({ ...formData, deel_van_huis: value })}
+          onValueChange={(value) => setFormData((prev) => ({ ...prev, deel_van_huis: value }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecteer of voer nieuw in" />
@@ -226,7 +247,9 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <SelectContent>
             <SelectItem value="__none__">Geen</SelectItem>
             {availableDelenVanHuis.map((deel) => (
-              <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+              <SelectItem key={deel} value={deel}>
+                {deel}
+              </SelectItem>
             ))}
             <SelectItem value="__custom__">+ Nieuw toevoegen...</SelectItem>
           </SelectContent>
@@ -246,7 +269,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Input
           id="verantwoordelijke"
           value={formData.verantwoordelijke}
-          onChange={(e) => setFormData({ ...formData, verantwoordelijke: e.target.value })}
+          onChange={(e) => setFormData((prev) => ({ ...prev, verantwoordelijke: e.target.value }))}
           placeholder="Naam van verantwoordelijke"
         />
       </div>
