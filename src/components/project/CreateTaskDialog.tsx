@@ -34,8 +34,14 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   const isMobile = useIsMobile();
 
+  const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDeadlineInvalid) {
+      toast.error("Deadline kan niet voor begindatum liggen");
+      return;
+    }
     setLoading(true);
 
     const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
@@ -161,8 +167,12 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             id="deadline"
             type="date"
             value={formData.deadline}
+            min={formData.begindatum || undefined}
             onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
           />
+          {formData.begindatum && formData.deadline && formData.deadline < formData.begindatum && (
+            <p className="text-sm text-destructive mt-1">Deadline kan niet voor begindatum liggen</p>
+          )}
         </div>
       </div>
 
