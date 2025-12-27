@@ -118,6 +118,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Label htmlFor="beschrijving">Beschrijving</Label>
         <Textarea
           id="beschrijving"
+          name="beschrijving"
           value={formData.beschrijving}
           onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
           placeholder="Taak beschrijving..."
@@ -274,7 +275,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   // Desktop: use Dialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Taak Bewerken</DialogTitle>
         </DialogHeader>
