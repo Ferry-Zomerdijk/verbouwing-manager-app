@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -7,16 +7,28 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TaskUpdatesSection from "./TaskUpdatesSection";
+import { AlertTriangle } from "lucide-react";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -30,6 +42,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
@@ -53,12 +66,15 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     deel_van_huis: "",
   });
 
+  // Store initial values to compare for dirty state
+  const [initialFormData, setInitialFormData] = useState(formData);
+  const [initialCustomDeelVanHuis, setInitialCustomDeelVanHuis] = useState("");
+
   const lastInitializedTaskIdRef = useRef<string | null>(null);
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
     // Initialiseer form state alleen bij (1) openen, of (2) andere task.
-    // Dit voorkomt dat background refetch (of een nieuwe array reference) het formulier reset tijdens typen.
     if (!open || !task?.id) {
       wasOpenRef.current = open;
       return;
@@ -75,7 +91,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     const deelVanHuis = task.deel_van_huis || "";
     const isExisting = availableDelenVanHuis.includes(deelVanHuis);
 
-    setFormData({
+    const newFormData = {
       titel: task.titel || "",
       beschrijving: task.beschrijving || "",
       begindatum: task.begindatum || "",
@@ -84,19 +100,61 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       prioriteit: task.prioriteit || "Middel",
       verantwoordelijke: task.verantwoordelijke || "",
       deel_van_huis: deelVanHuis && !isExisting && deelVanHuis !== "" ? "__custom__" : deelVanHuis,
-    });
+    };
 
-    if (deelVanHuis && !isExisting && deelVanHuis !== "") {
-      setCustomDeelVanHuis(deelVanHuis);
-    } else {
-      setCustomDeelVanHuis("");
-    }
+    setFormData(newFormData);
+    setInitialFormData(newFormData);
+
+    const customValue = deelVanHuis && !isExisting && deelVanHuis !== "" ? deelVanHuis : "";
+    setCustomDeelVanHuis(customValue);
+    setInitialCustomDeelVanHuis(customValue);
 
     lastInitializedTaskIdRef.current = task.id;
     wasOpenRef.current = open;
   }, [open, task?.id]);
 
+  // Calculate dirty state
+  const isDirty = useMemo(() => {
+    if (!open) return false;
+    
+    const formChanged = 
+      formData.titel !== initialFormData.titel ||
+      formData.beschrijving !== initialFormData.beschrijving ||
+      formData.begindatum !== initialFormData.begindatum ||
+      formData.deadline !== initialFormData.deadline ||
+      formData.status !== initialFormData.status ||
+      formData.prioriteit !== initialFormData.prioriteit ||
+      formData.verantwoordelijke !== initialFormData.verantwoordelijke ||
+      formData.deel_van_huis !== initialFormData.deel_van_huis;
+
+    const customChanged = 
+      formData.deel_van_huis === "__custom__" && 
+      customDeelVanHuis !== initialCustomDeelVanHuis;
+
+    return formChanged || customChanged;
+  }, [formData, initialFormData, customDeelVanHuis, initialCustomDeelVanHuis, open]);
+
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
+
+  // Handle close with dirty check
+  const handleCloseRequest = (shouldClose: boolean) => {
+    if (!shouldClose) return;
+    
+    if (isDirty) {
+      setShowUnsavedWarning(true);
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowUnsavedWarning(false);
+    onOpenChange(false);
+  };
+
+  const handleCancelClose = () => {
+    setShowUnsavedWarning(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +200,14 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Dirty state indicator */}
+      {isDirty && (
+        <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-sm">Je hebt niet-opgeslagen wijzigingen</span>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="titel">Titel *</Label>
         <Input
@@ -286,7 +352,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Button 
           type="button" 
           variant="outline" 
-          onClick={() => onOpenChange(false)}
+          onClick={() => handleCloseRequest(true)}
           className={isMobile ? "flex-1" : ""}
         >
           Annuleren
@@ -296,44 +362,89 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           disabled={loading} 
           className={`gradient-primary ${isMobile ? "flex-1" : ""}`}
         >
-          {loading ? "Opslaan..." : "Opslaan"}
+          {loading ? "Opslaan..." : isDirty ? "Opslaan *" : "Opslaan"}
         </Button>
       </div>
     </form>
   );
 
+  // Unsaved changes warning dialog
+  const unsavedWarningDialog = (
+    <AlertDialog open={showUnsavedWarning} onOpenChange={setShowUnsavedWarning}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Niet-opgeslagen wijzigingen
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Je hebt wijzigingen gemaakt die nog niet zijn opgeslagen. Weet je zeker dat je wilt sluiten? Je wijzigingen gaan verloren.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancelClose}>
+            Terug naar bewerken
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmClose} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Sluiten zonder opslaan
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   // Mobile: use Drawer (bottom sheet)
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle>Taak Bewerken</DrawerTitle>
-            <DrawerDescription className="sr-only">
-              Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto">
-            {formContent}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <>
+        <Drawer open={open} onOpenChange={handleCloseRequest}>
+          <DrawerContent className="max-h-[90vh]">
+            <DrawerHeader className="text-left">
+              <div className="flex items-center gap-2">
+                <DrawerTitle>Taak Bewerken</DrawerTitle>
+                {isDirty && (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                    Niet opgeslagen
+                  </Badge>
+                )}
+              </div>
+              <DrawerDescription className="sr-only">
+                Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-4 overflow-y-auto">
+              {formContent}
+            </div>
+          </DrawerContent>
+        </Drawer>
+        {unsavedWarningDialog}
+      </>
     );
   }
 
   // Desktop: use Dialog
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Taak Bewerken</DialogTitle>
-          <DialogDescription className="sr-only">
-            Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
-          </DialogDescription>
-        </DialogHeader>
-        {formContent}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={handleCloseRequest}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <DialogTitle>Taak Bewerken</DialogTitle>
+              {isDirty && (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                  Niet opgeslagen
+                </Badge>
+              )}
+            </div>
+            <DialogDescription className="sr-only">
+              Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
+            </DialogDescription>
+          </DialogHeader>
+          {formContent}
+        </DialogContent>
+      </Dialog>
+      {unsavedWarningDialog}
+    </>
   );
 };
 
