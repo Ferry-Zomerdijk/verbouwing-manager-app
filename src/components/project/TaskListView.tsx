@@ -68,9 +68,11 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
 
       toast.success("Taak bijgewerkt");
       onUpdate();
-    } catch (error) {
-      toast.error("Fout bij bijwerken van taak");
-      console.error(error);
+    } catch (error: any) {
+      const message =
+        error?.message || error?.error_description || "Fout bij bijwerken van taak";
+      toast.error(message);
+      console.error("updateTask error:", error);
       throw error;
     }
   };
@@ -214,8 +216,7 @@ export const TaskListView = ({ tasks, onUpdate }: TaskListViewProps) => {
               sortedTasks.map((task) => (
                 <TableRow
                   key={task.id}
-                  className="hover:bg-muted/30 cursor-pointer"
-                  onClick={() => toggleTaskSelection(task.id)}
+                  className="hover:bg-muted/30"
                 >
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
