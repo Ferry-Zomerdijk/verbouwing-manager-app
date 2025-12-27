@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +18,28 @@ function generateSecurePassword(length: number = 32): string {
   const randomValues = new Uint8Array(length);
   crypto.getRandomValues(randomValues);
   return Array.from(randomValues, (v) => charset[v % charset.length]).join('');
+}
+
+// Hash PIN using PBKDF2
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(pin), 'PBKDF2', false, ['deriveBits']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  
+  // Combine salt + hash and encode as base64
+  const combined = new Uint8Array(salt.length + new Uint8Array(derivedBits).length);
+  combined.set(salt);
+  combined.set(new Uint8Array(derivedBits), salt.length);
+  
+  return btoa(String.fromCharCode(...combined));
 }
 
 // Encrypt password using AES-GCM
@@ -100,8 +121,8 @@ serve(async (req) => {
     const generatedPassword = generateSecurePassword(32);
     console.log('Generated secure password for auth');
 
-    // 4. Hash the PIN using bcrypt
-    const pinHash = await bcrypt.hash(pin);
+    // 4. Hash the PIN using PBKDF2
+    const pinHash = await hashPin(pin);
     console.log('PIN hashed successfully');
 
     // 5. Encrypt the generated password
