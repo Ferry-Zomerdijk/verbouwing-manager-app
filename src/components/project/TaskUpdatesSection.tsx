@@ -219,14 +219,25 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
       {/* Add new update */}
       {isAdding ? (
         <div className="space-y-3">
-          <Textarea
-            value={newUpdate}
-            onChange={(e) => setNewUpdate(e.target.value)}
-            placeholder="Schrijf een update..."
-            rows={2}
-            autoFocus
-            className="min-h-[80px]"
-          />
+          <div className="relative">
+            <Textarea
+              value={newUpdate}
+              onChange={(e) => setNewUpdate(e.target.value)}
+              onKeyDown={(e) => {
+                // Ctrl+Enter or Cmd+Enter to submit
+                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  if ((newUpdate.trim() || selectedImages.length > 0) && !uploading) {
+                    handleAddUpdate();
+                  }
+                }
+              }}
+              placeholder="Schrijf een update... (Ctrl+Enter om te versturen)"
+              rows={2}
+              autoFocus
+              className="min-h-[80px]"
+            />
+          </div>
 
           {/* Image previews */}
           {previewUrls.length > 0 && (
