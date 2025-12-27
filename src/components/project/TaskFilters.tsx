@@ -71,31 +71,33 @@ export const TaskFilters = ({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="border border-border rounded-lg overflow-hidden bg-card">
-        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">Filters</span>
-            {activeCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {activeCount}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {activeCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReset();
-                }}
-              >
-                <X className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-            )}
-            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <CollapsibleTrigger asChild>
+          <div className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">Filters</span>
+              {activeCount > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {activeCount}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {activeCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReset();
+                  }}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Reset
+                </Button>
+              )}
+              <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </div>
           </div>
         </CollapsibleTrigger>
 
