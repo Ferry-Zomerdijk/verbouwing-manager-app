@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = true
+
+[functions.pin-login]
+verify_jwt = false

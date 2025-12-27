@@ -171,7 +171,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
                 </p>
                 <p className="text-muted-foreground mt-1">
                   {isNewUser 
-                    ? "Via deze link kan de gebruiker een wachtwoord aanmaken en direct toegang krijgen tot het project."
+                    ? "Via deze link kan de gebruiker een pincode aanmaken en direct toegang krijgen tot het project."
                     : "De gebruiker heeft al een account en krijgt via deze link direct toegang tot het project."}
                 </p>
               </div>
@@ -189,7 +189,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
           <DrawerHeader className="text-left">
             <DrawerTitle>Projectgebruiker Uitnodigen</DrawerTitle>
             <DrawerDescription>
-              Genereer een uitnodigingslink. De ontvanger kan zelf een wachtwoord instellen.
+              Genereer een uitnodigingslink. De ontvanger kan zelf een pincode instellen.
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto flex-1">
@@ -241,7 +241,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
         <DialogHeader>
           <DialogTitle>Projectgebruiker Uitnodigen</DialogTitle>
           <DialogDescription>
-            Genereer een uitnodigingslink. De ontvanger kan zelf een wachtwoord instellen en krijgt direct toegang tot het project.
+            Genereer een uitnodigingslink. De ontvanger kan zelf een pincode instellen en krijgt direct toegang tot het project.
           </DialogDescription>
         </DialogHeader>
         {content}
