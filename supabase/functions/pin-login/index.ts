@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +13,34 @@ interface RequestBody {
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+
+// Verify PIN using PBKDF2
+async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
+  
+  // Extract salt (first 16 bytes) and hash
+  const salt = combined.slice(0, 16);
+  const storedDerivedBits = combined.slice(16);
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(pin), 'PBKDF2', false, ['deriveBits']
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  
+  // Compare hashes (constant-time comparison)
+  const newHash = new Uint8Array(derivedBits);
+  if (newHash.length !== storedDerivedBits.length) return false;
+  let result = 0;
+  for (let i = 0; i < newHash.length; i++) {
+    result |= newHash[i] ^ storedDerivedBits[i];
+  }
+  return result === 0;
+}
 
 // Decrypt password using AES-GCM
 async function decryptPassword(encryptedData: string, encryptionKey: string): Promise<string> {
@@ -105,8 +132,8 @@ serve(async (req) => {
       throw new Error(`Account tijdelijk geblokkeerd. Probeer het over ${remainingMinutes} minuten opnieuw.`);
     }
 
-    // 4. Verify PIN
-    const pinValid = await bcrypt.compare(pin, pinData.pin_hash);
+    // 4. Verify PIN using PBKDF2
+    const pinValid = await verifyPin(pin, pinData.pin_hash);
 
     if (!pinValid) {
       console.log('Invalid PIN for user:', user.id);
