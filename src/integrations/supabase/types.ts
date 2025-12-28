@@ -505,6 +505,7 @@ export type Database = {
           deadline: string | null
           deel_van_huis: string | null
           id: string
+          image_urls: string[] | null
           prioriteit: Database["public"]["Enums"]["task_priority"] | null
           project_id: string
           status: Database["public"]["Enums"]["task_status"] | null
@@ -519,6 +520,7 @@ export type Database = {
           deadline?: string | null
           deel_van_huis?: string | null
           id?: string
+          image_urls?: string[] | null
           prioriteit?: Database["public"]["Enums"]["task_priority"] | null
           project_id: string
           status?: Database["public"]["Enums"]["task_status"] | null
@@ -533,6 +535,7 @@ export type Database = {
           deadline?: string | null
           deel_van_huis?: string | null
           id?: string
+          image_urls?: string[] | null
           prioriteit?: Database["public"]["Enums"]["task_priority"] | null
           project_id?: string
           status?: Database["public"]["Enums"]["task_status"] | null
