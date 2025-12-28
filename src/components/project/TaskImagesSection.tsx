@@ -26,17 +26,19 @@ export function TaskImagesSection({
 }: TaskImagesSectionProps) {
   const [uploading, setUploading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const processFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
 
     setUploading(true);
     const newUrls: string[] = [];
 
     try {
-      for (const file of Array.from(files)) {
+      for (const file of fileArray) {
         // Validate file type
         if (!file.type.startsWith("image/")) {
           toast.error(`${file.name} is geen afbeelding`);
@@ -87,6 +89,45 @@ export function TaskImagesSection({
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    await processFiles(files);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!readOnly && !uploading) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the drop zone entirely
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (readOnly || uploading) return;
+
+    const files = e.dataTransfer.files;
+    await processFiles(files);
+  };
+
   const handleRemoveImage = async (urlToRemove: string) => {
     try {
       // Extract path from URL
@@ -113,7 +154,18 @@ export function TaskImagesSection({
   };
 
   return (
-    <div className="space-y-3">
+    <div 
+      ref={dropZoneRef}
+      className={`space-y-3 rounded-lg transition-colors ${
+        isDragging 
+          ? "bg-primary/10 border-2 border-dashed border-primary p-3" 
+          : ""
+      }`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Foto's</span>
         {!readOnly && (
@@ -141,6 +193,13 @@ export function TaskImagesSection({
           onChange={handleFileSelect}
         />
       </div>
+
+      {isDragging && (
+        <div className="flex items-center justify-center py-8 text-primary font-medium">
+          <ImagePlus className="h-6 w-6 mr-2" />
+          Sleep foto's hier om te uploaden
+        </div>
+      )}
 
       {imageUrls.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -176,9 +235,11 @@ export function TaskImagesSection({
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">Nog geen foto's toegevoegd</p>
-      )}
+      ) : !isDragging ? (
+        <p className="text-sm text-muted-foreground">
+          {readOnly ? "Nog geen foto's toegevoegd" : "Sleep foto's hierheen of klik op 'Foto toevoegen'"}
+        </p>
+      ) : null}
 
       {/* Lightbox Dialog */}
       <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
