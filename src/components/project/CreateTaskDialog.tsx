@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -21,6 +24,9 @@ interface CreateTaskDialogProps {
 const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableDelenVanHuis = [] }: CreateTaskDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
+  const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     titel: "",
     beschrijving: "",
@@ -36,6 +42,68 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newImages = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+
+    setPendingImages((prev) => [...prev, ...newImages]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => {
+      const removed = prev[index];
+      if (removed) {
+        URL.revokeObjectURL(removed.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadImages = async (taskId: string): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+
+    for (const { file } of pendingImages) {
+      try {
+        const resizedBlob = await resizeImage(file);
+        const filename = generateUniqueFilename(file.name);
+        const path = `${projectId}/${taskId}/${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("task-images")
+          .upload(path, resizedBlob, {
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("task-images")
+          .getPublicUrl(path);
+
+        uploadedUrls.push(urlData.publicUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
+    }
+
+    return uploadedUrls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isDeadlineInvalid) {
@@ -49,7 +117,8 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       : formData.deel_van_huis;
 
     try {
-      const { error } = await supabase.from("tasks").insert([{
+      // First create the task
+      const { data: newTask, error } = await supabase.from("tasks").insert([{
         project_id: projectId,
         titel: formData.titel,
         beschrijving: formData.beschrijving || null,
@@ -59,9 +128,26 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         prioriteit: formData.prioriteit as any,
         verantwoordelijke: formData.verantwoordelijke || null,
         deel_van_huis: finalDeelVanHuis || null,
-      }]);
+      }]).select().single();
 
       if (error) throw error;
+
+      // Upload pending images if any
+      if (pendingImages.length > 0 && newTask) {
+        setUploadingImages(true);
+        const imageUrls = await uploadImages(newTask.id);
+        
+        if (imageUrls.length > 0) {
+          await supabase
+            .from("tasks")
+            .update({ image_urls: imageUrls })
+            .eq("id", newTask.id);
+        }
+        setUploadingImages(false);
+      }
+
+      // Cleanup previews
+      pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
 
       onSuccess();
       onOpenChange(false);
@@ -76,10 +162,12 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         deel_van_huis: "",
       });
       setCustomDeelVanHuis("");
+      setPendingImages([]);
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
       setLoading(false);
+      setUploadingImages(false);
     }
   };
 
@@ -213,13 +301,70 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         />
       </div>
 
+      <Separator className="my-4" />
+
+      {/* Images Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-foreground">Foto's</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImages}
+          >
+            {uploadingImages ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ImagePlus className="h-4 w-4 mr-2" />
+            )}
+            Foto toevoegen
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
+
+        {pendingImages.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {pendingImages.map((img, index) => (
+              <div
+                key={img.preview}
+                className="relative group aspect-square rounded-lg overflow-hidden bg-muted"
+              >
+                <img
+                  src={img.preview}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removePendingImage(index)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Geen foto's geselecteerd</p>
+        )}
+      </div>
+
       {!isMobile && (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Annuleren
           </Button>
-          <Button type="submit" disabled={loading} className="gradient-primary">
-            {loading ? "Bezig..." : "Taak Aanmaken"}
+          <Button type="submit" disabled={loading || uploadingImages} className="gradient-primary">
+            {loading || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
           </Button>
         </div>
       )}
@@ -240,8 +385,8 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Annuleren
             </Button>
-            <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={loading} className="flex-1 gradient-primary">
-              {loading ? "Bezig..." : "Taak Aanmaken"}
+            <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={loading || uploadingImages} className="flex-1 gradient-primary">
+              {loading || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
             </Button>
           </div>
         </DrawerContent>

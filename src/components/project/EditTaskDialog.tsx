@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TaskUpdatesSection from "./TaskUpdatesSection";
+import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
 
 interface EditTaskDialogProps {
@@ -65,6 +66,8 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     verantwoordelijke: "",
     deel_van_huis: "",
   });
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
 
   // Store initial values to compare for dirty state
   const [initialFormData, setInitialFormData] = useState(formData);
@@ -109,6 +112,11 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     setCustomDeelVanHuis(customValue);
     setInitialCustomDeelVanHuis(customValue);
 
+    // Initialize image URLs
+    const taskImageUrls = task.image_urls || [];
+    setImageUrls(taskImageUrls);
+    setInitialImageUrls(taskImageUrls);
+
     lastInitializedTaskIdRef.current = task.id;
     wasOpenRef.current = open;
   }, [open, task?.id]);
@@ -131,8 +139,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       formData.deel_van_huis === "__custom__" && 
       customDeelVanHuis !== initialCustomDeelVanHuis;
 
-    return formChanged || customChanged;
-  }, [formData, initialFormData, customDeelVanHuis, initialCustomDeelVanHuis, open]);
+    const imagesChanged = JSON.stringify(imageUrls) !== JSON.stringify(initialImageUrls);
+
+    return formChanged || customChanged || imagesChanged;
+  }, [formData, initialFormData, customDeelVanHuis, initialCustomDeelVanHuis, imageUrls, initialImageUrls, open]);
 
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
@@ -187,6 +197,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           prioriteit: formData.prioriteit as any,
           verantwoordelijke: formData.verantwoordelijke || null,
           deel_van_huis: finalDeelVanHuis || null,
+          image_urls: imageUrls.length > 0 ? imageUrls : null,
         })
         .eq("id", task.id);
 
@@ -343,6 +354,18 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           placeholder="Naam van verantwoordelijke"
         />
       </div>
+
+      <Separator className="my-4" />
+
+      {/* Images Section */}
+      {task?.id && (
+        <TaskImagesSection
+          taskId={task.id}
+          projectId={task.project_id}
+          imageUrls={imageUrls}
+          onImagesChange={setImageUrls}
+        />
+      )}
 
       <Separator className="my-4" />
 
