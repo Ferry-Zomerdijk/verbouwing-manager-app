@@ -137,9 +137,13 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
   // Handle close with dirty check
-  const handleCloseRequest = (shouldClose: boolean) => {
-    if (!shouldClose) return;
+  const handleCloseRequest = (newOpen: boolean) => {
+    if (newOpen) {
+      onOpenChange(true);
+      return;
+    }
     
+    // Closing requested
     if (isDirty) {
       setShowUnsavedWarning(true);
     } else {
