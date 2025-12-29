@@ -12,6 +12,36 @@ import { toast } from "sonner";
 type LoginMethod = "pin" | "password";
 type Mode = "login" | "register" | "forgot-password";
 
+// Determine where to redirect the user after login
+const getRedirectPath = async (userId: string): Promise<string> => {
+  // Check if user is admin
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  // Admins always go to dashboard
+  if (adminRole) {
+    return "/dashboard";
+  }
+
+  // Check how many projects the user has access to via project_users
+  const { data: projectUsers } = await supabase
+    .from("project_users")
+    .select("project_id")
+    .eq("user_id", userId);
+
+  // If exactly 1 project, redirect directly to that project
+  if (projectUsers && projectUsers.length === 1) {
+    return `/project-tasks/${projectUsers[0].project_id}`;
+  }
+
+  // Otherwise (0 or multiple projects, or project owner): go to dashboard
+  return "/dashboard";
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("login");
@@ -24,15 +54,23 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const path = await getRedirectPath(session.user.id);
+        navigate(path);
       }
-    });
+    };
+    
+    checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/dashboard");
+      if (session?.user) {
+        // Use setTimeout to avoid Supabase deadlock
+        setTimeout(async () => {
+          const path = await getRedirectPath(session.user.id);
+          navigate(path);
+        }, 0);
       }
     });
 
