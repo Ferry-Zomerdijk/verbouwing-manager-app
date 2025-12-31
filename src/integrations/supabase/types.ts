@@ -414,6 +414,47 @@ export type Database = {
         }
         Relationships: []
       }
+      public_project_shares: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          project_id: string
+          share_token: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id: string
+          share_token: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id?: string
+          share_token?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_project_shares_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_activity_log: {
         Row: {
           action: string

@@ -18,9 +18,11 @@ import { toast } from "sonner";
 
 interface ProjectContractorsProps {
   projectId: string;
+  readOnly?: boolean;
+  publicContractors?: any[];
 }
 
-const ProjectContractors = ({ projectId }: ProjectContractorsProps) => {
+const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: ProjectContractorsProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -39,7 +41,11 @@ const ProjectContractors = ({ projectId }: ProjectContractorsProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: !readOnly,
   });
+
+  // Use publicContractors in readOnly mode, otherwise use fetched contractors
+  const displayContractors = readOnly ? publicContractors : contractors;
 
   const handleDelete = async () => {
     if (!selectedContractor) return;
@@ -60,15 +66,17 @@ const ProjectContractors = ({ projectId }: ProjectContractorsProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold truncate">Aannemers</h2>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
-          <Plus className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">Nieuwe Aannemer</span>
-        </Button>
+        {!readOnly && (
+          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nieuwe Aannemer</span>
+          </Button>
+        )}
       </div>
 
-      {contractors && contractors.length > 0 ? (
+      {displayContractors && displayContractors.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {contractors.map((contractor) => (
+          {displayContractors.map((contractor) => (
             <Card key={contractor.id} className="shadow-card hover:shadow-hover transition-smooth">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -78,34 +86,36 @@ const ProjectContractors = ({ projectId }: ProjectContractorsProps) => {
                       <p className="text-sm text-muted-foreground mt-1">{contractor.bedrijf}</p>
                     )}
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedContractor(contractor);
-                          setEditDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Bewerken
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedContractor(contractor);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Verwijderen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {!readOnly && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedContractor(contractor);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Bewerken
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedContractor(contractor);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Verwijderen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
                 {contractor.rol && (
                   <Badge variant="outline" className="mt-2 w-fit">{contractor.rol}</Badge>

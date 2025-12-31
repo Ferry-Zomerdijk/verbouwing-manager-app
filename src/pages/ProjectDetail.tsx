@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import ProjectDocuments from "@/components/project/ProjectDocuments";
 import ProjectPhotos from "@/components/project/ProjectPhotos";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
+import SharePublicLinkDialog from "@/components/SharePublicLinkDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Breadcrumb,
@@ -39,6 +40,7 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
@@ -228,6 +230,17 @@ const ProjectDetail = () => {
               <div className="flex items-center gap-1 sm:gap-2">
                 <WeatherExcuseButton />
                 <CoffeeBreakTimer />
+                {isAdminOrOwner && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShareDialogOpen(true)}
+                    className="hidden sm:flex"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Delen
+                  </Button>
+                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -373,6 +386,13 @@ const ProjectDetail = () => {
       <AccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
+      />
+
+      <SharePublicLinkDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        projectId={project.id}
+        projectName={project.naam}
       />
     </div>
   );

@@ -15,9 +15,11 @@ interface ProjectOverviewProps {
   project: any;
   onUpdate?: () => void;
   isAdminOrOwner?: boolean;
+  readOnly?: boolean;
+  publicData?: { activity?: any[] };
 }
 
-const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false }: ProjectOverviewProps) => {
+const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false, readOnly = false, publicData }: ProjectOverviewProps) => {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [wisdom, setWisdom] = useState(getRandomWisdom());
   const [wisdomAnimating, setWisdomAnimating] = useState(false);

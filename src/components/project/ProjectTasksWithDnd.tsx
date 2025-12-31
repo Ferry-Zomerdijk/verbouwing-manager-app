@@ -28,6 +28,8 @@ import MobileTaskList from "./MobileTaskList";
 interface ProjectTasksWithDndProps {
   projectId: string;
   isProjectUserView?: boolean;
+  readOnly?: boolean;
+  publicTasks?: any[];
 }
 
 const STORAGE_KEYS = {
@@ -35,7 +37,7 @@ const STORAGE_KEYS = {
   FILTERS: "tasks-filters",
 };
 
-const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false }: ProjectTasksWithDndProps) => {
+const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = false, publicTasks }: ProjectTasksWithDndProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
