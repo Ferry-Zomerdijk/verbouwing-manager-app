@@ -57,9 +57,13 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
       if (error) throw error;
       return data;
     },
+    enabled: !readOnly,
   });
 
-  const filteredPhotos = photos?.filter(photo => 
+  // Use public data in readOnly mode
+  const displayPhotos = readOnly && publicPhotos ? publicPhotos : photos;
+
+  const filteredPhotos = displayPhotos?.filter(photo => 
     filter === "all" ? true : photo.fase === filter
   );
 
@@ -203,10 +207,12 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold">Foto's</h2>
-        <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
-          <Plus className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">Uploaden</span>
-        </Button>
+        {!readOnly && (
+          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Uploaden</span>
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
@@ -264,18 +270,20 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                 <Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
                   {photo.fase}
                 </Badge>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPhoto(photo);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                {!readOnly && (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPhoto(photo);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
               {photo.notitie && (
                 <CardContent className="p-3">

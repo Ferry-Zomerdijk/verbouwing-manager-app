@@ -43,10 +43,24 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"kanban" | "list">(() => {
+    if (readOnly) return "kanban"; // Default for public view
     const saved = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
     return (saved as "kanban" | "list") || "kanban";
   });
   const [filters, setFilters] = useState<TaskFiltersType>(() => {
+    if (readOnly) {
+      return {
+        search: "",
+        statuses: ["Te doen", "Bezig", "Gereed"],
+        priorities: ["Laag", "Middel", "Hoog"],
+        verantwoordelijke: null,
+        deelVanHuis: null,
+        begindatumVan: null,
+        begindatumTot: null,
+        deadlineVan: null,
+        deadlineTot: null,
+      };
+    }
     const saved = localStorage.getItem(STORAGE_KEYS.FILTERS);
     return saved
       ? JSON.parse(saved)
@@ -85,6 +99,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       if (error) throw error;
       return data;
     },
+    enabled: !readOnly,
   });
 
   const { data: tasks, refetch } = useQuery({
@@ -123,7 +138,11 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
         latest_update: latestUpdateByTask[task.id] || null
       })) as any[];
     },
+    enabled: !readOnly,
   });
+
+  // Use public tasks in readOnly mode
+  const displayTasks = readOnly && publicTasks ? publicTasks : tasks;
 
   const { data: userRole } = useQuery({
     queryKey: ['user-role', projectId],
@@ -148,37 +167,41 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
 
       return 'project_user';
     },
-    enabled: !isProjectUserView,
+    enabled: !isProjectUserView && !readOnly,
   });
 
-  const canDelete = userRole === 'admin' || userRole === 'owner';
-  const canImportExport = userRole === 'admin' || userRole === 'owner';
+  const canDelete = readOnly ? false : (userRole === 'admin' || userRole === 'owner');
+  const canImportExport = readOnly ? false : (userRole === 'admin' || userRole === 'owner');
 
-  // Save preferences to localStorage
+  // Save preferences to localStorage (only when not in readOnly mode)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.VIEW_MODE, viewMode);
-  }, [viewMode]);
+    if (!readOnly) {
+      localStorage.setItem(STORAGE_KEYS.VIEW_MODE, viewMode);
+    }
+  }, [viewMode, readOnly]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
-  }, [filters]);
+    if (!readOnly) {
+      localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
+    }
+  }, [filters, readOnly]);
 
   // Get unique values for filter dropdowns
   const availableVerantwoordelijken = useMemo(() => {
-    const unique = new Set(tasks?.map((t) => t.verantwoordelijke).filter(Boolean) || []);
+    const unique = new Set(displayTasks?.map((t) => t.verantwoordelijke).filter(Boolean) || []);
     return Array.from(unique).sort();
-  }, [tasks]);
+  }, [displayTasks]);
 
   const availableDelenVanHuis = useMemo(() => {
-    const unique = new Set(tasks?.map((t) => t.deel_van_huis).filter(Boolean) || []);
+    const unique = new Set(displayTasks?.map((t) => t.deel_van_huis).filter(Boolean) || []);
     return Array.from(unique).sort();
-  }, [tasks]);
+  }, [displayTasks]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
+    if (!displayTasks) return [];
 
-    return tasks.filter((task) => {
+    return displayTasks.filter((task) => {
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -237,7 +260,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
 
       return true;
     });
-  }, [tasks, filters]);
+  }, [displayTasks, filters]);
 
   // Active filters count
   const activeFiltersCount = useMemo(() => {
@@ -290,6 +313,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   };
 
   const handleDragStart = (event: any) => {
+    if (readOnly) return;
     const task = filteredTasks?.find((t) => t.id === event.active.id);
     setActiveTask(task);
   };
@@ -298,7 +322,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
     const { active, over } = event;
     setActiveTask(null);
 
-    if (!over) return;
+    if (readOnly || !over) return;
 
     const taskId = active.id as string;
     const task = filteredTasks?.find((t) => t.id === taskId);
@@ -325,24 +349,27 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
     return (
       <>
         <MobileTaskList
-          tasks={tasks || []}
+          tasks={displayTasks || []}
           projectId={projectId}
-          onUpdate={refetch}
+          onUpdate={readOnly ? () => {} : refetch}
           canDelete={canDelete}
-          onCreateTask={() => setCreateDialogOpen(true)}
+          onCreateTask={readOnly ? undefined : () => setCreateDialogOpen(true)}
           availableDelenVanHuis={availableDelenVanHuis}
+          readOnly={readOnly}
         />
         
-        <CreateTaskDialog
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-          projectId={projectId}
-          availableDelenVanHuis={availableDelenVanHuis}
-          onSuccess={() => {
-            refetch();
-            toast.success("Taak succesvol aangemaakt!");
-          }}
-        />
+        {!readOnly && (
+          <CreateTaskDialog
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+            projectId={projectId}
+            availableDelenVanHuis={availableDelenVanHuis}
+            onSuccess={() => {
+              refetch();
+              toast.success("Taak succesvol aangemaakt!");
+            }}
+          />
+        )}
       </>
     );
   }
@@ -373,7 +400,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
               Lijst
             </Button>
           </div>
-          {!isProjectUserView && canImportExport && (
+          {!readOnly && !isProjectUserView && canImportExport && (
             <>
               <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
                 <FileDown className="w-4 h-4 mr-2" />
@@ -385,10 +412,12 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
               </Button>
             </>
           )}
-          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Nieuwe Taak
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Nieuwe Taak
+            </Button>
+          )}
         </div>
       </div>
 
