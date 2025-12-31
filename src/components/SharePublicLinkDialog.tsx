@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -9,14 +10,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2 } from "lucide-react";
+import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2, QrCode, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -39,6 +44,7 @@ const SharePublicLinkDialog = ({
   projectName,
 }: SharePublicLinkDialogProps) => {
   const [expiresInDays, setExpiresInDays] = useState<string>("never");
+  const [expandedQRCode, setExpandedQRCode] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch existing shares
@@ -224,6 +230,15 @@ const SharePublicLinkDialog = ({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
+                            onClick={() => setExpandedQRCode(expandedQRCode === share.id ? null : share.id)}
+                            title="Toon QR-code"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => copyLink(share.share_token)}
                           >
                             <Copy className="w-4 h-4" />
@@ -246,6 +261,21 @@ const SharePublicLinkDialog = ({
                           </Button>
                         </div>
                       </div>
+
+                      {/* QR Code Section */}
+                      {expandedQRCode === share.id && (
+                        <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-lg border">
+                          <QRCodeSVG
+                            value={`${window.location.origin}/public/project/${share.share_token}`}
+                            size={160}
+                            level="M"
+                            includeMargin={true}
+                          />
+                          <p className="text-xs text-muted-foreground text-center">
+                            Scan met je telefoon om het project te bekijken
+                          </p>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-3">
