@@ -19,6 +19,8 @@ import { nl } from "date-fns/locale";
 interface ProjectDocumentsProps {
   projectId: string;
   isAdminOrOwner?: boolean;
+  readOnly?: boolean;
+  publicDocuments?: any[];
 }
 
 type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Plattegrond" | "Overig";
@@ -29,7 +31,7 @@ interface FileUpload {
   type: DocumentType;
 }
 
-const ProjectDocuments = ({ projectId, isAdminOrOwner = false }: ProjectDocumentsProps) => {
+const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false, publicDocuments }: ProjectDocumentsProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);

@@ -17,6 +17,8 @@ import { toast } from "sonner";
 
 interface ProjectPhotosProps {
   projectId: string;
+  readOnly?: boolean;
+  publicPhotos?: any[];
 }
 
 type PhotoPhase = "Voor" | "Tijdens" | "Na";
@@ -28,7 +30,7 @@ interface PhotoUpload {
   notitie: string;
 }
 
-const ProjectPhotos = ({ projectId }: ProjectPhotosProps) => {
+const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPhotosProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
