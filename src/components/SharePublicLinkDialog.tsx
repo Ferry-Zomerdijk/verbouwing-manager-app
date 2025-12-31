@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2, QrCode, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2, QrCode, Download } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import {
@@ -136,6 +136,43 @@ const SharePublicLinkDialog = ({
 
   const openLink = (token: string) => {
     window.open(`${window.location.origin}/public/project/${token}`, "_blank");
+  };
+
+  const downloadQRCode = (shareId: string, token: string) => {
+    const svgElement = document.getElementById(`qr-code-${shareId}`);
+    if (!svgElement) return;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width * 2;
+      canvas.height = img.height * 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `qr-code-${projectName.replace(/\s+/g, "-").toLowerCase()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        toast.success("QR-code gedownload");
+      }, "image/png");
+    };
+    img.src = url;
   };
 
   return (
@@ -264,8 +301,9 @@ const SharePublicLinkDialog = ({
 
                       {/* QR Code Section */}
                       {expandedQRCode === share.id && (
-                        <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-lg border">
+                        <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg border">
                           <QRCodeSVG
+                            id={`qr-code-${share.id}`}
                             value={`${window.location.origin}/public/project/${share.share_token}`}
                             size={160}
                             level="M"
@@ -274,6 +312,15 @@ const SharePublicLinkDialog = ({
                           <p className="text-xs text-muted-foreground text-center">
                             Scan met je telefoon om het project te bekijken
                           </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadQRCode(share.id, share.share_token)}
+                            className="gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download QR-code
+                          </Button>
                         </div>
                       )}
 
