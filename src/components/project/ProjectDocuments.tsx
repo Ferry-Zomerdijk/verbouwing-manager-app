@@ -33,6 +33,9 @@ interface FileUpload {
 
 const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false, publicDocuments }: ProjectDocumentsProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  // Use public data in readOnly mode, otherwise fetch from database
+  const displayDocuments = readOnly && publicDocuments ? publicDocuments : null;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,9 +58,10 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
       if (error) throw error;
       return data;
     },
+    enabled: !readOnly,
   });
 
-  // Fetch invoices from costs table (only for admin/owner)
+  // Fetch invoices from costs table (only for admin/owner, not in readOnly mode)
   const { data: invoices } = useQuery({
     queryKey: ["cost-invoices", projectId],
     queryFn: async () => {
@@ -71,29 +75,31 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
       if (error) throw error;
       return data;
     },
-    enabled: isAdminOrOwner,
+    enabled: isAdminOrOwner && !readOnly,
   });
 
-  // Combine documents and invoices into a unified list
-  const allDocuments = [
-    ...(documents || []).map(doc => ({
-      ...doc,
-      source: 'document' as const,
-    })),
-    ...(invoices || []).map(inv => ({
-      id: inv.id,
-      bestandsnaam: inv.leverancier 
-        ? `Factuur - ${inv.leverancier}` 
-        : inv.beschrijving 
-          ? `Factuur - ${inv.beschrijving.slice(0, 30)}` 
-          : 'Factuur',
-      bestand_url: inv.factuur_url!,
-      type: 'Factuur' as const,
-      upload_datum: inv.datum,
-      source: 'cost' as const,
-      categorie: inv.categorie,
-    })),
-  ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
+  // Combine documents and invoices into a unified list (or use public data)
+  const allDocuments = readOnly && displayDocuments 
+    ? displayDocuments.map(doc => ({ ...doc, source: 'document' as const }))
+    : [
+        ...(documents || []).map(doc => ({
+          ...doc,
+          source: 'document' as const,
+        })),
+        ...(invoices || []).map(inv => ({
+          id: inv.id,
+          bestandsnaam: inv.leverancier 
+            ? `Factuur - ${inv.leverancier}` 
+            : inv.beschrijving 
+              ? `Factuur - ${inv.beschrijving.slice(0, 30)}` 
+              : 'Factuur',
+          bestand_url: inv.factuur_url!,
+          type: 'Factuur' as const,
+          upload_datum: inv.datum,
+          source: 'cost' as const,
+          categorie: inv.categorie,
+        })),
+      ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
 
   // Get unique document types for filter
   const availableTypes = [...new Set(allDocuments.map(doc => doc.type))];
@@ -284,10 +290,12 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
               </SelectContent>
             </Select>
           )}
-          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
-            <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Uploaden</span>
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Uploaden</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -329,7 +337,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
                     <Download className="w-4 h-4 mr-2" />
                     Download
                   </Button>
-                  {doc.source === 'document' && (
+                  {!readOnly && doc.source === 'document' && (
                     <Button
                       variant="outline"
                       size="sm"

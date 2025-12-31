@@ -19,8 +19,9 @@ interface MobileTaskListProps {
   projectId: string;
   onUpdate: () => void;
   canDelete?: boolean;
-  onCreateTask: () => void;
+  onCreateTask?: () => void;
   availableDelenVanHuis?: string[];
+  readOnly?: boolean;
 }
 
 type StatusFilter = "Te doen" | "Bezig" | "Gereed";
@@ -31,7 +32,7 @@ const statusColors: Record<StatusFilter, string> = {
   "Gereed": "bg-green-500/20 text-green-700 hover:bg-green-500/30",
 };
 
-const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask, availableDelenVanHuis = [] }: MobileTaskListProps) => {
+const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask, availableDelenVanHuis = [], readOnly = false }: MobileTaskListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeStatuses, setActiveStatuses] = useState<StatusFilter[]>(["Te doen", "Bezig"]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -161,6 +162,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
   const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const handleStatusChange = (taskId: string, newStatus: StatusFilter) => {
+    if (readOnly) return;
     updateTaskStatus.mutate({ taskId, newStatus });
   };
 
@@ -176,17 +178,21 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Taken</h2>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button onClick={onCreateTask} size="icon" className="gradient-primary">
-            <Plus className="w-4 h-4" />
-          </Button>
+          {!readOnly && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
+          {!readOnly && onCreateTask && (
+            <Button onClick={onCreateTask} size="icon" className="gradient-primary">
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
