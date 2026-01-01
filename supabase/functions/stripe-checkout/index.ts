@@ -92,7 +92,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: successUrl || `${req.headers.get("origin")}/dashboard?success=true`,
+      success_url: successUrl || `${req.headers.get("origin")}/checkout/success`,
       cancel_url: cancelUrl || `${req.headers.get("origin")}/pricing?canceled=true`,
       subscription_data: {
         metadata: {
