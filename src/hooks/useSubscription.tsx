@@ -41,6 +41,18 @@ export interface Product {
   metadata: Record<string, string> | null;
 }
 
+// Stripe product and price IDs
+export const STRIPE_TIERS = {
+  basis: {
+    product_id: "prod_TiJvrPggwqeBgF",
+    price_id: "price_1SktI7GzO5wk8qyVK5wr1ENc",
+  },
+  pro: {
+    product_id: "prod_TiJysg1CJilS1o",
+    price_id: "price_1SktK8GzO5wk8qyVsW9NlTMb",
+  },
+};
+
 // Tier limits configuration
 export const TIER_LIMITS = {
   free: {
