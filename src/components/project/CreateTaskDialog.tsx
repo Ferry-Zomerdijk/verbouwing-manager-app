@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
 import { ImagePlus, X, Loader2 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
+import { useQuery } from "@tanstack/react-query";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -39,6 +42,24 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   });
 
   const isMobile = useIsMobile();
+  const { currentTier, hasReachedLimit, limits } = useSubscription();
+
+  // Get current task count for this project
+  const { data: taskCount = 0 } = useQuery({
+    queryKey: ["taskCount", projectId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("project_id", projectId);
+      
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: open,
+  });
+
+  const isLimitReached = hasReachedLimit("maxTasks", taskCount);
 
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
@@ -170,6 +191,44 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       setUploadingImages(false);
     }
   };
+
+  // Show upgrade prompt if limit reached
+  if (isLimitReached) {
+    const upgradeContent = (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Je hebt {taskCount} van {limits.maxTasks} taken gebruikt in dit project.
+        </p>
+        <UpgradePrompt currentTier={currentTier} limitType="maxTasks" />
+      </div>
+    );
+
+    if (isMobile) {
+      return (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="max-h-[90vh]">
+            <DrawerHeader className="text-left">
+              <DrawerTitle>Takenlimiet bereikt</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4">
+              {upgradeContent}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Takenlimiet bereikt</DialogTitle>
+          </DialogHeader>
+          {upgradeContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">

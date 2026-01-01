@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,8 @@ import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 
 interface ProjectDocumentsProps {
   projectId: string;
@@ -45,6 +47,8 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  const { currentTier, hasReachedLimit, limits } = useSubscription();
 
   const { data: documents, refetch } = useQuery({
     queryKey: ["documents", projectId],
@@ -100,6 +104,10 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
           categorie: inv.categorie,
         })),
       ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
+
+  // Calculate document count (excluding invoices from costs)
+  const documentCount = documents?.length || 0;
+  const isLimitReached = hasReachedLimit("maxDocuments", documentCount);
 
   // Get unique document types for filter
   const availableTypes = [...new Set(allDocuments.map(doc => doc.type))];
@@ -291,13 +299,35 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
             </Select>
           )}
           {!readOnly && (
-            <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
-              <Plus className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Uploaden</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {limits.maxDocuments !== -1 && (
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  {documentCount}/{limits.maxDocuments}
+                </span>
+              )}
+              <Button 
+                onClick={() => {
+                  if (isLimitReached) {
+                    toast.error("Documentlimiet bereikt. Upgrade je abonnement.");
+                    return;
+                  }
+                  setUploadDialogOpen(true);
+                }} 
+                className="gradient-primary shrink-0" 
+                size="sm"
+              >
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Uploaden</span>
+              </Button>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Upgrade prompt for limit reached */}
+      {!readOnly && isLimitReached && (
+        <UpgradePrompt currentTier={currentTier} limitType="maxDocuments" compact />
+      )}
 
       {filteredDocuments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
