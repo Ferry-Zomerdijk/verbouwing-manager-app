@@ -56,6 +56,131 @@ function getTierFeatures(tier: string): string[] {
   }
 }
 
+function generateCancellationEmailHtml(
+  userName: string,
+  tier: string
+): string {
+  const tierName = getTierDisplayName(tier);
+  const features = getTierFeatures(tier);
+
+  return `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); padding: 40px 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
+                Je abonnement is beëindigd
+              </h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Hoi${userName ? ` ${userName}` : ''},
+              </p>
+              
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Je <strong>${tierName}</strong> abonnement is nu beëindigd. We vinden het jammer om je te zien gaan!
+              </p>
+              
+              <!-- Lost Features Box -->
+              <div style="background-color: #fef2f2; border-radius: 8px; padding: 24px; margin: 24px 0; border-left: 4px solid #ef4444;">
+                <h2 style="color: #991b1b; font-size: 16px; margin: 0 0 16px; font-weight: 600;">
+                  ⚠️ Je verliest toegang tot:
+                </h2>
+                <ul style="color: #7f1d1d; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                  ${features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+              </div>
+              
+              <!-- Free Tier Info -->
+              <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                <h2 style="color: #374151; font-size: 16px; margin: 0 0 12px; font-weight: 600;">
+                  Wat kun je nog wel doen?
+                </h2>
+                <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                  Met het gratis account heb je nog steeds toegang tot 1 project, 10 taken per project, en basis functionaliteit. 
+                  Je bestaande projecten en data blijven bewaard.
+                </p>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 24px 0;">
+                Wil je toch weer upgraden? Je kunt op elk moment je abonnement opnieuw activeren.
+              </p>
+              
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="https://bouwapp.lovable.app/pricing" 
+                   style="display: inline-block; background-color: #f59e0b; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Bekijk abonnementen →
+                </a>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Feedback? Laat ons weten waarom je hebt opgezegd, zodat we kunnen verbeteren.<br>
+                © ${new Date().getFullYear()} Bouw App. Alle rechten voorbehouden.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+async function sendCancellationEmail(userId: string, tier: string) {
+  try {
+    console.log("Sending cancellation email for user:", userId);
+    
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("email, naam")
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile?.email) {
+      console.error("Could not fetch user profile for cancellation email:", profileError);
+      return;
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: "Bouw App <onboarding@resend.dev>",
+      to: [profile.email],
+      subject: `Je ${getTierDisplayName(tier)} abonnement is beëindigd`,
+      html: generateCancellationEmailHtml(profile.naam || "", tier),
+    });
+
+    if (error) {
+      console.error("Error sending cancellation email:", error);
+      return;
+    }
+
+    console.log("Cancellation email sent successfully:", data);
+  } catch (error) {
+    console.error("Exception sending cancellation email:", error);
+  }
+}
+
 function generateSubscriptionEmailHtml(
   userName: string,
   tier: string,
@@ -284,6 +409,13 @@ async function handlePriceEvent(price: Stripe.Price, eventType: string) {
 async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log("Processing subscription deletion:", subscription.id);
 
+  // First get the subscription to find user_id and tier before updating
+  const { data: existingSub } = await supabaseAdmin
+    .from("subscriptions")
+    .select("user_id, tier")
+    .eq("id", subscription.id)
+    .single();
+
   const { error } = await supabaseAdmin
     .from("subscriptions")
     .update({ status: "canceled", canceled_at: new Date().toISOString() })
@@ -292,6 +424,11 @@ async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscripti
   if (error) {
     console.error("Error updating deleted subscription:", error);
     throw error;
+  }
+
+  // Send cancellation email
+  if (existingSub?.user_id) {
+    await sendCancellationEmail(existingSub.user_id, existingSub.tier || "basis");
   }
 }
 
