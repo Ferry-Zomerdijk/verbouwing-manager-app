@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PricingCard } from "@/components/subscription/PricingCard";
 import { useSubscription, STRIPE_TIERS } from "@/hooks/useSubscription";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Footer } from "@/components/Footer";
 
 // Predefined pricing plans (will be synced with Stripe products)
 const PRICING_PLANS = [
@@ -194,7 +195,24 @@ export default function Pricing() {
             <span className="text-sm font-medium">Mastercard</span>
           </div>
         </div>
+
+        {/* Legal links */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Door een abonnement af te sluiten ga je akkoord met onze{" "}
+            <Link to="/terms" className="underline hover:text-foreground transition-colors">
+              Algemene Voorwaarden
+            </Link>{" "}
+            en{" "}
+            <Link to="/privacy" className="underline hover:text-foreground transition-colors">
+              Privacybeleid
+            </Link>
+            .
+          </p>
+        </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

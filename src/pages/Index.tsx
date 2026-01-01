@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowRight } from "lucide-react";
 import heroHouse from "@/assets/hero-house.png";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Index = () => {
   }, [navigate]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Parallax Background */}
       <div 
         className="absolute inset-0 z-0"
@@ -44,7 +45,7 @@ const Index = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-16 sm:py-20">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-16 sm:py-20">
         <div className="text-center max-w-2xl w-full">
           <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-3xl gradient-primary flex items-center justify-center shadow-hover">
             <Home className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
@@ -70,6 +71,11 @@ const Index = () => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="relative z-10">
+        <Footer />
       </div>
     </div>
   );
