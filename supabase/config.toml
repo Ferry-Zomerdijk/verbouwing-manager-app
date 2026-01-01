@@ -26,3 +26,12 @@ verify_jwt = true
 
 [functions.get-public-project-data]
 verify_jwt = false
+
+[functions.stripe-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-portal]
+verify_jwt = true
