@@ -3,9 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus, Lock } from "lucide-react";
 import { InviteProjectUserDialog } from "./InviteProjectUserDialog";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 
 interface ProjectUsersManagerProps {
   open: boolean;
@@ -16,6 +18,8 @@ interface ProjectUsersManagerProps {
 export const ProjectUsersManager = ({ open, onOpenChange, projectId }: ProjectUsersManagerProps) => {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { canUseFeature, currentTier } = useSubscription();
+  const hasTeamSharingAccess = canUseFeature("team_sharing");
 
   const { data: projectUsers, isLoading } = useQuery({
     queryKey: ['project-users', projectId],
@@ -67,13 +71,31 @@ export const ProjectUsersManager = ({ open, onOpenChange, projectId }: ProjectUs
           </DialogHeader>
 
           <div className="space-y-4">
-            <Button 
-              onClick={() => setInviteDialogOpen(true)}
-              className="w-full"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Nieuwe Gebruiker Uitnodigen
-            </Button>
+            {hasTeamSharingAccess ? (
+              <Button 
+                onClick={() => setInviteDialogOpen(true)}
+                className="w-full"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Nieuwe Gebruiker Uitnodigen
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <Button 
+                  disabled
+                  className="w-full opacity-60"
+                  variant="secondary"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Nieuwe Gebruiker Uitnodigen
+                </Button>
+                <UpgradePrompt 
+                  currentTier={currentTier} 
+                  feature="team_sharing" 
+                  compact 
+                />
+              </div>
+            )}
 
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">

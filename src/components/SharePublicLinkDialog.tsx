@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2, QrCode, Download } from "lucide-react";
+import { Copy, Link, Trash2, ExternalLink, Eye, Calendar, Loader2, QrCode, Download, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import {
@@ -29,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 
 interface SharePublicLinkDialogProps {
   open: boolean;
@@ -46,6 +48,8 @@ const SharePublicLinkDialog = ({
   const [expiresInDays, setExpiresInDays] = useState<string>("never");
   const [expandedQRCode, setExpandedQRCode] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { canUseFeature, currentTier } = useSubscription();
+  const hasPublicLinksAccess = canUseFeature("public_links");
 
   // Fetch existing shares
   const { data: shares, isLoading: sharesLoading } = useQuery({
@@ -190,44 +194,52 @@ const SharePublicLinkDialog = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Generate new link section */}
-          <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
-            <h4 className="font-medium">Nieuwe link aanmaken</h4>
-            
-            <div className="space-y-2">
-              <Label>Vervaldatum</Label>
-              <Select value={expiresInDays} onValueChange={setExpiresInDays}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Kies verloop" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="never">Nooit</SelectItem>
-                  <SelectItem value="7">7 dagen</SelectItem>
-                  <SelectItem value="30">30 dagen</SelectItem>
-                  <SelectItem value="90">90 dagen</SelectItem>
-                  <SelectItem value="365">1 jaar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Feature gate check */}
+          {!hasPublicLinksAccess ? (
+            <UpgradePrompt 
+              currentTier={currentTier} 
+              feature="public_links" 
+            />
+          ) : (
+            <>
+              {/* Generate new link section */}
+              <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                <h4 className="font-medium">Nieuwe link aanmaken</h4>
+                
+                <div className="space-y-2">
+                  <Label>Vervaldatum</Label>
+                  <Select value={expiresInDays} onValueChange={setExpiresInDays}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kies verloop" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="never">Nooit</SelectItem>
+                      <SelectItem value="7">7 dagen</SelectItem>
+                      <SelectItem value="30">30 dagen</SelectItem>
+                      <SelectItem value="90">90 dagen</SelectItem>
+                      <SelectItem value="365">1 jaar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <Button
-              onClick={() => generateMutation.mutate()}
-              disabled={generateMutation.isPending}
-              className="w-full gradient-primary"
-            >
-              {generateMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Aanmaken...
-                </>
-              ) : (
-                <>
-                  <Link className="w-4 h-4 mr-2" />
-                  Link Aanmaken & Kopiëren
-                </>
-              )}
-            </Button>
-          </div>
+                <Button
+                  onClick={() => generateMutation.mutate()}
+                  disabled={generateMutation.isPending}
+                  className="w-full gradient-primary"
+                >
+                  {generateMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Aanmaken...
+                    </>
+                  ) : (
+                    <>
+                      <Link className="w-4 h-4 mr-2" />
+                      Link Aanmaken & Kopiëren
+                    </>
+                  )}
+                </Button>
+              </div>
 
           {/* Existing shares */}
           <div className="space-y-3">
@@ -359,6 +371,8 @@ const SharePublicLinkDialog = ({
               </p>
             )}
           </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
