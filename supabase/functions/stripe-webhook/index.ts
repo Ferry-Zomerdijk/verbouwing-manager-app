@@ -306,6 +306,126 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   await sendPaymentFailedEmail(customerEmail, customerName, attemptCount);
 }
 
+function generatePaymentRecoveredEmailHtml(userName: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
+                ✅ Betaling geslaagd!
+              </h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Hoi${userName ? ` ${userName}` : ''},
+              </p>
+              
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Goed nieuws! Je betaling is nu succesvol verwerkt en je abonnement blijft actief.
+              </p>
+              
+              <!-- Success Box -->
+              <div style="background-color: #d1fae5; border-radius: 8px; padding: 24px; margin: 24px 0; border-left: 4px solid #10b981;">
+                <h2 style="color: #065f46; font-size: 16px; margin: 0 0 12px; font-weight: 600;">
+                  Alles is in orde
+                </h2>
+                <p style="color: #047857; font-size: 14px; line-height: 1.6; margin: 0;">
+                  Je hoeft verder niets te doen. Je hebt weer volledige toegang tot alle premium features van je abonnement.
+                </p>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 24px 0;">
+                Bedankt dat je klant blijft! Als je vragen hebt over je abonnement of facturen, kun je altijd contact met ons opnemen.
+              </p>
+              
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="https://bouwapp.lovable.app/dashboard" 
+                   style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Naar mijn dashboard →
+                </a>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Dit is een bevestiging van je herstelde abonnementsbetaling.<br>
+                © ${new Date().getFullYear()} Bouw App. Alle rechten voorbehouden.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+async function sendPaymentRecoveredEmail(customerEmail: string, customerName: string) {
+  try {
+    console.log("Sending payment recovered email to:", customerEmail);
+
+    const { data, error } = await resend.emails.send({
+      from: "Bouw App <onboarding@resend.dev>",
+      to: [customerEmail],
+      subject: "✅ Je betaling is geslaagd!",
+      html: generatePaymentRecoveredEmailHtml(customerName),
+    });
+
+    if (error) {
+      console.error("Error sending payment recovered email:", error);
+      return;
+    }
+
+    console.log("Payment recovered email sent successfully:", data);
+  } catch (error) {
+    console.error("Exception sending payment recovered email:", error);
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  console.log("Processing successful invoice payment:", invoice.id);
+
+  // Only send email if this was a recovery (attempt_count > 1 means there were failed attempts before)
+  const attemptCount = invoice.attempt_count || 1;
+  
+  if (attemptCount <= 1) {
+    console.log("First attempt success, no recovery email needed");
+    return;
+  }
+
+  const customerEmail = invoice.customer_email;
+  const customerName = invoice.customer_name || "";
+
+  if (!customerEmail) {
+    console.error("No customer email found on invoice");
+    return;
+  }
+
+  console.log(`Payment recovered after ${attemptCount} attempts, sending recovery email`);
+  await sendPaymentRecoveredEmail(customerEmail, customerName);
+}
+
 
 function generateSubscriptionEmailHtml(
   userName: string,
@@ -614,6 +734,10 @@ serve(async (req) => {
       
       case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+      
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
         break;
       
       default:
