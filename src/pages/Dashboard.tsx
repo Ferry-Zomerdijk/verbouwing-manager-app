@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown } from "lucide-react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -30,10 +30,12 @@ import AccountSettingsDialog from "@/components/AccountSettingsDialog";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { currentTier, limits } = useSubscription();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -228,6 +230,28 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* Upgrade Banner for Free Users */}
+        {currentTier === "free" && (
+          <div className="mb-6 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Upgrade naar Basis of Pro</p>
+                  <p className="text-sm text-muted-foreground">
+                    Krijg toegang tot meer projecten, onbeperkte taken en extra features
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => navigate("/pricing")} className="gradient-primary shrink-0">
+                Bekijk plannen
+              </Button>
+            </div>
+          </div>
+        )}
+
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
             <TabsList className="inline-flex w-auto min-w-full sm:w-auto">
