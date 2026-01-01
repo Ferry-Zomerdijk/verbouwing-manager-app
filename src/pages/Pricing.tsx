@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PricingCard } from "@/components/subscription/PricingCard";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, STRIPE_TIERS } from "@/hooks/useSubscription";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,10 +69,11 @@ export default function Pricing() {
     }
   }, [searchParams]);
 
-  // Map prices to plans
-  const getPriceForTier = (tier: string) => {
-    const tierPrice = prices?.find(p => p.metadata?.tier === tier);
-    return tierPrice;
+  // Get price ID for tier directly from constants
+  const getPriceIdForTier = (tier: string): string | null => {
+    if (tier === "basis") return STRIPE_TIERS.basis.price_id;
+    if (tier === "pro") return STRIPE_TIERS.pro.price_id;
+    return null;
   };
 
   const handleSelectPlan = async (tier: string) => {
@@ -89,9 +90,9 @@ export default function Pricing() {
       return;
     }
 
-    const price = getPriceForTier(tier);
-    if (price) {
-      createCheckout(price.id);
+    const priceId = getPriceIdForTier(tier);
+    if (priceId) {
+      createCheckout(priceId);
     } else {
       toast.error("Prijs niet gevonden. Neem contact op met ondersteuning.");
     }
