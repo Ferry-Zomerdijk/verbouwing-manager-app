@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Badge } from "@/components/ui/badge";
 
 interface AccountSettingsDialogProps {
   open: boolean;
@@ -15,6 +18,7 @@ interface AccountSettingsDialogProps {
 }
 
 const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDialogProps) => {
+  const navigate = useNavigate();
   const [naam, setNaam] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -23,6 +27,13 @@ const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDialogProp
   const [profileLoading, setProfileLoading] = useState(true);
 
   const isMobile = useIsMobile();
+  const { currentTier, subscription, openPortal, isOpeningPortal } = useSubscription();
+
+  const tierNames: Record<string, string> = {
+    free: "Gratis",
+    basis: "Basis",
+    pro: "Pro",
+  };
 
   useEffect(() => {
     if (open) {
@@ -138,6 +149,48 @@ const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDialogProp
         <Button onClick={handleSaveProfile} disabled={loading} className="w-full">
           Profiel Opslaan
         </Button>
+      </div>
+
+      {/* Subscription Section */}
+      <div className="border-t pt-6 space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <CreditCard className="w-4 h-4" />
+          Abonnement
+        </h3>
+
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-2">
+            {currentTier !== "free" && <Crown className="w-4 h-4 text-primary" />}
+            <span className="font-medium">{tierNames[currentTier]}</span>
+          </div>
+          <Badge variant={currentTier === "free" ? "secondary" : "default"}>
+            {currentTier === "free" ? "Gratis" : "Actief"}
+          </Badge>
+        </div>
+
+        <div className="flex gap-2">
+          {currentTier === "free" ? (
+            <Button 
+              onClick={() => {
+                onOpenChange(false);
+                navigate("/pricing");
+              }}
+              className="w-full gradient-primary"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Upgraden
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => openPortal()}
+              disabled={isOpeningPortal}
+              className="w-full"
+            >
+              Beheer abonnement
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Password Section */}
