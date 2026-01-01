@@ -14,6 +14,7 @@ import UserManagement from "./pages/UserManagement";
 import AcceptInvite from "./pages/AcceptInvite";
 import PublicProjectView from "./pages/PublicProjectView";
 import Pricing from "./pages/Pricing";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/accept-invite/:token" element={<AcceptInvite />} />
           <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
