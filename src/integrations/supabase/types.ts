@@ -114,6 +114,30 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           bestand_url: string
@@ -227,6 +251,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prices: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          currency: string
+          id: string
+          interval: string | null
+          interval_count: number | null
+          metadata: Json | null
+          product_id: string | null
+          trial_period_days: number | null
+          type: string | null
+          unit_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          currency: string
+          id: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          product_id?: string | null
+          trial_period_days?: number | null
+          type?: string | null
+          unit_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          currency?: string
+          id?: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          product_id?: string | null
+          trial_period_days?: number | null
+          type?: string | null
+          unit_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id: string
+          metadata?: Json | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -451,6 +558,68 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          customer_id: string | null
+          id: string
+          metadata: Json | null
+          price_id: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_id?: string | null
+          id: string
+          metadata?: Json | null
+          price_id?: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_id?: string | null
+          id?: string
+          metadata?: Json | null
+          price_id?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_price_id_fkey"
+            columns: ["price_id"]
+            isOneToOne: false
+            referencedRelation: "prices"
             referencedColumns: ["id"]
           },
         ]
@@ -687,6 +856,16 @@ export type Database = {
       notification_type: "Taak" | "Budget" | "Document"
       photo_phase: "Voor" | "Tijdens" | "Na"
       project_status: "Gepland" | "Lopend" | "Afgerond"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "canceled"
+        | "incomplete"
+        | "incomplete_expired"
+        | "past_due"
+        | "unpaid"
+        | "paused"
+      subscription_tier: "free" | "basis" | "pro"
       task_priority: "Laag" | "Middel" | "Hoog"
       task_status: "Te doen" | "Bezig" | "Gereed"
       user_role: "Eigenaar" | "Partner" | "Aannemer" | "Adviseur"
@@ -840,6 +1019,17 @@ export const Constants = {
       notification_type: ["Taak", "Budget", "Document"],
       photo_phase: ["Voor", "Tijdens", "Na"],
       project_status: ["Gepland", "Lopend", "Afgerond"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "canceled",
+        "incomplete",
+        "incomplete_expired",
+        "past_due",
+        "unpaid",
+        "paused",
+      ],
+      subscription_tier: ["free", "basis", "pro"],
       task_priority: ["Laag", "Middel", "Hoog"],
       task_status: ["Te doen", "Bezig", "Gereed"],
       user_role: ["Eigenaar", "Partner", "Aannemer", "Adviseur"],
