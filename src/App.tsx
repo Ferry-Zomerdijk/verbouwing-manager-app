@@ -7,6 +7,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Dashboard from "./pages/Dashboard";
 import ProjectDetail from "./pages/ProjectDetail";
 import ProjectTasksView from "./pages/ProjectTasksView";
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
