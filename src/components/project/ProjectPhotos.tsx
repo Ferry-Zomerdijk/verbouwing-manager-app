@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, X, Upload as UploadIcon, Image } from "lucide-react";
+import { Plus, Trash2, X, Upload as UploadIcon, Image, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 
 interface ProjectPhotosProps {
   projectId: string;
@@ -45,6 +47,8 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
+  const { currentTier, hasReachedLimit, limits } = useSubscription();
+
   const { data: photos, refetch } = useQuery({
     queryKey: ["photos", projectId],
     queryFn: async () => {
@@ -62,6 +66,8 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
 
   // Use public data in readOnly mode
   const displayPhotos = readOnly && publicPhotos ? publicPhotos : photos;
+  const photoCount = displayPhotos?.length || 0;
+  const isLimitReached = hasReachedLimit("maxPhotos", photoCount);
 
   const filteredPhotos = displayPhotos?.filter(photo => 
     filter === "all" ? true : photo.fase === filter
@@ -208,12 +214,34 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold">Foto's</h2>
         {!readOnly && (
-          <Button onClick={() => setUploadDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
-            <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Uploaden</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            {limits.maxPhotos !== -1 && (
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {photoCount}/{limits.maxPhotos}
+              </span>
+            )}
+            <Button 
+              onClick={() => {
+                if (isLimitReached) {
+                  toast.error("Fotolimiet bereikt. Upgrade je abonnement.");
+                  return;
+                }
+                setUploadDialogOpen(true);
+              }} 
+              className="gradient-primary shrink-0" 
+              size="sm"
+            >
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Uploaden</span>
+            </Button>
+          </div>
         )}
       </div>
+
+      {/* Upgrade prompt for limit reached */}
+      {!readOnly && isLimitReached && (
+        <UpgradePrompt currentTier={currentTier} limitType="maxPhotos" compact />
+      )}
 
       <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
         <Button

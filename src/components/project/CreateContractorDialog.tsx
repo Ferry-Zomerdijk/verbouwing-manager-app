@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
+import { useQuery } from "@tanstack/react-query";
 
 interface CreateContractorDialogProps {
   open: boolean;
@@ -28,6 +31,24 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
   });
 
   const isMobile = useIsMobile();
+  const { currentTier, hasReachedLimit, limits } = useSubscription();
+
+  // Get current contractor count for this project
+  const { data: contractorCount = 0 } = useQuery({
+    queryKey: ["contractorCount", projectId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("contractors")
+        .select("*", { count: "exact", head: true })
+        .eq("project_id", projectId);
+      
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: open,
+  });
+
+  const isLimitReached = hasReachedLimit("maxContractors", contractorCount);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +83,44 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
       setLoading(false);
     }
   };
+
+  // Show upgrade prompt if limit reached
+  if (isLimitReached) {
+    const upgradeContent = (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Je hebt {contractorCount} van {limits.maxContractors} aannemers gebruikt.
+        </p>
+        <UpgradePrompt currentTier={currentTier} limitType="maxContractors" />
+      </div>
+    );
+
+    if (isMobile) {
+      return (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="max-h-[90vh]">
+            <DrawerHeader className="text-left">
+              <DrawerTitle>Aannemerslimiet bereikt</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4">
+              {upgradeContent}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aannemerslimiet bereikt</DialogTitle>
+          </DialogHeader>
+          {upgradeContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">
