@@ -181,6 +181,132 @@ async function sendCancellationEmail(userId: string, tier: string) {
   }
 }
 
+function generatePaymentFailedEmailHtml(userName: string, attemptCount: number): string {
+  return `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
+                ⚠️ Betaling mislukt
+              </h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Hoi${userName ? ` ${userName}` : ''},
+              </p>
+              
+              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                We konden je laatste betaling voor je abonnement niet verwerken. ${attemptCount > 1 ? `Dit is poging ${attemptCount}.` : ''}
+              </p>
+              
+              <!-- Warning Box -->
+              <div style="background-color: #fef2f2; border-radius: 8px; padding: 24px; margin: 24px 0; border-left: 4px solid #ef4444;">
+                <h2 style="color: #991b1b; font-size: 16px; margin: 0 0 12px; font-weight: 600;">
+                  Actie vereist
+                </h2>
+                <p style="color: #7f1d1d; font-size: 14px; line-height: 1.6; margin: 0;">
+                  Om te voorkomen dat je abonnement wordt geannuleerd, werk je betaalmethode bij via onderstaande knop.
+                </p>
+              </div>
+              
+              <!-- Steps Box -->
+              <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                <h2 style="color: #374151; font-size: 16px; margin: 0 0 16px; font-weight: 600;">
+                  Hoe los je dit op?
+                </h2>
+                <ol style="color: #6b7280; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                  <li>Klik op de knop hieronder om naar je account te gaan</li>
+                  <li>Ga naar "Abonnement beheren"</li>
+                  <li>Werk je betaalmethode bij met een geldige kaart</li>
+                  <li>De betaling wordt automatisch opnieuw geprobeerd</li>
+                </ol>
+              </div>
+              
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="https://bouwapp.lovable.app/dashboard" 
+                   style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Betaalmethode bijwerken →
+                </a>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 24px 0; text-align: center;">
+                Heb je vragen? Neem gerust contact met ons op.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Dit is een automatisch bericht over je abonnementsbetaling.<br>
+                © ${new Date().getFullYear()} Bouw App. Alle rechten voorbehouden.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+async function sendPaymentFailedEmail(customerEmail: string, customerName: string, attemptCount: number) {
+  try {
+    console.log("Sending payment failed email to:", customerEmail);
+
+    const { data, error } = await resend.emails.send({
+      from: "Bouw App <onboarding@resend.dev>",
+      to: [customerEmail],
+      subject: "⚠️ Je betaling is mislukt - actie vereist",
+      html: generatePaymentFailedEmailHtml(customerName, attemptCount),
+    });
+
+    if (error) {
+      console.error("Error sending payment failed email:", error);
+      return;
+    }
+
+    console.log("Payment failed email sent successfully:", data);
+  } catch (error) {
+    console.error("Exception sending payment failed email:", error);
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  console.log("Processing failed invoice payment:", invoice.id);
+
+  const customerEmail = invoice.customer_email;
+  const customerName = invoice.customer_name || "";
+  const attemptCount = invoice.attempt_count || 1;
+
+  if (!customerEmail) {
+    console.error("No customer email found on invoice");
+    return;
+  }
+
+  await sendPaymentFailedEmail(customerEmail, customerName, attemptCount);
+}
+
+
 function generateSubscriptionEmailHtml(
   userName: string,
   tier: string,
@@ -484,6 +610,10 @@ serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Checkout completed for session:", session.id);
         // Subscription will be handled by customer.subscription.created event
+        break;
+      
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
       
       default:
