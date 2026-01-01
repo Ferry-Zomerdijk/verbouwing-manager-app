@@ -570,6 +570,7 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string | null
           customer_id: string | null
+          expiry_reminder_sent_at: string | null
           id: string
           metadata: Json | null
           price_id: string | null
@@ -587,6 +588,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           customer_id?: string | null
+          expiry_reminder_sent_at?: string | null
           id: string
           metadata?: Json | null
           price_id?: string | null
@@ -604,6 +606,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           customer_id?: string | null
+          expiry_reminder_sent_at?: string | null
           id?: string
           metadata?: Json | null
           price_id?: string | null

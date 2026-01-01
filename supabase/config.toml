@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.stripe-portal]
 verify_jwt = true
+
+[functions.check-expiring-subscriptions]
+verify_jwt = false
