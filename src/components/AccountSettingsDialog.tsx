@@ -5,9 +5,10 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail, CreditCard, Crown, RotateCcw } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,15 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
+  // PIN state
+  const [hasPin, setHasPin] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinPassword, setPinPassword] = useState("");
+  const [showPinPassword, setShowPinPassword] = useState(false);
+
   const isMobile = useIsMobile();
   const { currentTier, subscription, openPortal, isOpeningPortal } = useSubscription();
 
@@ -39,6 +49,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
   useEffect(() => {
     if (open) {
       loadProfile();
+      checkPinStatus();
     }
   }, [open]);
 
@@ -63,6 +74,20 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
       console.error("Error loading profile:", error);
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const checkPinStatus = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('pin-setup', {
+        body: { action: 'check' }
+      });
+      
+      if (!error && data) {
+        setHasPin(data.hasPin);
+      }
+    } catch (error) {
+      console.error("Error checking PIN status:", error);
     }
   };
 
@@ -113,6 +138,72 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSetupPin = async () => {
+    if (newPin.length !== 6) {
+      toast.error("Pincode moet 6 cijfers zijn");
+      return;
+    }
+
+    if (newPin !== confirmPin) {
+      toast.error("Pincodes komen niet overeen");
+      return;
+    }
+
+    if (!pinPassword) {
+      toast.error("Vul je huidige wachtwoord in");
+      return;
+    }
+
+    setPinLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pin-setup', {
+        body: { 
+          action: 'set',
+          pin: newPin,
+          password: pinPassword
+        }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Pincode ingesteld! Je kunt nu inloggen met je pincode.");
+      setHasPin(true);
+      setShowPinSetup(false);
+      resetPinForm();
+    } catch (error: any) {
+      toast.error(error.message || "Kon pincode niet instellen");
+    } finally {
+      setPinLoading(false);
+    }
+  };
+
+  const handleRemovePin = async () => {
+    setPinLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pin-setup', {
+        body: { action: 'remove' }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Pincode verwijderd");
+      setHasPin(false);
+    } catch (error: any) {
+      toast.error(error.message || "Kon pincode niet verwijderen");
+    } finally {
+      setPinLoading(false);
+    }
+  };
+
+  const resetPinForm = () => {
+    setNewPin("");
+    setConfirmPin("");
+    setPinPassword("");
+    setShowPinPassword(false);
   };
 
   const content = profileLoading ? (
@@ -192,6 +283,144 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
             </Button>
           )}
         </div>
+      </div>
+
+      {/* PIN Section */}
+      <div className="border-t pt-6 space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <KeyRound className="w-4 h-4" />
+          Snelle Login met Pincode
+        </h3>
+
+        {hasPin ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-sm">Pincode is ingesteld</span>
+              </div>
+              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                Actief
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Je kunt nu inloggen met je 6-cijferige pincode in plaats van je wachtwoord.
+            </p>
+            <Button
+              variant="outline"
+              onClick={handleRemovePin}
+              disabled={pinLoading}
+              className="w-full text-destructive hover:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {pinLoading ? "Bezig..." : "Pincode Verwijderen"}
+            </Button>
+          </div>
+        ) : showPinSetup ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Stel een 6-cijferige pincode in om sneller in te loggen.
+            </p>
+
+            <div className="space-y-3">
+              <Label>Nieuwe Pincode</Label>
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={newPin} 
+                  onChange={setNewPin}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Bevestig Pincode</Label>
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={confirmPin} 
+                  onChange={setConfirmPin}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pinPassword">Huidig Wachtwoord</Label>
+              <div className="relative">
+                <Input
+                  id="pinPassword"
+                  type={showPinPassword ? "text" : "password"}
+                  value={pinPassword}
+                  onChange={(e) => setPinPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPinPassword(!showPinPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPinPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Je wachtwoord is nodig om de pincode te beveiligen
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPinSetup(false);
+                  resetPinForm();
+                }}
+                className="flex-1"
+              >
+                Annuleren
+              </Button>
+              <Button
+                onClick={handleSetupPin}
+                disabled={pinLoading || newPin.length !== 6 || confirmPin.length !== 6 || !pinPassword}
+                className="flex-1"
+              >
+                {pinLoading ? "Bezig..." : "Pincode Instellen"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Stel een pincode in om sneller in te loggen met 6 cijfers in plaats van je wachtwoord.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setShowPinSetup(true)}
+              className="w-full"
+            >
+              <KeyRound className="w-4 h-4 mr-2" />
+              Pincode Instellen
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Password Section */}
@@ -281,7 +510,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />

@@ -21,6 +21,9 @@ verify_jwt = true
 [functions.pin-login]
 verify_jwt = false
 
+[functions.pin-setup]
+verify_jwt = true
+
 [functions.generate-public-share]
 verify_jwt = true
 
