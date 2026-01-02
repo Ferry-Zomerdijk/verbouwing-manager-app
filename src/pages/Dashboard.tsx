@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone } from "lucide-react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -238,6 +238,10 @@ const Dashboard = () => {
                       <DropdownMenuItem onClick={() => setContactMessagesOpen(true)}>
                         <Mail className="w-4 h-4 mr-2" />
                         Contactberichten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/app-store-screenshots")}>
+                        <Smartphone className="w-4 h-4 mr-2" />
+                        App Store Screenshots
                       </DropdownMenuItem>
                     </>
                   )}
