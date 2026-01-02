@@ -34,9 +34,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/project/:id" element={<ProjectDetail />} />
-          <Route path="/project-tasks/:id" element={<ProjectTasksView />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/project/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+          <Route path="/project-tasks/:id" element={<ProtectedRoute><ProjectTasksView /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
           <Route path="/accept-invite/:token" element={<AcceptInvite />} />
           <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
