@@ -341,6 +341,7 @@ export type Database = {
           email: string | null
           id: string
           naam: string | null
+          onboarding_completed: boolean | null
           rol: Database["public"]["Enums"]["user_role"] | null
         }
         Insert: {
@@ -348,6 +349,7 @@ export type Database = {
           email?: string | null
           id: string
           naam?: string | null
+          onboarding_completed?: boolean | null
           rol?: Database["public"]["Enums"]["user_role"] | null
         }
         Update: {
@@ -355,6 +357,7 @@ export type Database = {
           email?: string | null
           id?: string
           naam?: string | null
+          onboarding_completed?: boolean | null
           rol?: Database["public"]["Enums"]["user_role"] | null
         }
         Relationships: []
