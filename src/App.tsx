@@ -37,7 +37,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
           <Route path="/project-tasks/:id" element={<ProjectTasksView />} />
-          <Route path="/users" element={<UserManagement />} />
+          <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           <Route path="/accept-invite/:token" element={<AcceptInvite />} />
           <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
           <Route path="/pricing" element={<Pricing />} />
