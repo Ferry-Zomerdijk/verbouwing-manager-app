@@ -108,7 +108,20 @@ const Auth = () => {
         toast.success("Succesvol ingelogd!");
       }
     } catch (error: any) {
-      toast.error(error.message || "Er is een fout opgetreden");
+      const errorMessage = error.message || "Er is een fout opgetreden";
+      
+      // Check if the error indicates no PIN is set - suggest password login
+      if (errorMessage.includes("pincode ingesteld") || errorMessage.includes("no PIN")) {
+        toast.error("Geen pincode ingesteld. Gebruik wachtwoord login.", {
+          action: {
+            label: "Wachtwoord",
+            onClick: () => setLoginMethod("password"),
+          },
+        });
+        setLoginMethod("password");
+      } else {
+        toast.error(errorMessage);
+      }
       setPin(""); // Clear PIN on error
     } finally {
       setLoading(false);
