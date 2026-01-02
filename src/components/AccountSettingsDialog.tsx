@@ -32,6 +32,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
   const [hasPin, setHasPin] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
+  const [isChangingPin, setIsChangingPin] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinPassword, setPinPassword] = useState("");
@@ -169,9 +170,10 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success("Pincode ingesteld! Je kunt nu inloggen met je pincode.");
+      toast.success(isChangingPin ? "Pincode gewijzigd!" : "Pincode ingesteld! Je kunt nu inloggen met je pincode.");
       setHasPin(true);
       setShowPinSetup(false);
+      setIsChangingPin(false);
       resetPinForm();
     } catch (error: any) {
       toast.error(error.message || "Kon pincode niet instellen");
@@ -292,7 +294,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
           Snelle Login met Pincode
         </h3>
 
-        {hasPin ? (
+        {hasPin && !showPinSetup ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2">
@@ -306,20 +308,36 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
             <p className="text-xs text-muted-foreground">
               Je kunt nu inloggen met je 6-cijferige pincode in plaats van je wachtwoord.
             </p>
-            <Button
-              variant="outline"
-              onClick={handleRemovePin}
-              disabled={pinLoading}
-              className="w-full text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {pinLoading ? "Bezig..." : "Pincode Verwijderen"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsChangingPin(true);
+                  setShowPinSetup(true);
+                }}
+                disabled={pinLoading}
+                className="flex-1"
+              >
+                <KeyRound className="w-4 h-4 mr-2" />
+                Wijzigen
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleRemovePin}
+                disabled={pinLoading}
+                className="flex-1 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {pinLoading ? "Bezig..." : "Verwijderen"}
+              </Button>
+            </div>
           </div>
         ) : showPinSetup ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Stel een 6-cijferige pincode in om sneller in te loggen.
+              {isChangingPin 
+                ? "Voer je nieuwe 6-cijferige pincode in." 
+                : "Stel een 6-cijferige pincode in om sneller in te loggen."}
             </p>
 
             <div className="space-y-3">
@@ -391,6 +409,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
                 variant="outline"
                 onClick={() => {
                   setShowPinSetup(false);
+                  setIsChangingPin(false);
                   resetPinForm();
                 }}
                 className="flex-1"
@@ -402,7 +421,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
                 disabled={pinLoading || newPin.length !== 6 || confirmPin.length !== 6 || !pinPassword}
                 className="flex-1"
               >
-                {pinLoading ? "Bezig..." : "Pincode Instellen"}
+                {pinLoading ? "Bezig..." : isChangingPin ? "Pincode Wijzigen" : "Pincode Instellen"}
               </Button>
             </div>
           </div>
