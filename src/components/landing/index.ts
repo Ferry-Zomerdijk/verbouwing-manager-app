@@ -8,3 +8,4 @@ export { LandingTestimonials } from "./LandingTestimonials";
 export { LandingPricingPreview } from "./LandingPricingPreview";
 export { LandingFAQ } from "./LandingFAQ";
 export { LandingCTA } from "./LandingCTA";
+export { LandingContact } from "./LandingContact";
