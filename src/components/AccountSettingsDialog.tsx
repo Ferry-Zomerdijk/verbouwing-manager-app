@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail, CreditCard, Crown } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
@@ -15,9 +15,10 @@ import { Badge } from "@/components/ui/badge";
 interface AccountSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRestartOnboarding?: () => void;
 }
 
-const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDialogProps) => {
+const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: AccountSettingsDialogProps) => {
   const navigate = useNavigate();
   const [naam, setNaam] = useState("");
   const [email, setEmail] = useState("");
@@ -231,6 +232,27 @@ const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDialogProp
           Wachtwoord Wijzigen
         </Button>
       </div>
+
+      {/* Onboarding Section */}
+      {onRestartOnboarding && (
+        <div className="border-t pt-6 space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <RotateCcw className="w-4 h-4" />
+            Hulp
+          </h3>
+          <Button 
+            onClick={() => {
+              onOpenChange(false);
+              onRestartOnboarding();
+            }}
+            variant="outline"
+            className="w-full"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Bekijk introductie opnieuw
+          </Button>
+        </div>
+      )}
     </div>
   );
 

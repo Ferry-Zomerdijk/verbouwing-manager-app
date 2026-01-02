@@ -376,6 +376,7 @@ const Dashboard = () => {
       <AccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
+        onRestartOnboarding={() => setShowOnboarding(true)}
       />
 
       <OnboardingModal
