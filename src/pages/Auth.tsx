@@ -14,6 +14,18 @@ type Mode = "login" | "register" | "forgot-password";
 
 // Determine where to redirect the user after login
 const getRedirectPath = async (userId: string): Promise<string> => {
+  // First check if onboarding is completed - if not, always go to dashboard
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("id", userId)
+    .maybeSingle();
+
+  // If onboarding not completed, always redirect to dashboard where the modal will show
+  if (profile && !profile.onboarding_completed) {
+    return "/dashboard";
+  }
+
   // Check if user is admin
   const { data: adminRole } = await supabase
     .from("user_roles")
