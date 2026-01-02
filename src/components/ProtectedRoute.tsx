@@ -30,6 +30,15 @@ const ProtectedRoute = ({
   useEffect(() => {
     const checkAccess = async () => {
       try {
+        // Check if this was a temporary session (user didn't check "remember me")
+        // and clear it if the browser was closed and reopened
+        const isTempSession = sessionStorage.getItem('temp_session');
+        if (!isTempSession && localStorage.getItem('temp_session_marker')) {
+          // Browser was closed, clear the session
+          localStorage.removeItem('temp_session_marker');
+          await supabase.auth.signOut();
+        }
+        
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
