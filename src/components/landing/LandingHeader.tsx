@@ -69,6 +69,12 @@ export const LandingHeader = () => {
             >
               FAQ
             </button>
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="text-foreground/80 hover:text-foreground transition-colors font-medium"
+            >
+              Contact
+            </button>
           </nav>
 
           {/* CTA Buttons */}
@@ -124,6 +130,12 @@ export const LandingHeader = () => {
                 className="text-left py-2 text-foreground/80 hover:text-foreground transition-colors font-medium"
               >
                 FAQ
+              </button>
+              <button
+                onClick={() => scrollToSection("contact")}
+                className="text-left py-2 text-foreground/80 hover:text-foreground transition-colors font-medium"
+              >
+                Contact
               </button>
               <div className="flex flex-col gap-2 pt-2 border-t">
                 <Button variant="outline" onClick={() => navigate("/auth")} className="w-full">
