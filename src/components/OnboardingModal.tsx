@@ -152,11 +152,9 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onComplete(); }}>
       <DialogContent 
         className="sm:max-w-lg p-0 gap-0 overflow-hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         {/* Progress bar */}
         <div className="px-6 pt-6">
