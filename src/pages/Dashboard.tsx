@@ -31,6 +31,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
@@ -46,14 +48,14 @@ const Dashboard = () => {
     isAdmin: false,
   });
 
-  // Load user info
+  // Load user info and check onboarding status
   useEffect(() => {
     const loadUserInfo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("naam")
+          .select("naam, onboarding_completed")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -69,10 +71,27 @@ const Dashboard = () => {
           email: user.email || null,
           isAdmin: !!adminRole,
         });
+
+        // Show onboarding if not completed
+        if (profile && !profile.onboarding_completed) {
+          setShowOnboarding(true);
+        }
       }
     };
     loadUserInfo();
   }, []);
+
+  const handleOnboardingComplete = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true })
+        .eq("id", user.id);
+    }
+    setShowOnboarding(false);
+    toast.success("Welkom! Je bent klaar om te beginnen.");
+  };
 
   useKeyboardShortcuts([
     {
@@ -357,6 +376,11 @@ const Dashboard = () => {
       <AccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
+      />
+
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
       />
     </div>
   );
