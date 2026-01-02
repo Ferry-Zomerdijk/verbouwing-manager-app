@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Smartphone, Tablet, Monitor } from "lucide-react";
+import { ArrowLeft, Download, Smartphone, Tablet, Monitor, Loader2, ShieldX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ScreenshotData {
   id: string;
@@ -179,6 +180,41 @@ const ScreenContent = ({ screenshot }: { screenshot: ScreenshotData }) => {
 const AppStoreScreenshots = () => {
   const navigate = useNavigate();
   const [activeDevice, setActiveDevice] = useState<"iphone" | "ipad" | "desktop">("iphone");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (!adminRole) {
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error("Error checking admin access:", error);
+        setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminAccess();
+  }, [navigate]);
 
   const deviceSizes = {
     iphone: {
@@ -194,6 +230,33 @@ const AppStoreScreenshots = () => {
       "Mac": "1280 × 800 px",
     },
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="pt-6 text-center space-y-4">
+            <ShieldX className="h-16 w-16 text-destructive mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">Geen Toegang</h2>
+            <p className="text-muted-foreground">
+              Je hebt geen toegang tot deze pagina. Alleen beheerders kunnen de App Store screenshots bekijken.
+            </p>
+            <Button onClick={() => navigate("/dashboard")} className="w-full">
+              Terug naar Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
