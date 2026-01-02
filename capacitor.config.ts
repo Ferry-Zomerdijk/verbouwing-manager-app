@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.homeproject.app',
+  appId: 'com.therenovate.app',
   appName: 'HomeProject',
   webDir: 'dist',
   server: {
