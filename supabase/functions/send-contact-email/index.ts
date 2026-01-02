@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,7 +74,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Sending contact email from:", name, email);
+    console.log("Processing contact form from:", name, email);
+
+    // Save to database using service role
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    const { error: dbError } = await supabase
+      .from("contact_messages")
+      .insert({
+        name,
+        email,
+        message,
+      });
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      // Continue with email sending even if DB save fails
+    } else {
+      console.log("Contact message saved to database");
+    }
 
     // Send notification email to admin
     const adminEmailResponse = await sendEmail(
