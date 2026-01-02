@@ -59,6 +59,25 @@ const getRedirectPath = async (userId: string, returnUrl?: string | null): Promi
   return "/dashboard";
 };
 
+// Helper function to get a friendly page name from a path
+const getPageName = (path: string): string => {
+  const pathMap: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/project": "Project",
+    "/project-tasks": "Taken",
+    "/users": "Gebruikers Beheren",
+    "/checkout/success": "Checkout",
+    "/app-store-screenshots": "App Store Screenshots",
+  };
+
+  for (const [key, name] of Object.entries(pathMap)) {
+    if (path.startsWith(key)) {
+      return name;
+    }
+  }
+  return "de gevraagde pagina";
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -71,6 +90,20 @@ const Auth = () => {
   const [pin, setPin] = useState("");
   const [naam, setNaam] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showedReturnMessage, setShowedReturnMessage] = useState(false);
+
+  // Show toast message if user was redirected from a protected page
+  useEffect(() => {
+    if (returnUrl && !showedReturnMessage) {
+      const decodedUrl = decodeURIComponent(returnUrl);
+      const pageName = getPageName(decodedUrl);
+      toast.info(`Log in om ${pageName} te bekijken`, {
+        description: "Je wordt na het inloggen doorgestuurd.",
+        duration: 5000,
+      });
+      setShowedReturnMessage(true);
+    }
+  }, [returnUrl, showedReturnMessage]);
 
   useEffect(() => {
     const checkSession = async () => {
