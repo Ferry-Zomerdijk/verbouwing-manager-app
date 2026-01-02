@@ -41,7 +41,7 @@ const App = () => (
           <Route path="/accept-invite/:token" element={<AcceptInvite />} />
           <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/app-store-screenshots" element={<ProtectedRoute requiredRole="admin"><AppStoreScreenshots /></ProtectedRoute>} />
