@@ -189,7 +189,7 @@ const Auth = () => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary flex items-center justify-center">
             <Home className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">HomeProject</CardTitle>
+          <CardTitle className="text-2xl">De Renovatie App</CardTitle>
           <CardDescription>{getTitle()}</CardDescription>
         </CardHeader>
 

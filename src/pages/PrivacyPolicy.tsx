@@ -23,12 +23,12 @@ export default function PrivacyPolicy() {
 
       <main className="container mx-auto px-4 py-12 flex-1">
         <div className="max-w-3xl mx-auto prose prose-neutral dark:prose-invert">
-          <h1 className="text-3xl font-bold mb-8">Privacybeleid HomeProject</h1>
+          <h1 className="text-3xl font-bold mb-8">Privacybeleid De Renovatie App</h1>
           
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Inleiding</h2>
             <p className="text-muted-foreground mb-4">
-              HomeProject ("wij", "ons" of "onze") respecteert uw privacy en is toegewijd aan het beschermen van uw persoonlijke gegevens. Dit privacybeleid legt uit hoe wij uw persoonlijke informatie verzamelen, gebruiken, opslaan en beschermen wanneer u onze applicatie gebruikt.
+              De Renovatie App ("wij", "ons" of "onze") respecteert uw privacy en is toegewijd aan het beschermen van uw persoonlijke gegevens. Dit privacybeleid legt uit hoe wij uw persoonlijke informatie verzamelen, gebruiken, opslaan en beschermen wanneer u onze applicatie gebruikt.
             </p>
           </section>
 
@@ -122,7 +122,7 @@ export default function PrivacyPolicy() {
               Voor vragen over dit privacybeleid of uw persoonlijke gegevens kunt u contact met ons opnemen via:
             </p>
             <p className="text-muted-foreground">
-              E-mail: privacy@homeproject.nl
+              E-mail: privacy@derenovatieapp.nl
             </p>
           </section>
         </div>

@@ -23,19 +23,19 @@ export default function TermsOfService() {
 
       <main className="container mx-auto px-4 py-12 flex-1">
         <div className="max-w-3xl mx-auto prose prose-neutral dark:prose-invert">
-          <h1 className="text-3xl font-bold mb-8">Algemene Voorwaarden HomeProject</h1>
+          <h1 className="text-3xl font-bold mb-8">Algemene Voorwaarden De Renovatie App</h1>
           
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Acceptatie van voorwaarden</h2>
             <p className="text-muted-foreground mb-4">
-              Door HomeProject te gebruiken gaat u akkoord met deze algemene voorwaarden. Als u niet akkoord gaat met deze voorwaarden, gebruik onze diensten dan niet.
+              Door De Renovatie App te gebruiken gaat u akkoord met deze algemene voorwaarden. Als u niet akkoord gaat met deze voorwaarden, gebruik onze diensten dan niet.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">2. Beschrijving van de dienst</h2>
             <p className="text-muted-foreground mb-4">
-              HomeProject is een applicatie voor het beheren van woningrenovatieprojecten. De dienst stelt gebruikers in staat om:
+              De Renovatie App is een applicatie voor het beheren van woningrenovatieprojecten. De dienst stelt gebruikers in staat om:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Renovatieprojecten aan te maken en te beheren</li>
@@ -48,7 +48,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">3. Accounts</h2>
             <p className="text-muted-foreground mb-4">
-              Om HomeProject te gebruiken moet u een account aanmaken. U bent verantwoordelijk voor:
+              Om De Renovatie App te gebruiken moet u een account aanmaken. U bent verantwoordelijk voor:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Het verstrekken van accurate en volledige informatie</li>
@@ -61,7 +61,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">4. Abonnementen en betalingen</h2>
             <p className="text-muted-foreground mb-4">
-              HomeProject biedt gratis en betaalde abonnementen aan:
+              De Renovatie App biedt gratis en betaalde abonnementen aan:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li><strong>Gratis:</strong> Beperkte functies, geen kosten</li>
@@ -76,7 +76,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">5. Acceptabel gebruik</h2>
             <p className="text-muted-foreground mb-4">
-              Bij het gebruik van HomeProject gaat u akkoord met het volgende niet te doen:
+              Bij het gebruik van De Renovatie App gaat u akkoord met het volgende niet te doen:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Illegale of ongeoorloofde activiteiten</li>
@@ -90,17 +90,17 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">6. Intellectueel eigendom</h2>
             <p className="text-muted-foreground mb-4">
-              HomeProject en alle bijbehorende logo's, ontwerpen en content zijn eigendom van HomeProject en worden beschermd door auteursrechten en andere intellectuele eigendomsrechten.
+              De Renovatie App en alle bijbehorende logo's, ontwerpen en content zijn eigendom van De Renovatie App en worden beschermd door auteursrechten en andere intellectuele eigendomsrechten.
             </p>
             <p className="text-muted-foreground">
-              U behoudt alle rechten op de content die u uploadt naar HomeProject. Door content te uploaden verleent u ons een beperkte licentie om deze content te verwerken en weer te geven binnen de dienst.
+              U behoudt alle rechten op de content die u uploadt naar De Renovatie App. Door content te uploaden verleent u ons een beperkte licentie om deze content te verwerken en weer te geven binnen de dienst.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">7. Aansprakelijkheidsbeperking</h2>
             <p className="text-muted-foreground mb-4">
-              HomeProject wordt aangeboden "as is" zonder garanties. Wij zijn niet aansprakelijk voor:
+              De Renovatie App wordt aangeboden "as is" zonder garanties. Wij zijn niet aansprakelijk voor:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Indirecte, incidentele of gevolgschade</li>
@@ -148,7 +148,7 @@ export default function TermsOfService() {
               Voor vragen over deze voorwaarden kunt u contact met ons opnemen via:
             </p>
             <p className="text-muted-foreground">
-              E-mail: support@homeproject.nl
+              E-mail: support@derenovatieapp.nl
             </p>
           </section>
         </div>

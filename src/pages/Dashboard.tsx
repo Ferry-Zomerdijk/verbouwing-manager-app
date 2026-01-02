@@ -165,7 +165,7 @@ const Dashboard = () => {
                 <Home className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold">HomeProject</h1>
+                <h1 className="text-lg sm:text-2xl font-bold">De Renovatie App</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Jouw renovatieprojecten</p>
               </div>
             </div>
