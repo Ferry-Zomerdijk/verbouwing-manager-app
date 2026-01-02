@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Home, Eye, EyeOff, ArrowLeft, KeyRound, Lock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,6 +91,7 @@ const Auth = () => {
   const [pin, setPin] = useState("");
   const [naam, setNaam] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [showedReturnMessage, setShowedReturnMessage] = useState(false);
 
   // Show toast message if user was redirected from a protected page
@@ -157,6 +159,12 @@ const Auth = () => {
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
+        
+        // If "remember me" is not checked, clear session on browser close
+        if (!rememberMe) {
+          sessionStorage.setItem('temp_session', 'true');
+        }
+        
         toast.success("Succesvol ingelogd!");
       }
     } catch (error: any) {
@@ -191,6 +199,12 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
+        
+        // If "remember me" is not checked, mark session as temporary
+        if (!rememberMe) {
+          sessionStorage.setItem('temp_session', 'true');
+        }
+        
         toast.success("Succesvol ingelogd!");
       } else if (mode === "register") {
         const { error } = await supabase.auth.signUp({
@@ -356,6 +370,20 @@ const Auth = () => {
                     </div>
                   </div>
 
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="rememberMePin" 
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="rememberMePin" 
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Onthoud mij
+                    </Label>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full gradient-primary" 
@@ -405,7 +433,20 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="rememberMe" 
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label 
+                        htmlFor="rememberMe" 
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Onthoud mij
+                      </Label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setMode("forgot-password")}
