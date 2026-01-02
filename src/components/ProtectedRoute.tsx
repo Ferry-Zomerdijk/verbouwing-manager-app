@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const ProtectedRoute = ({
   unauthorizedRedirect = "/dashboard"
 }: ProtectedRouteProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasRequiredRole, setHasRequiredRole] = useState(false);
@@ -32,7 +33,9 @@ const ProtectedRoute = ({
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          navigate(redirectTo);
+          // Include current path as returnUrl parameter
+          const returnUrl = encodeURIComponent(location.pathname + location.search);
+          navigate(`${redirectTo}?returnUrl=${returnUrl}`);
           return;
         }
 

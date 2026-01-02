@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ type LoginMethod = "pin" | "password";
 type Mode = "login" | "register" | "forgot-password";
 
 // Determine where to redirect the user after login
-const getRedirectPath = async (userId: string): Promise<string> => {
+const getRedirectPath = async (userId: string, returnUrl?: string | null): Promise<string> => {
   // First check if onboarding is completed - if not, always go to dashboard
   const { data: profile } = await supabase
     .from("profiles")
@@ -24,6 +24,11 @@ const getRedirectPath = async (userId: string): Promise<string> => {
   // If onboarding not completed, always redirect to dashboard where the modal will show
   if (profile && !profile.onboarding_completed) {
     return "/dashboard";
+  }
+
+  // If there's a return URL, use it (but validate it's a relative path)
+  if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
+    return returnUrl;
   }
 
   // Check if user is admin
@@ -56,6 +61,8 @@ const getRedirectPath = async (userId: string): Promise<string> => {
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const [mode, setMode] = useState<Mode>("login");
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("pin");
   const [loading, setLoading] = useState(false);
@@ -69,7 +76,7 @@ const Auth = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const path = await getRedirectPath(session.user.id);
+        const path = await getRedirectPath(session.user.id, returnUrl);
         navigate(path);
       }
     };
@@ -80,7 +87,7 @@ const Auth = () => {
       if (session?.user) {
         // Use setTimeout to avoid Supabase deadlock
         setTimeout(async () => {
-          const path = await getRedirectPath(session.user.id);
+          const path = await getRedirectPath(session.user.id, returnUrl);
           navigate(path);
         }, 0);
       }
