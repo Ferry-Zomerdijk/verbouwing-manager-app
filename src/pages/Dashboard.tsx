@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail } from "lucide-react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -32,6 +32,7 @@ import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const Dashboard = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [contactMessagesOpen, setContactMessagesOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
@@ -233,6 +235,10 @@ const Dashboard = () => {
                         <Users className="w-4 h-4 mr-2" />
                         Gebruikers Beheren
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setContactMessagesOpen(true)}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Contactberichten
+                      </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
@@ -382,6 +388,11 @@ const Dashboard = () => {
       <OnboardingModal
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
+      />
+
+      <ContactMessagesDialog
+        open={contactMessagesOpen}
+        onOpenChange={setContactMessagesOpen}
       />
     </div>
   );
