@@ -171,7 +171,7 @@ export default function Pricing() {
               <h4 className="font-semibold mb-2">Is er een proefperiode?</h4>
               <p className="text-muted-foreground">
                 Het gratis plan is permanent beschikbaar. Voor betaalde plannen kun je altijd 
-                eerst het gratis plan proberen om te kijken of HomeProject bij je past.
+                eerst het gratis plan proberen om te kijken of De Renovatie App bij je past.
               </p>
             </div>
             

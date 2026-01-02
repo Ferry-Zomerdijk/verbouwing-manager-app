@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.therenovate.app',
-  appName: 'HomeProject',
+  appName: 'De Renovatie App',
   webDir: 'dist',
   server: {
     url: 'https://20291b55-3894-4f6c-8e54-46ea6ab5e19f.lovableproject.com?forceHideBadge=true',

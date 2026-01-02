@@ -52,7 +52,7 @@ const Index = () => {
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-primary-dark to-primary bg-clip-text text-transparent">
-            HomeProject
+            De Renovatie App
           </h1>
           
           <p className="text-lg sm:text-xl text-foreground/80 mb-8 px-4">

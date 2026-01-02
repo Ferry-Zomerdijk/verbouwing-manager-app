@@ -14,7 +14,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                 <Home className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold text-lg">HomeProject</span>
+              <span className="font-semibold text-lg">De Renovatie App</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Beheer je woningverbouwingen professioneel. Plan, volg en controleer je renovatieprojecten op één plek.
@@ -57,7 +57,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© {currentYear} HomeProject. Alle rechten voorbehouden.</p>
+          <p>© {currentYear} De Renovatie App. Alle rechten voorbehouden.</p>
         </div>
       </div>
     </footer>
