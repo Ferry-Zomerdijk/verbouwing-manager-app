@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addToQueue } from "@/lib/offlineQueue";
 import TaskUpdatesSection from "./TaskUpdatesSection";
 import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
@@ -41,7 +43,7 @@ interface EditTaskDialogProps {
 
 const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVanHuis = [] }: EditTaskDialogProps) => {
   const isMobile = useIsMobile();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -170,13 +172,56 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     setShowUnsavedWarning(false);
   };
 
+  const updateTaskMutation = useMutation({
+    mutationFn: async (updates: Record<string, unknown>) => {
+      // Queue voor offline sync als offline
+      if (!navigator.onLine) {
+        addToQueue({ type: 'update', table: 'tasks', data: { id: task.id, ...updates } });
+        return { id: task.id, ...updates };
+      }
+
+      const { error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", task.id);
+
+      if (error) throw error;
+      return { id: task.id, ...updates };
+    },
+    onMutate: async (updates) => {
+      // Cancel lopende fetches
+      await queryClient.cancelQueries({ queryKey: ["tasks", task.project_id] });
+      
+      // Sla huidige state op voor rollback
+      const previousTasks = queryClient.getQueryData(["tasks", task.project_id]);
+      
+      // Optimistic update
+      queryClient.setQueryData(["tasks", task.project_id], (old: any[] | undefined) =>
+        old?.map((t) =>
+          t.id === task.id ? { ...t, ...updates } : t
+        )
+      );
+      
+      return { previousTasks };
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback bij error
+      queryClient.setQueryData(["tasks", task.project_id], context?.previousTasks);
+      toast.error(error?.message || error?.error_description || "Er is een fout opgetreden");
+    },
+    onSuccess: () => {
+      toast.success(navigator.onLine ? "Taak bijgewerkt" : "Taak lokaal bijgewerkt (wordt gesync'd)");
+      onSuccess();
+      onOpenChange(false);
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isDeadlineInvalid) {
       toast.error("Deadline kan niet voor begindatum liggen");
       return;
     }
-    setLoading(true);
 
     const finalDeelVanHuis =
       formData.deel_van_huis === "__custom__"
@@ -185,32 +230,17 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           ? null
           : formData.deel_van_huis;
 
-    try {
-      const { error } = await supabase
-        .from("tasks")
-        .update({
-          titel: formData.titel,
-          beschrijving: formData.beschrijving || null,
-          begindatum: formData.begindatum || null,
-          deadline: formData.deadline || null,
-          status: formData.status as any,
-          prioriteit: formData.prioriteit as any,
-          verantwoordelijke: formData.verantwoordelijke || null,
-          deel_van_huis: finalDeelVanHuis || null,
-          image_urls: imageUrls.length > 0 ? imageUrls : null,
-        })
-        .eq("id", task.id);
-
-      if (error) throw error;
-
-      toast.success("Taak bijgewerkt");
-      onSuccess();
-      onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error?.message || error?.error_description || "Er is een fout opgetreden");
-    } finally {
-      setLoading(false);
-    }
+    updateTaskMutation.mutate({
+      titel: formData.titel,
+      beschrijving: formData.beschrijving || null,
+      begindatum: formData.begindatum || null,
+      deadline: formData.deadline || null,
+      status: formData.status as any,
+      prioriteit: formData.prioriteit as any,
+      verantwoordelijke: formData.verantwoordelijke || null,
+      deel_van_huis: finalDeelVanHuis || null,
+      image_urls: imageUrls.length > 0 ? imageUrls : null,
+    });
   };
 
   const formContent = (
@@ -386,10 +416,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         </Button>
         <Button 
           type="submit" 
-          disabled={loading} 
+          disabled={updateTaskMutation.isPending} 
           className={`gradient-primary ${isMobile ? "flex-1" : ""}`}
         >
-          {loading ? "Opslaan..." : isDirty ? "Opslaan *" : "Opslaan"}
+          {updateTaskMutation.isPending ? "Opslaan..." : isDirty ? "Opslaan *" : "Opslaan"}
         </Button>
       </div>
     </form>

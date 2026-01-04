@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addToQueue } from "@/lib/offlineQueue";
 import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -25,7 +27,6 @@ interface CreateTaskDialogProps {
 }
 
 const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableDelenVanHuis = [] }: CreateTaskDialogProps) => {
-  const [loading, setLoading] = useState(false);
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -43,6 +44,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   const isMobile = useIsMobile();
   const { currentTier, hasReachedLimit, limits } = useSubscription();
+  const queryClient = useQueryClient();
 
   // Get current task count for this project
   const { data: taskCount = 0 } = useQuery({
@@ -125,32 +127,30 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     return uploadedUrls;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isDeadlineInvalid) {
-      toast.error("Deadline kan niet voor begindatum liggen");
-      return;
-    }
-    setLoading(true);
+  type TaskPriority = "Hoog" | "Laag" | "Middel";
+  type TaskStatus = "Te doen" | "Bezig" | "Gereed";
 
-    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
-      ? customDeelVanHuis 
-      : formData.deel_van_huis;
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: {
+      project_id: string;
+      titel: string;
+      beschrijving: string | null;
+      begindatum: string | null;
+      deadline: string | null;
+      status: TaskStatus;
+      prioriteit: TaskPriority;
+      verantwoordelijke: string | null;
+      deel_van_huis: string | null;
+    }) => {
+      // Offline: genereer lokaal ID en queue
+      if (!navigator.onLine) {
+        const tempId = crypto.randomUUID();
+        const newTask = { id: tempId, ...taskData, created_at: new Date().toISOString() };
+        addToQueue({ type: 'insert', table: 'tasks', data: newTask });
+        return newTask;
+      }
 
-    try {
-      // First create the task
-      const { data: newTask, error } = await supabase.from("tasks").insert([{
-        project_id: projectId,
-        titel: formData.titel,
-        beschrijving: formData.beschrijving || null,
-        begindatum: formData.begindatum || null,
-        deadline: formData.deadline || null,
-        status: formData.status as any,
-        prioriteit: formData.prioriteit as any,
-        verantwoordelijke: formData.verantwoordelijke || null,
-        deel_van_huis: finalDeelVanHuis || null,
-      }]).select().single();
-
+      const { data: newTask, error } = await supabase.from("tasks").insert([taskData]).select().single();
       if (error) throw error;
 
       // Upload pending images if any
@@ -163,13 +163,44 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             .from("tasks")
             .update({ image_urls: imageUrls })
             .eq("id", newTask.id);
+          newTask.image_urls = imageUrls;
         }
         setUploadingImages(false);
       }
 
+      return newTask;
+    },
+    onMutate: async (taskData) => {
+      // Cancel lopende fetches
+      await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
+      
+      // Sla huidige state op voor rollback
+      const previousTasks = queryClient.getQueryData(["tasks", projectId]);
+      
+      // Optimistic update met temp ID
+      const tempTask = {
+        id: crypto.randomUUID(),
+        ...taskData,
+        created_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(["tasks", projectId], (old: any[] | undefined) =>
+        old ? [...old, tempTask] : [tempTask]
+      );
+      
+      return { previousTasks };
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback bij error
+      queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
+      toast.error(error.message || "Er is een fout opgetreden");
+    },
+    onSuccess: () => {
       // Cleanup previews
       pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
-
+      
+      toast.success(navigator.onLine ? "Taak aangemaakt" : "Taak lokaal aangemaakt (wordt gesync'd)");
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
       onSuccess();
       onOpenChange(false);
       setFormData({
@@ -184,12 +215,31 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       });
       setCustomDeelVanHuis("");
       setPendingImages([]);
-    } catch (error: any) {
-      toast.error(error.message || "Er is een fout opgetreden");
-    } finally {
-      setLoading(false);
-      setUploadingImages(false);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isDeadlineInvalid) {
+      toast.error("Deadline kan niet voor begindatum liggen");
+      return;
     }
+
+    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
+      ? customDeelVanHuis 
+      : formData.deel_van_huis;
+
+    createTaskMutation.mutate({
+      project_id: projectId,
+      titel: formData.titel,
+      beschrijving: formData.beschrijving || null,
+      begindatum: formData.begindatum || null,
+      deadline: formData.deadline || null,
+      status: formData.status as TaskStatus,
+      prioriteit: formData.prioriteit as TaskPriority,
+      verantwoordelijke: formData.verantwoordelijke || null,
+      deel_van_huis: finalDeelVanHuis || null,
+    });
   };
 
   // Show upgrade prompt if limit reached
@@ -422,8 +472,8 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Annuleren
           </Button>
-          <Button type="submit" disabled={loading || uploadingImages} className="gradient-primary">
-            {loading || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
+          <Button type="submit" disabled={createTaskMutation.isPending || uploadingImages} className="gradient-primary">
+            {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
           </Button>
         </div>
       )}
@@ -444,8 +494,8 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Annuleren
             </Button>
-            <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={loading || uploadingImages} className="flex-1 gradient-primary">
-              {loading || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
+            <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={createTaskMutation.isPending || uploadingImages} className="flex-1 gradient-primary">
+              {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
             </Button>
           </div>
         </DrawerContent>
