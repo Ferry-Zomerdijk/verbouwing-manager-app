@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PricingCardProps {
@@ -70,12 +70,19 @@ export function PricingCard({
         </div>
         
         <ul className="space-y-3">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-sm">{feature}</span>
-            </li>
-          ))}
+          {features.map((feature, index) => {
+            const isAiFeature = feature.toLowerCase().includes('ai');
+            return (
+              <li key={index} className="flex items-center gap-2">
+                {isAiFeature ? (
+                  <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+                ) : (
+                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                )}
+                <span className={cn("text-sm", isAiFeature && "font-medium")}>{feature}</span>
+              </li>
+            );
+          })}
         </ul>
       </CardContent>
       

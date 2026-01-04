@@ -88,6 +88,16 @@ export function SubscriptionStatus() {
               <span>Documenten</span>
               <span className="font-medium">{limits.maxDocuments === -1 ? "∞" : limits.maxDocuments}</span>
             </div>
+            <div className="flex justify-between">
+              <span>AI scans/maand</span>
+              <span className="font-medium">
+                {limits.maxAiScansPerMonth === -1 
+                  ? "∞" 
+                  : limits.maxAiScansPerMonth === 0 
+                    ? "—" 
+                    : limits.maxAiScansPerMonth}
+              </span>
+            </div>
           </div>
         </div>
 
