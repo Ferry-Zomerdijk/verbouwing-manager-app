@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Menu, X } from "lucide-react";
+import { Home, Menu, X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 export const LandingHeader = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { canInstall, promptInstall, isIOS } = usePwaInstall();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,6 +81,12 @@ export const LandingHeader = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            {canInstall && (
+              <Button variant="outline" size="sm" onClick={promptInstall}>
+                <Download className="h-4 w-4 mr-2" />
+                {isIOS ? 'Installeren' : 'App Installeren'}
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => navigate("/auth")}>
               Inloggen
             </Button>

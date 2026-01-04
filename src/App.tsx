@@ -9,6 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { OnlineProvider } from "./hooks/useOnlineStatus";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { SyncIndicator } from "./components/SyncIndicator";
+import { PwaInstallPrompt } from "./components/PwaInstallPrompt";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -60,6 +61,7 @@ const App = () => (
           <Sonner />
           <OfflineIndicator />
           <SyncIndicator />
+          <PwaInstallPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
