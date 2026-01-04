@@ -33,6 +33,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
+import AiUsageWidget from "@/components/AiUsageWidget";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -259,27 +260,32 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Upgrade Banner for Free Users */}
-        {currentTier === "free" && (
-          <div className="mb-6 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-primary" />
+        {/* AI Usage Widget & Upgrade Banner */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <AiUsageWidget />
+          
+          {/* Upgrade Banner for Free Users */}
+          {currentTier === "free" && (
+            <div className="sm:col-span-1 lg:col-span-2 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 h-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Upgrade naar Basis of Pro</p>
+                    <p className="text-sm text-muted-foreground">
+                      Krijg toegang tot meer projecten, onbeperkte taken en extra features
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">Upgrade naar Basis of Pro</p>
-                  <p className="text-sm text-muted-foreground">
-                    Krijg toegang tot meer projecten, onbeperkte taken en extra features
-                  </p>
-                </div>
+                <Button onClick={() => navigate("/pricing")} className="gradient-primary shrink-0">
+                  Bekijk plannen
+                </Button>
               </div>
-              <Button onClick={() => navigate("/pricing")} className="gradient-primary shrink-0">
-                Bekijk plannen
-              </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
