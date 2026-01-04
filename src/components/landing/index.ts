@@ -2,6 +2,7 @@ export { LandingHeader } from "./LandingHeader";
 export { LandingHero } from "./LandingHero";
 export { LandingProblemSolution } from "./LandingProblemSolution";
 export { LandingFeatures } from "./LandingFeatures";
+export { LandingAiFeatures } from "./LandingAiFeatures";
 export { LandingHowItWorks } from "./LandingHowItWorks";
 export { LandingBenefits } from "./LandingBenefits";
 export { LandingTestimonials } from "./LandingTestimonials";
