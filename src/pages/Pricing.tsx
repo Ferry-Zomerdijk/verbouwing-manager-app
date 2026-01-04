@@ -21,6 +21,7 @@ const PRICING_PLANS = [
       "10 foto's",
       "3 documenten",
       "Basis taakbeheer",
+      "Geen AI factuurscanning",
     ],
   },
   {
@@ -35,6 +36,7 @@ const PRICING_PLANS = [
       "20 documenten",
       "Importeren & exporteren",
       "Aannemers beheren",
+      "10 AI factuurscans per maand",
       "Email ondersteuning",
     ],
   },
@@ -50,6 +52,7 @@ const PRICING_PLANS = [
       "Onbeperkte documenten",
       "Teamleden uitnodigen",
       "Publieke links delen",
+      "Onbeperkte AI factuurscans",
       "Prioriteit ondersteuning",
       "Alle toekomstige features",
     ],

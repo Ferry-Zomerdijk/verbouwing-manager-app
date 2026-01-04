@@ -275,7 +275,7 @@ const Dashboard = () => {
                   <div>
                     <p className="font-medium">Upgrade naar Basis of Pro</p>
                     <p className="text-sm text-muted-foreground">
-                      Krijg toegang tot meer projecten, onbeperkte taken en extra features
+                      Krijg toegang tot meer projecten, AI factuurscanning en extra features
                     </p>
                   </div>
                 </div>
