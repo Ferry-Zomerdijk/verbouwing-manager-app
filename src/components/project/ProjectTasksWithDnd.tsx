@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FileSpreadsheet, FileDown, LayoutGrid, List } from "lucide-react";
+import { Plus, FileSpreadsheet, FileDown, LayoutGrid, List, ClipboardList } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -18,6 +18,7 @@ import TaskCard from "./TaskCard";
 import CreateTaskDialog from "./CreateTaskDialog";
 import ImportTasksDialog from "./ImportTasksDialog";
 import { ExportTasksDialog } from "./ExportTasksDialog";
+import { ApplyTemplateDialog } from "./ApplyTemplateDialog";
 import { ExportTask } from "@/lib/excelImport";
 import { toast } from "sonner";
 import { TaskFilters, TaskFiltersType } from "./TaskFilters";
@@ -41,6 +42,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"kanban" | "list">(() => {
     if (readOnly) return "kanban"; // Default for public view
@@ -402,6 +404,10 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
           </div>
           {!readOnly && !isProjectUserView && canImportExport && (
             <>
+              <Button variant="outline" size="sm" onClick={() => setTemplateDialogOpen(true)}>
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Template
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
                 <FileDown className="w-4 h-4 mr-2" />
                 Exporteren
@@ -519,6 +525,13 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
           beschrijving: task.beschrijving || null
         } as ExportTask))}
         projectName={project?.naam || 'project'}
+      />
+
+      <ApplyTemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        projectId={projectId}
+        onSuccess={() => refetch()}
       />
     </div>
   );
