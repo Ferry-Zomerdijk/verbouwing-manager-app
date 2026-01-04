@@ -61,6 +61,7 @@ export const TIER_LIMITS = {
     maxPhotos: 10,
     maxDocuments: 3,
     maxContractors: 2,
+    maxAiScansPerMonth: 0, // No AI access
     features: ["basic_tasks", "basic_photos"],
   },
   basis: {
@@ -69,7 +70,8 @@ export const TIER_LIMITS = {
     maxPhotos: 100,
     maxDocuments: 20,
     maxContractors: 10,
-    features: ["basic_tasks", "basic_photos", "import_export", "contractors"],
+    maxAiScansPerMonth: 10, // 10 scans per month
+    features: ["basic_tasks", "basic_photos", "import_export", "contractors", "ai_invoice_scan"],
   },
   pro: {
     maxProjects: -1, // unlimited
@@ -77,7 +79,8 @@ export const TIER_LIMITS = {
     maxPhotos: -1,
     maxDocuments: -1,
     maxContractors: -1,
-    features: ["basic_tasks", "basic_photos", "import_export", "contractors", "team_sharing", "public_links", "priority_support"],
+    maxAiScansPerMonth: -1, // Unlimited
+    features: ["basic_tasks", "basic_photos", "import_export", "contractors", "team_sharing", "public_links", "priority_support", "ai_invoice_scan"],
   },
 };
 

@@ -27,6 +27,7 @@ export function UpgradePrompt({ currentTier, feature, limitType, compact = false
     public_links: "Publieke links zijn alleen beschikbaar in het Pro abonnement",
     import_export: "Importeren en exporteren is beschikbaar vanaf het Basis abonnement",
     contractors: "Aannemers beheren is beschikbaar vanaf het Basis abonnement",
+    ai_invoice_scan: "AI factuurscanning is beschikbaar vanaf het Basis abonnement",
   };
 
   const message = limitType 
