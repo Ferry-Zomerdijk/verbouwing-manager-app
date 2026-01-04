@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, Users, TrendingUp, Calendar, Crown, Zap } from "lucide-react";
+import { Sparkles, Users, TrendingUp, Calendar, Crown, Zap, Euro } from "lucide-react";
 import { format, startOfMonth, subMonths } from "date-fns";
 import { nl } from "date-fns/locale";
 
@@ -29,9 +29,17 @@ interface AiUsageStats {
     date: string;
     count: number;
   }[];
+  estimatedCosts: {
+    thisMonth: number;
+    lastMonth: number;
+    perScan: number;
+  };
 }
 
 const AiUsageAnalytics = () => {
+  // Average cost per AI invoice scan (Gemini 2.5 Flash)
+  const COST_PER_SCAN = 0.003; // €0.003 per scan
+
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ["ai-usage-analytics"],
     queryFn: async (): Promise<AiUsageStats> => {
@@ -142,6 +150,13 @@ const AiUsageAnalytics = () => {
         .map(([date, count]) => ({ date, count }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
+      // Calculate estimated costs
+      const estimatedCosts = {
+        thisMonth: totalScansThisMonth * COST_PER_SCAN,
+        lastMonth: totalScansLastMonth * COST_PER_SCAN,
+        perScan: COST_PER_SCAN,
+      };
+
       return {
         totalScansThisMonth,
         totalScansLastMonth,
@@ -150,6 +165,7 @@ const AiUsageAnalytics = () => {
         usageByTier,
         topUsers,
         dailyUsage,
+        estimatedCosts,
       };
     },
     refetchInterval: 60000, // Refetch every minute
@@ -189,8 +205,79 @@ const AiUsageAnalytics = () => {
     );
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const getCostGrowthPercentage = () => {
+    if (!stats) return 0;
+    if (stats.estimatedCosts.lastMonth === 0) return stats.estimatedCosts.thisMonth > 0 ? 100 : 0;
+    return Math.round(((stats.estimatedCosts.thisMonth - stats.estimatedCosts.lastMonth) / stats.estimatedCosts.lastMonth) * 100);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Cost Overview Card */}
+      <Card className="border-chart-1/30 bg-gradient-to-br from-chart-1/5 to-transparent">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Euro className="w-5 h-5 text-chart-1" />
+            AI Kosten Overzicht
+          </CardTitle>
+          <CardDescription>
+            Geschatte kosten op basis van {formatCurrency(COST_PER_SCAN)} per scan (Gemini 2.5 Flash)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-background border">
+              <p className="text-sm text-muted-foreground mb-1">Kosten deze maand</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-chart-1">
+                    {formatCurrency(stats?.estimatedCosts.thisMonth || 0)}
+                  </span>
+                  {getCostGrowthPercentage() !== 0 && (
+                    <Badge variant={getCostGrowthPercentage() > 0 ? "destructive" : "default"} className="text-xs">
+                      {getCostGrowthPercentage() > 0 ? "+" : ""}{getCostGrowthPercentage()}%
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="p-4 rounded-lg bg-background border">
+              <p className="text-sm text-muted-foreground mb-1">Kosten vorige maand</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <span className="text-2xl font-bold">
+                  {formatCurrency(stats?.estimatedCosts.lastMonth || 0)}
+                </span>
+              )}
+            </div>
+            <div className="p-4 rounded-lg bg-background border">
+              <p className="text-sm text-muted-foreground mb-1">Gem. kosten per gebruiker</p>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <span className="text-2xl font-bold">
+                  {stats?.activeUsersThisMonth 
+                    ? formatCurrency(stats.estimatedCosts.thisMonth / stats.activeUsersThisMonth)
+                    : formatCurrency(0)}
+                </span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Overview Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
