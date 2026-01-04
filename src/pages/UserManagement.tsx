@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -22,6 +22,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import AiUsageAnalytics from "@/components/admin/AiUsageAnalytics";
 
 interface PlatformUser {
   id: string;
@@ -417,6 +418,12 @@ const UserManagement = () => {
                 Platform Gebruikers
               </TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="ai-analytics" className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                AI Analytics
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Project Users Tab */}
@@ -707,6 +714,13 @@ const UserManagement = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {/* AI Analytics Tab */}
+          {isAdmin && (
+            <TabsContent value="ai-analytics">
+              <AiUsageAnalytics />
             </TabsContent>
           )}
         </Tabs>
