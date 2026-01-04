@@ -13,6 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { emptyStateMessages, getRandomCompletionMessage } from "@/lib/builderJokes";
+import { addToQueue } from "@/lib/offlineQueue";
 
 interface MobileTaskListProps {
   tasks: any[];
@@ -60,18 +61,28 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
 
   const updateTaskStatus = useMutation({
     mutationFn: async ({ taskId, newStatus }: { taskId: string; newStatus: StatusFilter }) => {
+      // Queue voor offline sync als offline
+      if (!navigator.onLine) {
+        addToQueue({ type: 'update', table: 'tasks', data: { id: taskId, status: newStatus } });
+        return { id: taskId, status: newStatus };
+      }
+
       const { error } = await supabase
         .from("tasks")
         .update({ status: newStatus })
         .eq("id", taskId);
       
       if (error) throw error;
+      return { id: taskId, status: newStatus };
     },
     onMutate: async ({ taskId, newStatus }) => {
+      // Cancel lopende fetches
       await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
       
+      // Sla huidige state op voor rollback
       const previousTasks = queryClient.getQueryData(["tasks", projectId]);
       
+      // Optimistic update
       queryClient.setQueryData(["tasks", projectId], (old: any) =>
         old?.map((task: any) =>
           task.id === taskId ? { ...task, status: newStatus } : task
@@ -81,11 +92,12 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
       return { previousTasks };
     },
     onError: (err, variables, context) => {
+      // Rollback bij error
       queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
       toast.error("Fout bij bijwerken van status");
     },
-    onSuccess: () => {
-      toast.success("Status bijgewerkt");
+    onSuccess: (_, { taskId, newStatus }) => {
+      toast.success(navigator.onLine ? "Status bijgewerkt" : "Status lokaal bijgewerkt (wordt gesync'd)");
     },
   });
 

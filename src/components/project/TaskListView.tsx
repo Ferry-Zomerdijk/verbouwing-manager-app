@@ -15,6 +15,8 @@ import { TaskBulkActions } from "./TaskBulkActions";
 import { InlineEditableCell } from "./InlineEditableCell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addToQueue } from "@/lib/offlineQueue";
 
 interface Task {
   id: string;
@@ -57,25 +59,65 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
+  const queryClient = useQueryClient();
 
-  const updateTask = async (taskId: string, updates: Partial<Task>) => {
-    try {
+  // Extract projectId from first task
+  const projectId = tasks[0]?.project_id;
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Task> }) => {
+      // Queue voor offline sync als offline
+      if (!navigator.onLine) {
+        addToQueue({ type: 'update', table: 'tasks', data: { id: taskId, ...updates } });
+        return { id: taskId, ...updates };
+      }
+
       const { error } = await supabase
         .from("tasks")
         .update(updates)
         .eq("id", taskId);
 
       if (error) throw error;
-
-      toast.success("Taak bijgewerkt");
-      onUpdate();
-    } catch (error: any) {
-      const message =
-        error?.message || error?.error_description || "Fout bij bijwerken van taak";
+      return { id: taskId, ...updates };
+    },
+    onMutate: async ({ taskId, updates }) => {
+      // Cancel lopende fetches
+      await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
+      
+      // Sla huidige state op voor rollback
+      const previousTasks = queryClient.getQueryData(["tasks", projectId]);
+      
+      // Optimistic update
+      queryClient.setQueryData(["tasks", projectId], (old: Task[] | undefined) =>
+        old?.map((task) =>
+          task.id === taskId ? { ...task, ...updates } : task
+        )
+      );
+      
+      return { previousTasks };
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback bij error
+      queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
+      const message = error?.message || error?.error_description || "Fout bij bijwerken van taak";
       toast.error(message);
       console.error("updateTask error:", error);
-      throw error;
-    }
+    },
+    onSuccess: () => {
+      toast.success(navigator.onLine ? "Taak bijgewerkt" : "Taak lokaal bijgewerkt (wordt gesync'd)");
+    },
+  });
+
+  const updateTask = async (taskId: string, updates: Partial<Task>): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      updateTaskMutation.mutate(
+        { taskId, updates },
+        {
+          onSuccess: () => resolve(),
+          onError: (error) => reject(error),
+        }
+      );
+    });
   };
 
   const handleSort = (key: SortKey) => {
