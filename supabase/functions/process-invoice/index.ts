@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Tier limits configuration (keep in sync with frontend)
+const TIER_LIMITS: Record<string, number> = {
+  free: 0,
+  basis: 10,
+  pro: -1, // unlimited
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,7 +33,88 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    // Get user from authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Niet ingelogd' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Get user
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Niet ingelogd' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Processing invoice for user:', user.id);
+
+    // Check subscription tier and usage limits
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('tier, status')
+      .eq('user_id', user.id)
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const tier = subscription?.tier || 'free';
+    const limit = TIER_LIMITS[tier] ?? 0;
+
+    console.log('User tier:', tier, 'Limit:', limit);
+
+    // Check if user can use AI
+    if (limit === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'AI factuurscanning is niet beschikbaar in het gratis abonnement. Upgrade naar Basis of Pro.',
+          requiresUpgrade: true,
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check usage limit (if not unlimited)
+    if (limit !== -1) {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const { count } = await supabase
+        .from('ai_usage')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('usage_type', 'invoice_scan')
+        .gte('created_at', firstDayOfMonth);
+
+      const currentUsage = count || 0;
+      
+      if (currentUsage >= limit) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Je hebt de maandelijkse limiet van ${limit} AI scans bereikt. Upgrade naar Pro voor onbeperkte scans.`,
+            requiresUpgrade: true,
+            currentUsage,
+            limit,
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Current usage:', currentUsage, 'of', limit);
+    }
 
     // Download file from storage
     console.log('Downloading file:', filePath);
@@ -246,6 +334,25 @@ ${extractedText}`
     }
     
     console.log('Extracted data:', extractedData);
+
+    // Log AI usage after successful processing
+    const { error: usageError } = await supabase
+      .from('ai_usage')
+      .insert({
+        user_id: user.id,
+        usage_type: 'invoice_scan',
+        metadata: {
+          filePath,
+          tier,
+        }
+      });
+
+    if (usageError) {
+      console.error('Failed to log AI usage:', usageError);
+      // Don't fail the request, just log the error
+    } else {
+      console.log('AI usage logged successfully');
+    }
 
     return new Response(
       JSON.stringify({

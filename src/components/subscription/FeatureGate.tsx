@@ -116,7 +116,7 @@ export function useFeatureAccess(feature: string) {
 
 function getRequiredTierForFeature(feature: string): SubscriptionTier {
   const proFeatures = ["team_sharing", "public_links", "priority_support"];
-  const basisFeatures = ["import_export", "contractors"];
+  const basisFeatures = ["import_export", "contractors", "ai_invoice_scan"];
 
   if (proFeatures.includes(feature)) return "pro";
   if (basisFeatures.includes(feature)) return "basis";

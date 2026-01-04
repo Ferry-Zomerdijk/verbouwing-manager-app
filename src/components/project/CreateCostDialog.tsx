@@ -7,10 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, FileText, Loader2, X } from "lucide-react";
+import { Upload, FileText, Loader2, X, Sparkles, Lock, Infinity } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAiUsage } from "@/hooks/useAiUsage";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -37,6 +41,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   });
 
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { canUseAi, remaining, limit, isUnlimited, isLoading: isLoadingAi, refetch: refetchAiUsage } = useAiUsage();
+  const { currentTier } = useSubscription();
 
   const validateFile = (file: File): boolean => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -83,6 +90,16 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const handleFileUpload = async () => {
     if (!selectedFile) return;
 
+    // Check if user can use AI
+    if (!canUseAi) {
+      if (currentTier === 'free') {
+        toast.error("AI factuurscanning is alleen beschikbaar vanaf het Basis abonnement");
+      } else {
+        toast.error("Je hebt de maandelijkse limiet bereikt. Upgrade naar Pro voor onbeperkte scans.");
+      }
+      return;
+    }
+
     setProcessingOCR(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,6 +125,12 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
       if (functionError) throw functionError;
 
+      // Check for upgrade required error
+      if (ocrData?.requiresUpgrade) {
+        toast.error(ocrData.error);
+        return;
+      }
+
       if (ocrData?.success && ocrData?.data) {
         const extracted = ocrData.data;
         
@@ -121,9 +144,12 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           status: "Factuur",
         });
 
+        // Refetch AI usage to update remaining count
+        refetchAiUsage();
+
         toast.success("Factuurgegevens succesvol ingelezen!");
       } else {
-        toast.warning("Factuur geüpload, maar automatische extractie mislukt. Vul de gegevens handmatig in.");
+        toast.warning(ocrData?.error || "Factuur geüpload, maar automatische extractie mislukt. Vul de gegevens handmatig in.");
       }
     } catch (error: any) {
       console.error("OCR error:", error);
@@ -186,84 +212,162 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     }
   };
 
+  // AI usage indicator component
+  const AiUsageIndicator = () => {
+    if (isLoadingAi) return null;
+
+    if (currentTier === 'free') {
+      return (
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">AI niet beschikbaar</p>
+            <p className="text-xs text-muted-foreground">Upgrade voor AI factuurscanning</p>
+          </div>
+          <Button size="sm" variant="default" onClick={() => navigate('/pricing')}>
+            <Sparkles className="h-3 w-3 mr-1" />
+            Upgrade
+          </Button>
+        </div>
+      );
+    }
+
+    if (isUnlimited) {
+      return (
+        <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">Pro abonnement</p>
+            <p className="text-xs text-muted-foreground">Onbeperkte AI scans</p>
+          </div>
+          <Badge variant="secondary" className="bg-primary/10 text-primary">
+            <Infinity className="h-3 w-3 mr-1" />
+            Onbeperkt
+          </Badge>
+        </div>
+      );
+    }
+
+    // Basis tier with limited scans
+    const usagePercentage = limit > 0 ? ((limit - remaining) / limit) * 100 : 0;
+    const isNearLimit = remaining <= 2;
+
+    return (
+      <div className={`flex items-center gap-2 p-3 rounded-lg border ${isNearLimit ? 'bg-destructive/5 border-destructive/20' : 'bg-muted/50 border-border'}`}>
+        <Sparkles className={`h-4 w-4 ${isNearLimit ? 'text-destructive' : 'text-primary'}`} />
+        <div className="flex-1">
+          <p className="text-sm font-medium">AI factuurscanning</p>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all ${isNearLimit ? 'bg-destructive' : 'bg-primary'}`}
+                style={{ width: `${usagePercentage}%` }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {remaining} van {limit} over
+            </span>
+          </div>
+        </div>
+        {isNearLimit && (
+          <Button size="sm" variant="outline" onClick={() => navigate('/pricing')}>
+            Upgrade
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   const formContent = (
     <>
       <Tabs defaultValue="manual" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manual">Handmatig</TabsTrigger>
-          <TabsTrigger value="upload">Factuur Uploaden</TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            AI Upload
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="upload" className="space-y-4">
-          {!selectedFile ? (
-            <div 
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all ${
-                isDragging 
-                  ? 'border-primary bg-primary/5 scale-[1.02]' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileSelect}
-              />
-              <label htmlFor="file-upload" className="cursor-pointer block">
-                <Upload className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 transition-colors ${
-                  isDragging ? 'text-primary' : 'text-muted-foreground'
-                }`} />
-                <p className="text-sm font-medium mb-2">
-                  {isDragging ? 'Laat los om te uploaden' : 'Klik of sleep een factuur hierheen'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PDF, JPG of PNG (max 20MB)
-                </p>
-              </label>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                <FileText className="w-8 h-8 text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleRemoveFile}
-                  disabled={processingOCR}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+          <AiUsageIndicator />
 
-              {!uploadedFilePath && (
-                <Button
-                  type="button"
-                  onClick={handleFileUpload}
-                  disabled={processingOCR}
-                  className="w-full"
+          {currentTier !== 'free' && canUseAi && (
+            <>
+              {!selectedFile ? (
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all ${
+                    isDragging 
+                      ? 'border-primary bg-primary/5 scale-[1.02]' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
                 >
-                  {processingOCR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Factuur analyseren...
-                    </>
-                  ) : (
-                    "Analyseer met AI"
+                  <input
+                    type="file"
+                    id="file-upload"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileSelect}
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer block">
+                    <Upload className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 transition-colors ${
+                      isDragging ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                    <p className="text-sm font-medium mb-2">
+                      {isDragging ? 'Laat los om te uploaden' : 'Klik of sleep een factuur hierheen'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF, JPG of PNG (max 20MB)
+                    </p>
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                    <FileText className="w-8 h-8 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRemoveFile}
+                      disabled={processingOCR}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {!uploadedFilePath && (
+                    <Button
+                      type="button"
+                      onClick={handleFileUpload}
+                      disabled={processingOCR}
+                      className="w-full"
+                    >
+                      {processingOCR ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Factuur analyseren...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Analyseer met AI
+                        </>
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               )}
-            </div>
+            </>
           )}
         </TabsContent>
 
