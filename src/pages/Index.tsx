@@ -7,6 +7,7 @@ import {
   LandingHero,
   LandingProblemSolution,
   LandingFeatures,
+  LandingAiFeatures,
   LandingHowItWorks,
   LandingBenefits,
   LandingTestimonials,
@@ -34,6 +35,7 @@ const Index = () => {
         <LandingHero />
         <LandingProblemSolution />
         <LandingFeatures />
+        <LandingAiFeatures />
         <LandingHowItWorks />
         <LandingBenefits />
         <LandingTestimonials />
