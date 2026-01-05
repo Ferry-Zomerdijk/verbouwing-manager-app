@@ -223,14 +223,40 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
           />
         </div>
 
-        <div>
-          <Label htmlFor="type">Type Project</Label>
-          <Input
-            id="type"
-            value={formData.type}
-            onChange={(e) => handleTypeChange(e.target.value)}
-            placeholder="Badkamer, Keuken, Dakkapel..."
-          />
+        <div className="col-span-1 sm:col-span-2">
+          <Label htmlFor="template">Template (optioneel)</Label>
+          <Select 
+            value={selectedTemplate?.id || "none"} 
+            onValueChange={(value) => {
+              if (value === "none") {
+                setSelectedTemplate(null);
+                setFormData({ ...formData, type: "" });
+              } else {
+                const template = renovationTemplates.find(t => t.id === value);
+                if (template) {
+                  setSelectedTemplate(template);
+                  setFormData({ ...formData, type: template.naam });
+                  setApplyTemplate(true);
+                }
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Kies een template..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Geen template</SelectItem>
+              {renovationTemplates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  <div className="flex items-center gap-2">
+                    {getIconForTemplate(template.icon)}
+                    <span>{template.naam}</span>
+                    <span className="text-muted-foreground text-xs">({template.taken.length} taken)</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {selectedTemplate && (
@@ -248,10 +274,10 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
                   className="text-sm font-medium leading-none cursor-pointer flex items-center gap-2"
                 >
                   {getIconForTemplate(selectedTemplate.icon)}
-                  Template toepassen: {selectedTemplate.naam}
+                  {selectedTemplate.taken.length} taken toevoegen
                 </label>
                 <p className="text-xs text-muted-foreground">
-                  {selectedTemplate.taken.length} taken • {selectedTemplate.geschatte_doorlooptijd}
+                  {selectedTemplate.geschatte_doorlooptijd} doorlooptijd
                 </p>
                 {selectedTemplate.vergunningen.length > 0 && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
