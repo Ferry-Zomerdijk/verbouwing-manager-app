@@ -12,12 +12,38 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuery } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
+import { renovationTemplates, RenovationTemplate } from "@/lib/renovationTemplates";
+import { ClipboardList, ShowerHead, ChefHat, Home, Building2, Layers, Building } from "lucide-react";
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
+
+// Map template types to project type input values
+const typeToTemplateMap: Record<string, string> = {
+  'badkamer': 'badkamer',
+  'keuken': 'keuken',
+  'dakkapel': 'dakkapel',
+  'aanbouw': 'aanbouw',
+  'uitbouw': 'aanbouw',
+  'vloer': 'vloer',
+  'zolder': 'zolder',
+};
+
+const getIconForTemplate = (iconName: string) => {
+  const icons: Record<string, React.ReactNode> = {
+    ShowerHead: <ShowerHead className="h-4 w-4" />,
+    ChefHat: <ChefHat className="h-4 w-4" />,
+    Home: <Home className="h-4 w-4" />,
+    Building2: <Building2 className="h-4 w-4" />,
+    Layers: <Layers className="h-4 w-4" />,
+    Building: <Building className="h-4 w-4" />,
+  };
+  return icons[iconName] || <ClipboardList className="h-4 w-4" />;
+};
 
 const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDialogProps) => {
   const [loading, setLoading] = useState(false);
@@ -30,9 +56,32 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
     beschrijving: "",
     totaal_begroting: "",
   });
+  const [selectedTemplate, setSelectedTemplate] = useState<RenovationTemplate | null>(null);
+  const [applyTemplate, setApplyTemplate] = useState(true);
 
   const isMobile = useIsMobile();
   const { currentTier, hasReachedLimit, limits } = useSubscription();
+
+  // Find matching template based on project type
+  const findMatchingTemplate = (type: string): RenovationTemplate | null => {
+    const normalizedType = type.toLowerCase().trim();
+    for (const [key, templateId] of Object.entries(typeToTemplateMap)) {
+      if (normalizedType.includes(key)) {
+        return renovationTemplates.find(t => t.id === templateId) || null;
+      }
+    }
+    return null;
+  };
+
+  // Update selected template when type changes
+  const handleTypeChange = (type: string) => {
+    setFormData({ ...formData, type });
+    const template = findMatchingTemplate(type);
+    setSelectedTemplate(template);
+    if (template) {
+      setApplyTemplate(true);
+    }
+  };
 
   // Get current project count
   const { data: projectCount = 0 } = useQuery({
@@ -66,7 +115,7 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
         return;
       }
 
-      const { error } = await supabase.from("projects").insert([{
+      const { data: project, error } = await supabase.from("projects").insert([{
         user_id: user.id,
         naam: formData.naam,
         type: formData.type || null,
@@ -75,9 +124,32 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
         einddatum: formData.einddatum || null,
         beschrijving: formData.beschrijving || null,
         totaal_begroting: formData.totaal_begroting ? parseFloat(formData.totaal_begroting) : 0,
-      }]);
+      }]).select().single();
 
       if (error) throw error;
+
+      // If template is selected and user wants to apply it, create tasks
+      if (selectedTemplate && applyTemplate && project) {
+        const tasksToInsert = selectedTemplate.taken.map(task => ({
+          project_id: project.id,
+          titel: task.titel,
+          beschrijving: task.beschrijving,
+          deel_van_huis: task.deel_van_huis,
+          prioriteit: task.prioriteit,
+          status: 'Te doen' as const,
+        }));
+
+        const { error: tasksError } = await supabase.from("tasks").insert(tasksToInsert);
+        
+        if (tasksError) {
+          console.error("Error creating tasks:", tasksError);
+          toast.warning("Project aangemaakt, maar taken konden niet worden toegevoegd");
+        } else {
+          toast.success(`Project aangemaakt met ${tasksToInsert.length} taken uit template`);
+        }
+      } else {
+        toast.success("Project aangemaakt");
+      }
 
       onSuccess();
       onOpenChange(false);
@@ -90,6 +162,8 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
         beschrijving: "",
         totaal_begroting: "",
       });
+      setSelectedTemplate(null);
+      setApplyTemplate(true);
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
@@ -154,10 +228,40 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
           <Input
             id="type"
             value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            placeholder="Badkamer, Keuken, etc."
+            onChange={(e) => handleTypeChange(e.target.value)}
+            placeholder="Badkamer, Keuken, Dakkapel..."
           />
         </div>
+
+        {selectedTemplate && (
+          <div className="col-span-1 sm:col-span-2">
+            <div className="flex items-start space-x-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <Checkbox
+                id="applyTemplate"
+                checked={applyTemplate}
+                onCheckedChange={(checked) => setApplyTemplate(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1 space-y-1">
+                <label
+                  htmlFor="applyTemplate"
+                  className="text-sm font-medium leading-none cursor-pointer flex items-center gap-2"
+                >
+                  {getIconForTemplate(selectedTemplate.icon)}
+                  Template toepassen: {selectedTemplate.naam}
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {selectedTemplate.taken.length} taken • {selectedTemplate.geschatte_doorlooptijd}
+                </p>
+                {selectedTemplate.vergunningen.length > 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    ⚠️ Let op: mogelijk vergunning nodig
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="status">Status</Label>
