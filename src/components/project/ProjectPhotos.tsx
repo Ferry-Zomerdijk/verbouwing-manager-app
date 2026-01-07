@@ -129,7 +129,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
         const filePath = `${projectId}/photos/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("invoices")
+          .from("project-photos")
           .upload(filePath, photo.file);
 
         if (uploadError) throw uploadError;
@@ -181,7 +181,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
   };
 
   const getPhotoUrl = (path: string) => {
-    const { data } = supabase.storage.from("invoices").getPublicUrl(path);
+    const { data } = supabase.storage.from("project-photos").getPublicUrl(path);
     return data.publicUrl;
   };
 
@@ -189,7 +189,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     if (!selectedPhoto) return;
     setDeleting(true);
     try {
-      await supabase.storage.from("invoices").remove([selectedPhoto.afbeelding_url]);
+      await supabase.storage.from("project-photos").remove([selectedPhoto.afbeelding_url]);
       
       const { error } = await supabase.from("photos").delete().eq("id", selectedPhoto.id);
       if (error) throw error;
