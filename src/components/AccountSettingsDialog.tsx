@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check, Bell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
+import { NotificationSettings } from "@/components/NotificationSettings";
 
 interface AccountSettingsDialogProps {
   open: boolean;
@@ -440,6 +441,15 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Notification Settings Section */}
+      <div className="border-t pt-6 space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <Bell className="w-4 h-4" />
+          Notificaties
+        </h3>
+        <NotificationSettings />
       </div>
 
       {/* Password Section */}
