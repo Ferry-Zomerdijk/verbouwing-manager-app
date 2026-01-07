@@ -59,6 +59,25 @@ const Dashboard = () => {
     localStorage.setItem('upgradeBannerDismissed', 'true');
   };
 
+  // Reset upgrade banner when user downgrades from Pro
+  useEffect(() => {
+    const previousTier = localStorage.getItem('previousSubscriptionTier');
+    
+    // If user had Pro and now has Basis or Free, reset the banner
+    if (previousTier === 'pro' && (currentTier === 'basis' || currentTier === 'free')) {
+      localStorage.removeItem('upgradeBannerDismissed');
+      setShowUpgradeBanner(true);
+    }
+    // If user had Basis and now has Free, also reset the banner
+    if (previousTier === 'basis' && currentTier === 'free') {
+      localStorage.removeItem('upgradeBannerDismissed');
+      setShowUpgradeBanner(true);
+    }
+    
+    // Store current tier for next comparison
+    localStorage.setItem('previousSubscriptionTier', currentTier);
+  }, [currentTier]);
+
   // Load user info and check onboarding status
   useEffect(() => {
     const loadUserInfo = async () => {
