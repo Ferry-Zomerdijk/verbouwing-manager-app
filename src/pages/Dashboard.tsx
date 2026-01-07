@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone, X } from "lucide-react";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -45,11 +45,19 @@ const Dashboard = () => {
   const [contactMessagesOpen, setContactMessagesOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(() => {
+    return localStorage.getItem('upgradeBannerDismissed') !== 'true';
+  });
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
     email: null,
     isAdmin: false,
   });
+
+  const handleDismissUpgradeBanner = () => {
+    setShowUpgradeBanner(false);
+    localStorage.setItem('upgradeBannerDismissed', 'true');
+  };
 
   // Load user info and check onboarding status
   useEffect(() => {
@@ -264,18 +272,30 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <AiUsageWidget />
           
-          {/* Upgrade Banner for Free Users */}
-          {currentTier === "free" && (
-            <div className="sm:col-span-1 lg:col-span-2 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 h-full">
+          {/* Upgrade Banner for Free and Basis Users */}
+          {(currentTier === "free" || currentTier === "basis") && showUpgradeBanner && (
+            <div className="sm:col-span-1 lg:col-span-2 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 relative">
+              <button 
+                onClick={handleDismissUpgradeBanner}
+                className="absolute top-2 right-2 p-1 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Sluiten"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 h-full pr-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <Crown className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Upgrade naar Basis of Pro</p>
+                    <p className="font-medium">
+                      {currentTier === "free" ? "Upgrade naar Basis of Pro" : "Upgrade naar Pro"}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Krijg toegang tot meer projecten, AI factuurscanning en extra features
+                      {currentTier === "free" 
+                        ? "Krijg toegang tot meer projecten, AI factuurscanning en extra features"
+                        : "Krijg onbeperkte projecten, prioriteit support en alle premium features"
+                      }
                     </p>
                   </div>
                 </div>
