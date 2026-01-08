@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 
 export type SubscriptionTier = "free" | "basis" | "pro";
 export type SubscriptionStatus = "trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused";
@@ -86,8 +87,9 @@ export const TIER_LIMITS = {
 
 export function useSubscription() {
   const queryClient = useQueryClient();
+  const syncAttemptedRef = useRef(false);
 
-  const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
+  const { data: subscription, isLoading: isLoadingSubscription, refetch: refetchSubscription } = useQuery({
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -110,6 +112,50 @@ export function useSubscription() {
       return data as Subscription | null;
     },
   });
+
+  // Fallback: sync with Stripe if no subscription found but user exists
+  useEffect(() => {
+    const syncWithStripe = async () => {
+      if (isLoadingSubscription || subscription || syncAttemptedRef.current) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if user has a customer record (indicates they may have paid)
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("stripe_customer_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Only sync if user has a Stripe customer record
+      if (!customer?.stripe_customer_id) return;
+
+      syncAttemptedRef.current = true;
+      console.log("[useSubscription] No subscription found, syncing with Stripe...");
+
+      try {
+        const { data, error } = await supabase.functions.invoke("sync-subscription");
+        
+        if (error) {
+          console.error("[useSubscription] Sync error:", error);
+          return;
+        }
+
+        if (data?.synced) {
+          console.log("[useSubscription] Subscription synced successfully:", data.subscription);
+          // Refetch subscription from database
+          refetchSubscription();
+        } else {
+          console.log("[useSubscription] No subscription to sync:", data?.reason);
+        }
+      } catch (err) {
+        console.error("[useSubscription] Failed to sync subscription:", err);
+      }
+    };
+
+    syncWithStripe();
+  }, [subscription, isLoadingSubscription, refetchSubscription]);
 
   const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ["products"],
