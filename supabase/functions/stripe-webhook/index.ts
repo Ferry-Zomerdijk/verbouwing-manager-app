@@ -14,6 +14,38 @@ const supabaseAdmin = createClient(
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// Webhook health monitoring helpers
+async function logWebhookEvent(
+  eventId: string,
+  eventType: string,
+  status: 'received' | 'processing' | 'success' | 'failed',
+  options?: {
+    stripeCustomerId?: string;
+    userId?: string;
+    errorMessage?: string;
+    processingTimeMs?: number;
+  }
+) {
+  try {
+    const { error } = await supabaseAdmin.from("webhook_events").upsert({
+      event_id: eventId,
+      event_type: eventType,
+      status,
+      stripe_customer_id: options?.stripeCustomerId || null,
+      user_id: options?.userId || null,
+      error_message: options?.errorMessage || null,
+      processing_time_ms: options?.processingTimeMs || null,
+      processed_at: status === 'success' || status === 'failed' ? new Date().toISOString() : null,
+    }, { onConflict: 'event_id' });
+    
+    if (error) {
+      console.error("[WEBHOOK-MONITOR] Failed to log event:", error);
+    }
+  } catch (err) {
+    console.error("[WEBHOOK-MONITOR] Exception logging event:", err);
+  }
+}
+
 // Map price metadata to tier
 function getTierFromPrice(priceId: string, metadata: Record<string, string>): string {
   if (metadata?.tier) return metadata.tier;
@@ -686,6 +718,10 @@ serve(async (req) => {
     console.log("No signature found, processing without verification");
   }
 
+  const startTime = Date.now();
+  let eventId = "unknown";
+  let eventType = "unknown";
+
   try {
     const body = await req.text();
     let event: Stripe.Event;
@@ -697,6 +733,9 @@ serve(async (req) => {
       } catch (err) {
         const errMessage = err instanceof Error ? err.message : "Unknown error";
         console.error("Webhook signature verification failed:", errMessage);
+        await logWebhookEvent("sig_failed_" + Date.now(), "signature_verification", "failed", {
+          errorMessage: errMessage,
+        });
         return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
       }
     } else {
@@ -704,17 +743,32 @@ serve(async (req) => {
       event = JSON.parse(body);
     }
 
-    console.log("Received webhook event:", event.type);
+    eventId = event.id;
+    eventType = event.type;
+    console.log("[WEBHOOK-MONITOR] Received event:", eventType, eventId);
+
+    // Log received event
+    await logWebhookEvent(eventId, eventType, "processing");
+
+    let stripeCustomerId: string | undefined;
+    let userId: string | undefined;
 
     switch (event.type) {
       case "customer.subscription.created":
-      case "customer.subscription.updated":
-        await handleSubscriptionEvent(event.data.object as Stripe.Subscription, event.type);
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        stripeCustomerId = subscription.customer as string;
+        userId = subscription.metadata?.supabase_user_id;
+        await handleSubscriptionEvent(subscription, event.type);
         break;
+      }
       
-      case "customer.subscription.deleted":
-        await handleCustomerSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        stripeCustomerId = subscription.customer as string;
+        await handleCustomerSubscriptionDeleted(subscription);
         break;
+      }
       
       case "product.created":
       case "product.updated":
@@ -726,31 +780,55 @@ serve(async (req) => {
         await handlePriceEvent(event.data.object as Stripe.Price, event.type);
         break;
       
-      case "checkout.session.completed":
+      case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        stripeCustomerId = session.customer as string;
         console.log("Checkout completed for session:", session.id);
-        // Subscription will be handled by customer.subscription.created event
         break;
+      }
       
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        stripeCustomerId = invoice.customer as string;
+        await handleInvoicePaymentFailed(invoice);
         break;
+      }
       
-      case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        stripeCustomerId = invoice.customer as string;
+        await handleInvoicePaymentSucceeded(invoice);
         break;
+      }
       
       default:
         console.log("Unhandled event type:", event.type);
     }
+
+    const processingTime = Date.now() - startTime;
+    await logWebhookEvent(eventId, eventType, "success", {
+      stripeCustomerId,
+      userId,
+      processingTimeMs: processingTime,
+    });
+
+    console.log(`[WEBHOOK-MONITOR] Successfully processed ${eventType} in ${processingTime}ms`);
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error("Webhook error:", error);
+    const processingTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    console.error(`[WEBHOOK-MONITOR] Failed to process ${eventType}:`, errorMessage);
+    
+    await logWebhookEvent(eventId, eventType, "failed", {
+      errorMessage,
+      processingTimeMs: processingTime,
+    });
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
