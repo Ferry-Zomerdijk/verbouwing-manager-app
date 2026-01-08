@@ -904,6 +904,45 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_id: string
+          event_type: string
+          id: string
+          processed_at: string | null
+          processing_time_ms: number | null
+          status: string
+          stripe_customer_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          status?: string
+          stripe_customer_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          status?: string
+          stripe_customer_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
