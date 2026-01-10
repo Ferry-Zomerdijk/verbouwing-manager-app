@@ -38,6 +38,41 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_categories: {
+        Row: {
+          created_at: string | null
+          icoon: string | null
+          id: string
+          naam: string
+          project_id: string
+          volgorde: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          icoon?: string | null
+          id?: string
+          naam: string
+          project_id: string
+          volgorde?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          icoon?: string | null
+          id?: string
+          naam?: string
+          project_id?: string
+          volgorde?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_categories_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string | null
@@ -67,10 +102,14 @@ export type Database = {
       }
       contractors: {
         Row: {
+          adres: string | null
           bedrijf: string | null
+          category_id: string | null
           created_at: string | null
           email: string | null
           id: string
+          is_actief: boolean | null
+          label: string | null
           naam: string
           notities: string | null
           project_id: string
@@ -78,10 +117,14 @@ export type Database = {
           telefoon: string | null
         }
         Insert: {
+          adres?: string | null
           bedrijf?: string | null
+          category_id?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
+          is_actief?: boolean | null
+          label?: string | null
           naam: string
           notities?: string | null
           project_id: string
@@ -89,10 +132,14 @@ export type Database = {
           telefoon?: string | null
         }
         Update: {
+          adres?: string | null
           bedrijf?: string | null
+          category_id?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
+          is_actief?: boolean | null
+          label?: string | null
           naam?: string
           notities?: string | null
           project_id?: string
@@ -100,6 +147,13 @@ export type Database = {
           telefoon?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contractors_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "contact_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contractors_project_id_fkey"
             columns: ["project_id"]
