@@ -25,9 +25,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Key, Plus, Pencil, Trash2, Loader2, User, Calendar } from "lucide-react";
+import { Key, Plus, Pencil, Trash2, Loader2, User, Calendar, History } from "lucide-react";
 import { CreateKeyDialog } from "./CreateKeyDialog";
 import { EditKeyHolderDialog } from "./EditKeyHolderDialog";
+import { KeyHistoryDialog } from "./KeyHistoryDialog";
 
 interface KeyManagementProps {
   projectId: string;
@@ -53,6 +54,8 @@ export function KeyManagement({ projectId }: KeyManagementProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<KeyData | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyKey, setHistoryKey] = useState<KeyData | null>(null);
 
   const { data: keys, isLoading } = useQuery({
     queryKey: ["keys", projectId],
@@ -76,6 +79,11 @@ export function KeyManagement({ projectId }: KeyManagementProps) {
   const handleEditHolder = (key: KeyData) => {
     setSelectedKey(key);
     setEditHolderDialogOpen(true);
+  };
+
+  const handleShowHistory = (key: KeyData) => {
+    setHistoryKey(key);
+    setHistoryDialogOpen(true);
   };
 
   const handleDeleteClick = (key: KeyData) => {
@@ -191,7 +199,15 @@ export function KeyManagement({ projectId }: KeyManagementProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleShowHistory(key)}
+                            title="Historie bekijken"
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -231,6 +247,13 @@ export function KeyManagement({ projectId }: KeyManagementProps) {
         open={editHolderDialogOpen}
         onOpenChange={setEditHolderDialogOpen}
         keyData={selectedKey}
+      />
+
+      <KeyHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        keyId={historyKey?.id || null}
+        keyNumber={historyKey?.key_number || ""}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
