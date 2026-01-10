@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut, Share2, Key } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, BookUser, Users, Home, ChevronDown, LogOut, Share2, Key } from "lucide-react";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +21,7 @@ import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import ProjectOverview from "@/components/project/ProjectOverview";
 import ProjectTasksWithDnd from "@/components/project/ProjectTasksWithDnd";
 import ProjectCosts from "@/components/project/ProjectCosts";
-import ProjectContractors from "@/components/project/ProjectContractors";
+import ProjectContacts from "@/components/project/ProjectContacts";
 import ProjectDocuments from "@/components/project/ProjectDocuments";
 import ProjectPhotos from "@/components/project/ProjectPhotos";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
@@ -121,7 +121,8 @@ const ProjectDetail = () => {
       refetch(),
       queryClient.invalidateQueries({ queryKey: ['tasks', id] }),
       queryClient.invalidateQueries({ queryKey: ['costs', id] }),
-      queryClient.invalidateQueries({ queryKey: ['contractors', id] }),
+              queryClient.invalidateQueries({ queryKey: ['contacts', id] }),
+              queryClient.invalidateQueries({ queryKey: ['contact-categories', id] }),
       queryClient.invalidateQueries({ queryKey: ['documents', id] }),
       queryClient.invalidateQueries({ queryKey: ['photos', id] }),
     ]);
@@ -347,12 +348,11 @@ const ProjectDetail = () => {
                   <span className="hidden sm:inline">Foto's</span>
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="aannemers" 
+                  value="contacten" 
                   className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                 >
-                  <Users className="w-4 h-4" />
-                  <span className="sm:hidden">Team</span>
-                  <span className="hidden sm:inline">Aannemers</span>
+                  <BookUser className="w-4 h-4" />
+                  <span>Contacten</span>
                 </TabsTrigger>
                 {isAdminOrOwner && (
                   <TabsTrigger 
@@ -389,8 +389,8 @@ const ProjectDetail = () => {
             <ProjectPhotos projectId={project.id} />
           </TabsContent>
 
-          <TabsContent value="aannemers" className="animate-fade-in">
-            <ProjectContractors projectId={project.id} />
+          <TabsContent value="contacten" className="animate-fade-in">
+            <ProjectContacts projectId={project.id} />
           </TabsContent>
 
           {isAdminOrOwner && (
