@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut, Share2 } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut, Share2, Key } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import ProjectPhotos from "@/components/project/ProjectPhotos";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import SharePublicLinkDialog from "@/components/SharePublicLinkDialog";
+import { KeyManagement } from "@/components/admin/KeyManagement";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Breadcrumb,
@@ -351,6 +352,15 @@ const ProjectDetail = () => {
                   <span className="sm:hidden">Team</span>
                   <span className="hidden sm:inline">Aannemers</span>
                 </TabsTrigger>
+                {isAdminOrOwner && (
+                  <TabsTrigger 
+                    value="sleutels" 
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
+                  >
+                    <Key className="w-4 h-4" />
+                    <span>Sleutels</span>
+                  </TabsTrigger>
+                )}
               </TabsList>
             </div>
           </div>
@@ -380,6 +390,12 @@ const ProjectDetail = () => {
           <TabsContent value="aannemers" className="animate-fade-in">
             <ProjectContractors projectId={project.id} />
           </TabsContent>
+
+          {isAdminOrOwner && (
+            <TabsContent value="sleutels" className="animate-fade-in">
+              <KeyManagement projectId={project.id} />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 
