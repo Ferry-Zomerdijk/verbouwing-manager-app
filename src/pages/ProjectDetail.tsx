@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, Users, Home, ChevronDown, LogOut, Share2, Key } from "lucide-react";
+import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -231,6 +232,7 @@ const ProjectDetail = () => {
               <div className="flex items-center gap-1 sm:gap-2">
                 <WeatherExcuseButton />
                 <CoffeeBreakTimer />
+                <PwaInstallButton />
                 {isAdminOrOwner && (
                   <Button
                     variant="outline"
