@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone, X } from "lucide-react";
+import { PwaInstallButton } from "@/components/PwaInstallButton";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
 import { getRandomWisdom, emptyStateMessages } from "@/lib/builderJokes";
@@ -230,6 +231,7 @@ const Dashboard = () => {
               <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)} className="hidden sm:flex">
                 <Keyboard className="w-4 h-4" />
               </Button>
+              <PwaInstallButton />
               
               {/* User Dropdown Menu */}
               <DropdownMenu>
