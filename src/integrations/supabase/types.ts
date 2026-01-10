@@ -224,6 +224,53 @@ export type Database = {
           },
         ]
       }
+      keys: {
+        Row: {
+          created_at: string
+          current_holder: string | null
+          deel_van_huis: string
+          id: string
+          key_number: string
+          notes: string | null
+          project_id: string
+          received_at: string | null
+          sequence_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_holder?: string | null
+          deel_van_huis: string
+          id?: string
+          key_number: string
+          notes?: string | null
+          project_id: string
+          received_at?: string | null
+          sequence_number: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_holder?: string | null
+          deel_van_huis?: string
+          id?: string
+          key_number?: string
+          notes?: string | null
+          project_id?: string
+          received_at?: string | null
+          sequence_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           bericht: string

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity, Key } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import AiUsageAnalytics from "@/components/admin/AiUsageAnalytics";
 import WebhookHealthMonitor from "@/components/admin/WebhookHealthMonitor";
+import { KeyManagement } from "@/components/admin/KeyManagement";
 
 interface PlatformUser {
   id: string;
@@ -431,6 +432,12 @@ const UserManagement = () => {
                 Webhooks
               </TabsTrigger>
             )}
+            {projectId && (
+              <TabsTrigger value="keys" className="gap-2">
+                <Key className="w-4 h-4" />
+                Sleutelbeheer
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Project Users Tab */}
@@ -735,6 +742,13 @@ const UserManagement = () => {
           {isAdmin && (
             <TabsContent value="webhooks">
               <WebhookHealthMonitor />
+            </TabsContent>
+          )}
+
+          {/* Key Management Tab */}
+          {projectId && (
+            <TabsContent value="keys">
+              <KeyManagement projectId={projectId} />
             </TabsContent>
           )}
         </Tabs>
