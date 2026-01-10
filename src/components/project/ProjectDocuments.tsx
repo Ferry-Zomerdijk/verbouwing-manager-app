@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,8 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
   const [defaultType, setDefaultType] = useState<DocumentType>("Contract");
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
 
@@ -284,6 +286,24 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold truncate">Documenten</h2>
         <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 border rounded-lg p-0.5">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
           {availableTypes.length > 1 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[100px] sm:w-[140px]">
@@ -330,60 +350,137 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
       )}
 
       {filteredDocuments.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDocuments.map((doc) => (
-            <Card key={`${doc.source}-${doc.id}`} className="shadow-card hover:shadow-hover transition-smooth">
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <FileText className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base truncate">{doc.bestandsnaam}</CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
-                        {doc.type}
-                      </Badge>
-                      {doc.source === 'cost' && (
-                        <Badge variant="outline" className="text-xs">
-                          Via Kosten
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredDocuments.map((doc) => (
+              <Card key={`${doc.source}-${doc.id}`} className="shadow-card hover:shadow-hover transition-smooth">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base truncate">{doc.bestandsnaam}</CardTitle>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
+                          {doc.type}
                         </Badge>
-                      )}
+                        {doc.source === 'cost' && (
+                          <Badge variant="outline" className="text-xs">
+                            Via Kosten
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc)}
-                    className="flex-1"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                  {!readOnly && doc.source === 'document' && (
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
+                  </p>
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setSelectedDocument(doc);
-                        setDeleteDialogOpen(true);
-                      }}
+                      onClick={() => handleDownload(doc)}
+                      className="flex-1"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
                     </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    {!readOnly && doc.source === 'document' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedDocument(doc);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="shadow-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Document</TableHead>
+                  <TableHead className="hidden sm:table-cell">Type</TableHead>
+                  <TableHead className="hidden sm:table-cell">Datum</TableHead>
+                  <TableHead className="text-right">Acties</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.map((doc) => (
+                  <TableRow key={`${doc.source}-${doc.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 rounded bg-muted shrink-0">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{doc.bestandsnaam}</p>
+                          <div className="flex items-center gap-2 sm:hidden mt-1">
+                            <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
+                              {doc.type}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
+                          {doc.type}
+                        </Badge>
+                        {doc.source === 'cost' && (
+                          <Badge variant="outline" className="text-xs">
+                            Via Kosten
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
+                      {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(doc)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        {!readOnly && doc.source === 'document' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDocument(doc);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )
       ) : (
         <Card className="shadow-card">
           <CardContent className="py-16 text-center">
