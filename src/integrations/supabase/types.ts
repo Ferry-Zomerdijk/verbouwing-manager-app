@@ -224,6 +224,44 @@ export type Database = {
           },
         ]
       }
+      key_history: {
+        Row: {
+          created_at: string
+          holder_name: string
+          id: string
+          key_id: string
+          notes: string | null
+          received_at: string
+          returned_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          holder_name: string
+          id?: string
+          key_id: string
+          notes?: string | null
+          received_at: string
+          returned_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          holder_name?: string
+          id?: string
+          key_id?: string
+          notes?: string | null
+          received_at?: string
+          returned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_history_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keys: {
         Row: {
           created_at: string

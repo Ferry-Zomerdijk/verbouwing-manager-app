@@ -12,12 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, UserCheck } from "lucide-react";
 
 interface Key {
   id: string;
   key_number: string;
   current_holder: string | null;
+  received_at: string | null;
   project_id: string;
 }
 
@@ -35,10 +37,12 @@ export function EditKeyHolderDialog({
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [newHolder, setNewHolder] = useState("");
+  const [transferNotes, setTransferNotes] = useState("");
 
   useEffect(() => {
     if (keyData) {
       setNewHolder(keyData.current_holder || "");
+      setTransferNotes("");
     }
   }, [keyData]);
 
@@ -50,12 +54,44 @@ export function EditKeyHolderDialog({
     setIsLoading(true);
 
     try {
+      const now = new Date().toISOString();
+
+      // If there was a previous holder, close their history entry
+      if (keyData.current_holder && keyData.received_at) {
+        // Find the open history entry for the previous holder
+        const { data: openHistory } = await supabase
+          .from("key_history")
+          .select("id")
+          .eq("key_id", keyData.id)
+          .is("returned_at", null)
+          .single();
+
+        if (openHistory) {
+          // Close the previous holder's history entry
+          await supabase
+            .from("key_history")
+            .update({ returned_at: now })
+            .eq("id", openHistory.id);
+        }
+      }
+
+      // If there's a new holder, create a history entry for them
+      if (newHolder.trim()) {
+        await supabase.from("key_history").insert({
+          key_id: keyData.id,
+          holder_name: newHolder.trim(),
+          received_at: now,
+          notes: transferNotes.trim() || null,
+        });
+      }
+
+      // Update the key itself
       const updateData: {
         current_holder: string | null;
         received_at: string | null;
       } = {
         current_holder: newHolder.trim() || null,
-        received_at: newHolder.trim() ? new Date().toISOString() : null,
+        received_at: newHolder.trim() ? now : null,
       };
 
       const { error } = await supabase
@@ -72,6 +108,7 @@ export function EditKeyHolderDialog({
       }
       
       queryClient.invalidateQueries({ queryKey: ["keys", keyData.project_id] });
+      queryClient.invalidateQueries({ queryKey: ["key-history", keyData.id] });
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error updating key holder:", error);
@@ -112,8 +149,19 @@ export function EditKeyHolderDialog({
               onChange={(e) => setNewHolder(e.target.value)}
               placeholder="Laat leeg als sleutel wordt ingeleverd"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="transferNotes">Notitie bij overdracht</Label>
+            <Textarea
+              id="transferNotes"
+              value={transferNotes}
+              onChange={(e) => setTransferNotes(e.target.value)}
+              placeholder="Optionele notitie over deze overdracht"
+              rows={2}
+            />
             <p className="text-xs text-muted-foreground">
-              De ontvangstdatum wordt automatisch op vandaag gezet
+              Deze notitie wordt opgeslagen in de sleutelhistorie
             </p>
           </div>
 
