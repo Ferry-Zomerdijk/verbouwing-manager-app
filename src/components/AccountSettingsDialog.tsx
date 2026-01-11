@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -517,14 +518,14 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+        <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
               Mijn Account
             </DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto flex-1">
+          <div className="px-4 pb-4">
             {content}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t">
@@ -532,7 +533,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
               Sluiten
             </Button>
           </div>
-        </DrawerContent>
+        </KeyboardAwareDrawerContent>
       </Drawer>
     );
   }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { Drawer, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -500,14 +501,14 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+        <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>Nieuwe Kostenpost</DrawerTitle>
             <DrawerDescription>
               Voeg een kostenpost toe of upload een factuur.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto flex-1">
+          <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
@@ -522,7 +523,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
               {loading ? "Bezig..." : "Toevoegen"}
             </Button>
           </div>
-        </DrawerContent>
+        </KeyboardAwareDrawerContent>
       </Drawer>
     );
   }

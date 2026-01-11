@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,12 +95,12 @@ const EditCategoryDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <KeyboardAwareDrawerContent>
           <DrawerHeader>
             <DrawerTitle>Rubriek Bewerken</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{formContent}</div>
-        </DrawerContent>
+        </KeyboardAwareDrawerContent>
       </Drawer>
     );
   }

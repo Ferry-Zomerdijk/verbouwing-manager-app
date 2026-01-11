@@ -272,4 +272,30 @@ All colors MUST be HSL.
       transform: translate3d(0, 0, 0);
     }
   }
+
+  /* iOS Virtual Keyboard fixes */
+  @supports (-webkit-touch-callout: none) {
+    /* Prevent body scroll when drawer is open */
+    body.drawer-open {
+      position: fixed;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    /* Smooth keyboard transitions for drawer */
+    .drawer-content-ios {
+      transition: max-height 0.25s ease-out;
+    }
+    
+    /* Ensure inputs scroll into view when focused */
+    input:focus,
+    textarea:focus {
+      scroll-margin-bottom: 120px;
+    }
+  }
+
+  /* Safe area support for keyboard */
+  .keyboard-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
 }
