@@ -255,4 +255,21 @@ All colors MUST be HSL.
   .touch-spacing {
     @apply gap-3;
   }
+
+  /* iOS input/textarea text visibility fix */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* iOS Safari text visibility workaround */
+  @supports (-webkit-touch-callout: none) {
+    input, textarea {
+      -webkit-text-fill-color: currentColor;
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
 }

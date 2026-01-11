@@ -232,10 +232,14 @@ export const TaskUpdatesSection = ({ taskId, onUpdateAdded }: TaskUpdatesSection
                   }
                 }
               }}
-              placeholder="Schrijf een update... (Ctrl+Enter om te versturen)"
+              placeholder={isMobile ? "Schrijf een update..." : "Schrijf een update... (Ctrl+Enter om te versturen)"}
               rows={2}
-              autoFocus
-              className="min-h-[80px]"
+              autoFocus={!isMobile}
+              className="min-h-[80px] text-base"
+              style={{
+                fontSize: '16px',
+                WebkitTextFillColor: 'currentcolor',
+              }}
             />
           </div>
 
