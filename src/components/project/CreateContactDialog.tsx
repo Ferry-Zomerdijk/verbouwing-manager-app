@@ -37,6 +37,8 @@ interface CreateContactDialogProps {
   onSuccess: () => void;
 }
 
+const NO_CATEGORY = "no-category";
+
 const SUGGESTED_LABELS = [
   "Huidige leverancier",
   "Vorige leverancier",
@@ -65,7 +67,7 @@ const CreateContactDialog = ({
     adres: "",
     notities: "",
     label: "",
-    category_id: categoryId || "",
+    category_id: categoryId || NO_CATEGORY,
     is_actief: true,
   });
 
@@ -91,7 +93,7 @@ const CreateContactDialog = ({
         adres: formData.adres.trim() || null,
         notities: formData.notities.trim() || null,
         label: formData.label.trim() || null,
-        category_id: formData.category_id || null,
+        category_id: formData.category_id === NO_CATEGORY ? null : formData.category_id || null,
         is_actief: formData.is_actief,
       });
 
@@ -107,7 +109,7 @@ const CreateContactDialog = ({
         adres: "",
         notities: "",
         label: "",
-        category_id: categoryId || "",
+        category_id: categoryId || NO_CATEGORY,
         is_actief: true,
       });
       onSuccess();
@@ -154,7 +156,7 @@ const CreateContactDialog = ({
               <SelectValue placeholder="Selecteer rubriek" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Geen rubriek</SelectItem>
+              <SelectItem value={NO_CATEGORY}>Geen rubriek</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.naam}
