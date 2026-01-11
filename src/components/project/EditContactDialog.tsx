@@ -218,6 +218,7 @@ const EditContactDialog = ({
           onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
           placeholder="Straat, postcode, plaats"
           rows={2}
+          className="text-base"
         />
       </div>
 
@@ -253,6 +254,7 @@ const EditContactDialog = ({
           onChange={(e) => setFormData({ ...formData, notities: e.target.value })}
           placeholder="Extra informatie..."
           rows={2}
+          className="text-base"
         />
       </div>
 

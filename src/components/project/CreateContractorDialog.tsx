@@ -189,6 +189,7 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
           onChange={(e) => setFormData({ ...formData, notities: e.target.value })}
           placeholder="Extra informatie..."
           rows={3}
+          className="text-base"
         />
       </div>
 

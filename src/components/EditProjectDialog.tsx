@@ -169,6 +169,7 @@ const EditProjectDialog = ({ open, onOpenChange, onSuccess, project }: EditProje
             onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
             placeholder="Project beschrijving..."
             rows={4}
+            className="text-base"
           />
         </div>
       </div>

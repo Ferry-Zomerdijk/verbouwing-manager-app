@@ -219,6 +219,7 @@ export function CreateKeyDialog({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optionele notities over deze sleutel"
               rows={2}
+              className="text-base"
             />
           </div>
 

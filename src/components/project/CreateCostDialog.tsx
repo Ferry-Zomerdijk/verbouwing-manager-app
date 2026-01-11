@@ -479,6 +479,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
             placeholder="Beschrijving van producten/diensten"
             rows={3}
+            className="text-base"
           />
         </div>
 

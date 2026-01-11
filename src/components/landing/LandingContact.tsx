@@ -185,7 +185,7 @@ export const LandingContact = () => {
                     rows={5}
                     value={formData.message}
                     onChange={handleChange}
-                    className={errors.message ? "border-destructive" : ""}
+                    className={`text-base ${errors.message ? "border-destructive" : ""}`}
                   />
                   {errors.message && (
                     <p className="text-sm text-destructive">{errors.message}</p>
