@@ -196,6 +196,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
             onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
             placeholder="Beschrijving van de kosten..."
             rows={3}
+            className="text-base"
           />
         </div>
 

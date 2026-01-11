@@ -301,6 +301,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
           placeholder="Taak beschrijving..."
           rows={3}
+          className="text-base"
         />
       </div>
 

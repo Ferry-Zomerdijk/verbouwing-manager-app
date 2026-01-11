@@ -138,6 +138,7 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
           onChange={(e) => setFormData({ ...formData, notities: e.target.value })}
           placeholder="Extra informatie..."
           rows={3}
+          className="text-base"
         />
       </div>
 

@@ -159,6 +159,7 @@ export function EditKeyHolderDialog({
               onChange={(e) => setTransferNotes(e.target.value)}
               placeholder="Optionele notitie over deze overdracht"
               rows={2}
+              className="text-base"
             />
             <p className="text-xs text-muted-foreground">
               Deze notitie wordt opgeslagen in de sleutelhistorie

@@ -343,6 +343,7 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
             onChange={(e) => setFormData({ ...formData, beschrijving: e.target.value })}
             placeholder="Beschrijf je renovatieproject..."
             rows={4}
+            className="text-base"
           />
         </div>
       </div>
