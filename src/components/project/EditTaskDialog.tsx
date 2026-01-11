@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -456,7 +456,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     return (
       <>
         <Drawer open={open} onOpenChange={handleCloseRequest}>
-          <DrawerContent className="max-h-[90vh]">
+          <KeyboardAwareDrawerContent className="max-h-[90vh]">
             <DrawerHeader className="text-left">
               <div className="flex items-center gap-2">
                 <DrawerTitle>Taak Bewerken</DrawerTitle>
@@ -470,10 +470,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
                 Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 pb-4 overflow-y-auto">
+            <div className="px-4 pb-4">
               {formContent}
             </div>
-          </DrawerContent>
+          </KeyboardAwareDrawerContent>
         </Drawer>
         {unsavedWarningDialog}
       </>

@@ -2,8 +2,23 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+const isIOS = () => {
+  if (typeof navigator === 'undefined') return false;
+  return /iPhone|iPad|iPod/.test(navigator.userAgent);
+};
+
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, style, ...props }, ref) => {
+  ({ className, type, style, onFocus, ...props }, ref) => {
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      // iOS keyboard scroll fix
+      if (isIOS()) {
+        setTimeout(() => {
+          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+      onFocus?.(e);
+    };
+
     return (
       <input
         type={type}
@@ -17,6 +32,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           WebkitAppearance: 'none',
           ...style,
         }}
+        onFocus={handleFocus}
         ref={ref}
         {...props}
       />

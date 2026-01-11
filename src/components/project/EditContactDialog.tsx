@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -285,14 +285,14 @@ const EditContactDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+        <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader>
             <DrawerTitle>Contact Bewerken</DrawerTitle>
           </DrawerHeader>
           <ScrollArea className="px-4 pb-6 max-h-[calc(90vh-80px)]">
             {formContent}
           </ScrollArea>
-        </DrawerContent>
+        </KeyboardAwareDrawerContent>
       </Drawer>
     );
   }
