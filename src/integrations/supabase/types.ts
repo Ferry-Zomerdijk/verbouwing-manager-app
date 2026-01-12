@@ -408,6 +408,7 @@ export type Database = {
         Row: {
           afbeelding_url: string
           created_at: string | null
+          deel_van_huis: string
           fase: Database["public"]["Enums"]["photo_phase"]
           herkende_objecten: Json | null
           id: string
@@ -417,6 +418,7 @@ export type Database = {
         Insert: {
           afbeelding_url: string
           created_at?: string | null
+          deel_van_huis?: string
           fase: Database["public"]["Enums"]["photo_phase"]
           herkende_objecten?: Json | null
           id?: string
@@ -426,6 +428,7 @@ export type Database = {
         Update: {
           afbeelding_url?: string
           created_at?: string | null
+          deel_van_huis?: string
           fase?: Database["public"]["Enums"]["photo_phase"]
           herkende_objecten?: Json | null
           id?: string

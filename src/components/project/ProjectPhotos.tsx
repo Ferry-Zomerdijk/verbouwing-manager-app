@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, X, Upload as UploadIcon, Image, Crown } from "lucide-react";
+import { Plus, Trash2, X, Upload as UploadIcon, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,7 +29,10 @@ interface PhotoUpload {
   preview: string;
   fase: PhotoPhase;
   notitie: string;
+  deelVanHuis: string;
 }
+
+const DEFAULT_PARTS = ["Woning", "Keuken", "Badkamer", "Slaapkamer", "Woonkamer", "Garage", "Tuin", "Zolder", "Hal"];
 
 const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPhotosProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -40,10 +42,12 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   
   // Multi-upload state
   const [photosToUpload, setPhotosToUpload] = useState<PhotoUpload[]>([]);
   const [defaultFase, setDefaultFase] = useState<PhotoPhase>("Voor");
+  const [defaultDeelVanHuis, setDefaultDeelVanHuis] = useState<string>("Nog invullen");
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -64,14 +68,52 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     enabled: !readOnly,
   });
 
+  // Fetch tasks for deel_van_huis options
+  const { data: tasks } = useQuery({
+    queryKey: ["tasks-delen-voor-fotos", projectId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tasks")
+        .select("deel_van_huis")
+        .eq("project_id", projectId);
+      return data || [];
+    },
+    enabled: !readOnly,
+  });
+
   // Use public data in readOnly mode
   const displayPhotos = readOnly && publicPhotos ? publicPhotos : photos;
   const photoCount = displayPhotos?.length || 0;
   const isLimitReached = hasReachedLimit("maxPhotos", photoCount);
 
-  const filteredPhotos = displayPhotos?.filter(photo => 
-    filter === "all" ? true : photo.fase === filter
-  );
+  // Calculate available parts
+  const availableDelenVanHuis = useMemo(() => {
+    const photoValues = displayPhotos?.map(p => p.deel_van_huis).filter(Boolean) || [];
+    const taskValues = tasks?.map(t => t.deel_van_huis).filter((v): v is string => !!v) || [];
+    const allValues = [...new Set([...DEFAULT_PARTS, ...photoValues, ...taskValues])];
+    // Sort but keep "Nog invullen" at the end
+    return allValues.sort((a, b) => {
+      if (a === "Nog invullen") return 1;
+      if (b === "Nog invullen") return -1;
+      return a.localeCompare(b);
+    });
+  }, [displayPhotos, tasks]);
+
+  // Unique locations used in photos for filter
+  const usedLocations = useMemo(() => {
+    const locations = displayPhotos?.map(p => p.deel_van_huis).filter(Boolean) || [];
+    return [...new Set(locations)].sort((a, b) => {
+      if (a === "Nog invullen") return 1;
+      if (b === "Nog invullen") return -1;
+      return a.localeCompare(b);
+    });
+  }, [displayPhotos]);
+
+  const filteredPhotos = displayPhotos?.filter(photo => {
+    const matchFase = filter === "all" || photo.fase === filter;
+    const matchDeelVanHuis = deelVanHuisFilter === "all" || photo.deel_van_huis === deelVanHuisFilter;
+    return matchFase && matchDeelVanHuis;
+  });
 
   const handleFilesSelect = (files: FileList | null) => {
     if (!files) return;
@@ -90,7 +132,8 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
           file,
           preview: reader.result as string,
           fase: defaultFase,
-          notitie: ""
+          notitie: "",
+          deelVanHuis: defaultDeelVanHuis
         }]);
       };
       reader.readAsDataURL(file);
@@ -139,6 +182,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
           fase: photo.fase,
           afbeelding_url: filePath,
           notitie: photo.notitie || null,
+          deel_van_huis: photo.deelVanHuis,
         }]);
 
         if (dbError) throw dbError;
@@ -243,39 +287,68 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
         <UpgradePrompt currentTier={currentTier} limitType="maxPhotos" compact />
       )}
 
-      <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
-        <Button
-          variant={filter === "all" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("all")}
-          className="text-xs sm:text-sm shrink-0"
-        >
-          Alle
-        </Button>
-        <Button
-          variant={filter === "Voor" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("Voor")}
-          className="text-xs sm:text-sm shrink-0"
-        >
-          Voor
-        </Button>
-        <Button
-          variant={filter === "Tijdens" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("Tijdens")}
-          className="text-xs sm:text-sm shrink-0"
-        >
-          Tijdens
-        </Button>
-        <Button
-          variant={filter === "Na" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("Na")}
-          className="text-xs sm:text-sm shrink-0"
-        >
-          Na
-        </Button>
+      {/* Fase filter */}
+      <div className="space-y-2">
+        <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
+          <Button
+            variant={filter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("all")}
+            className="text-xs sm:text-sm shrink-0"
+          >
+            Alle
+          </Button>
+          <Button
+            variant={filter === "Voor" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("Voor")}
+            className="text-xs sm:text-sm shrink-0"
+          >
+            Voor
+          </Button>
+          <Button
+            variant={filter === "Tijdens" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("Tijdens")}
+            className="text-xs sm:text-sm shrink-0"
+          >
+            Tijdens
+          </Button>
+          <Button
+            variant={filter === "Na" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("Na")}
+            className="text-xs sm:text-sm shrink-0"
+          >
+            Na
+          </Button>
+        </div>
+
+        {/* Deel van huis filter */}
+        {usedLocations.length > 0 && (
+          <div className="flex gap-1 sm:gap-2 overflow-x-auto pb-1">
+            <Button
+              variant={deelVanHuisFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDeelVanHuisFilter("all")}
+              className="text-xs sm:text-sm shrink-0"
+            >
+              <MapPin className="w-3 h-3 mr-1" />
+              Alle locaties
+            </Button>
+            {usedLocations.map((deel) => (
+              <Button
+                key={deel}
+                variant={deelVanHuisFilter === deel ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDeelVanHuisFilter(deel)}
+                className="text-xs sm:text-sm shrink-0"
+              >
+                {deel}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       {filteredPhotos && filteredPhotos.length > 0 ? (
@@ -298,6 +371,12 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                 <Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
                   {photo.fase}
                 </Badge>
+                {photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" && (
+                  <Badge variant="secondary" className="absolute bottom-2 left-2 text-xs bg-background/80 backdrop-blur-sm">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {photo.deel_van_huis}
+                  </Badge>
+                )}
                 {!readOnly && (
                   <Button
                     variant="destructive"
@@ -342,21 +421,40 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
           </DialogHeader>
 
           <div className="space-y-4">
-            <div>
-              <Label>Standaard fase voor nieuwe foto's</Label>
-              <Select
-                value={defaultFase}
-                onValueChange={(value) => setDefaultFase(value as PhotoPhase)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Voor">Voor</SelectItem>
-                  <SelectItem value="Tijdens">Tijdens</SelectItem>
-                  <SelectItem value="Na">Na</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Standaard fase</Label>
+                <Select
+                  value={defaultFase}
+                  onValueChange={(value) => setDefaultFase(value as PhotoPhase)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Voor">Voor</SelectItem>
+                    <SelectItem value="Tijdens">Tijdens</SelectItem>
+                    <SelectItem value="Na">Na</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Standaard locatie</Label>
+                <Select
+                  value={defaultDeelVanHuis}
+                  onValueChange={setDefaultDeelVanHuis}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Nog invullen">Nog invullen</SelectItem>
+                    {availableDelenVanHuis.filter(d => d !== "Nog invullen").map((deel) => (
+                      <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div
@@ -411,7 +509,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                         />
                         <div className="flex-1 space-y-2 min-w-0">
                           <p className="text-sm font-medium truncate">{photo.file.name}</p>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Select
                               value={photo.fase}
                               onValueChange={(value) => updatePhotoInList(index, { fase: value as PhotoPhase })}
@@ -425,11 +523,25 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                                 <SelectItem value="Na">Na</SelectItem>
                               </SelectContent>
                             </Select>
+                            <Select
+                              value={photo.deelVanHuis}
+                              onValueChange={(value) => updatePhotoInList(index, { deelVanHuis: value })}
+                            >
+                              <SelectTrigger className="h-8 w-28">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Nog invullen">Nog invullen</SelectItem>
+                                {availableDelenVanHuis.filter(d => d !== "Nog invullen").map((deel) => (
+                                  <SelectItem key={deel} value={deel}>{deel}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Input
                               placeholder="Notitie..."
                               value={photo.notitie}
                               onChange={(e) => updatePhotoInList(index, { notitie: e.target.value })}
-                              className="h-8 flex-1"
+                              className="h-8 flex-1 min-w-[100px]"
                             />
                           </div>
                         </div>
@@ -487,6 +599,17 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                 alt={selectedPhoto.notitie || "Project foto"}
                 className="w-full rounded-lg"
               />
+              <div className="flex gap-2 flex-wrap">
+                <Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
+                  {selectedPhoto.fase}
+                </Badge>
+                {selectedPhoto.deel_van_huis && (
+                  <Badge variant="secondary">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {selectedPhoto.deel_van_huis}
+                  </Badge>
+                )}
+              </div>
               {selectedPhoto.notitie && (
                 <p className="text-muted-foreground">{selectedPhoto.notitie}</p>
               )}
