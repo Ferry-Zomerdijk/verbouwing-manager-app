@@ -27,11 +27,12 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
 import TaskUpdatesSection from "./TaskUpdatesSection";
 import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
+import { AutocompleteInput } from "./AutocompleteInput";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -47,6 +48,22 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
   const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Get available verantwoordelijken from existing tasks
+  const { data: existingVerantwoordelijken = [] } = useQuery({
+    queryKey: ["available-verantwoordelijken", task?.project_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tasks")
+        .select("verantwoordelijke")
+        .eq("project_id", task.project_id);
+      const unique = [...new Set(data?.map(t => t.verantwoordelijke).filter(Boolean) as string[])];
+      return unique.sort();
+    },
+    enabled: open && !!task?.project_id,
+  });
+
+  const availableVerantwoordelijken = useMemo(() => existingVerantwoordelijken, [existingVerantwoordelijken]);
 
   // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
   useEffect(() => {
@@ -378,11 +395,14 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
       <div>
         <Label htmlFor="verantwoordelijke">Verantwoordelijke</Label>
-        <Input
-          id="verantwoordelijke"
+        <AutocompleteInput
+          placeholder="Typ een naam..."
           value={formData.verantwoordelijke}
-          onChange={(e) => setFormData((prev) => ({ ...prev, verantwoordelijke: e.target.value }))}
-          placeholder="Naam van verantwoordelijke"
+          onChange={(value) => setFormData((prev) => ({ ...prev, verantwoordelijke: value }))}
+          suggestions={availableVerantwoordelijken}
+          allowCreate={true}
+          createLabel="Voeg toe:"
+          showAllOnFocus={true}
         />
       </div>
 
