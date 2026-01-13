@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
 
 interface AutocompleteInputProps {
   placeholder?: string;
@@ -8,6 +9,9 @@ interface AutocompleteInputProps {
   onChange: (value: string) => void;
   suggestions: string[];
   className?: string;
+  allowCreate?: boolean;
+  createLabel?: string;
+  showAllOnFocus?: boolean;
 }
 
 export const AutocompleteInput = ({
@@ -16,6 +20,9 @@ export const AutocompleteInput = ({
   onChange,
   suggestions,
   className,
+  allowCreate = false,
+  createLabel = "Voeg toe:",
+  showAllOnFocus = false,
 }: AutocompleteInputProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -29,6 +36,20 @@ export const AutocompleteInput = ({
       )
     : suggestions;
 
+  // Check if the current value is a new entry (not in suggestions)
+  const isNewValue = value.trim() !== "" && 
+    !suggestions.some(s => s.toLowerCase() === value.toLowerCase().trim());
+
+  // Build the list of items to display
+  const displayItems: { type: "suggestion" | "create"; value: string }[] = [
+    ...filteredSuggestions.map(s => ({ type: "suggestion" as const, value: s })),
+  ];
+
+  // Add "create new" option if allowed and value is new
+  if (allowCreate && isNewValue) {
+    displayItems.unshift({ type: "create", value: value.trim() });
+  }
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,30 +62,30 @@ export const AutocompleteInput = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Reset focused index when suggestions change
+  // Reset focused index when items change
   useEffect(() => {
     setFocusedIndex(-1);
-  }, [filteredSuggestions.length]);
+  }, [displayItems.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
     setIsOpen(true);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    onChange(suggestion);
+  const handleItemClick = (item: { type: "suggestion" | "create"; value: string }) => {
+    onChange(item.value);
     setIsOpen(false);
     inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || filteredSuggestions.length === 0) return;
+    if (!isOpen || displayItems.length === 0) return;
 
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
         setFocusedIndex((prev) =>
-          prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+          prev < displayItems.length - 1 ? prev + 1 : prev
         );
         break;
       case "ArrowUp":
@@ -73,8 +94,12 @@ export const AutocompleteInput = ({
         break;
       case "Enter":
         e.preventDefault();
-        if (focusedIndex >= 0 && focusedIndex < filteredSuggestions.length) {
-          handleSuggestionClick(filteredSuggestions[focusedIndex]);
+        if (focusedIndex >= 0 && focusedIndex < displayItems.length) {
+          handleItemClick(displayItems[focusedIndex]);
+        } else if (allowCreate && isNewValue) {
+          // If no item is focused but we have a new value, use it
+          onChange(value.trim());
+          setIsOpen(false);
         }
         break;
       case "Escape":
@@ -83,7 +108,13 @@ export const AutocompleteInput = ({
     }
   };
 
-  const showDropdown = isOpen && filteredSuggestions.length > 0 && value.length > 0;
+  const handleFocus = () => {
+    if (showAllOnFocus || value) {
+      setIsOpen(true);
+    }
+  };
+
+  const showDropdown = isOpen && displayItems.length > 0;
 
   return (
     <div ref={containerRef} className="relative">
@@ -92,25 +123,33 @@ export const AutocompleteInput = ({
         placeholder={placeholder}
         value={value}
         onChange={handleInputChange}
-        onFocus={() => value && setIsOpen(true)}
+        onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         className={className}
       />
       {showDropdown && (
         <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-y-auto">
-          {filteredSuggestions.map((suggestion, index) => (
+          {displayItems.map((item, index) => (
             <div
-              key={suggestion}
+              key={item.type === "create" ? `create-${item.value}` : item.value}
               className={cn(
-                "px-3 py-2 text-sm cursor-pointer transition-colors",
+                "px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2",
                 focusedIndex === index
                   ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
+                  : "hover:bg-muted",
+                item.type === "create" && "text-primary font-medium"
               )}
-              onClick={() => handleSuggestionClick(suggestion)}
+              onClick={() => handleItemClick(item)}
               onMouseEnter={() => setFocusedIndex(index)}
             >
-              {suggestion}
+              {item.type === "create" ? (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span>{createLabel} "{item.value}"</span>
+                </>
+              ) : (
+                item.value
+              )}
             </div>
           ))}
         </div>

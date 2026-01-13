@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
@@ -18,6 +18,7 @@ import { ImagePlus, X, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuery } from "@tanstack/react-query";
+import { AutocompleteInput } from "./AutocompleteInput";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -61,6 +62,22 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     },
     enabled: open,
   });
+
+  // Get available verantwoordelijken from existing tasks
+  const { data: existingVerantwoordelijken = [] } = useQuery({
+    queryKey: ["available-verantwoordelijken", projectId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tasks")
+        .select("verantwoordelijke")
+        .eq("project_id", projectId);
+      const unique = [...new Set(data?.map(t => t.verantwoordelijke).filter(Boolean) as string[])];
+      return unique.sort();
+    },
+    enabled: open,
+  });
+
+  const availableVerantwoordelijken = useMemo(() => existingVerantwoordelijken, [existingVerantwoordelijken]);
 
   const isLimitReached = hasReachedLimit("maxTasks", taskCount);
 
@@ -404,11 +421,14 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
       <div>
         <Label htmlFor="verantwoordelijke">Verantwoordelijke</Label>
-        <Input
-          id="verantwoordelijke"
+        <AutocompleteInput
+          placeholder="Typ een naam..."
           value={formData.verantwoordelijke}
-          onChange={(e) => setFormData({ ...formData, verantwoordelijke: e.target.value })}
-          placeholder="Naam"
+          onChange={(value) => setFormData({ ...formData, verantwoordelijke: value })}
+          suggestions={availableVerantwoordelijken}
+          allowCreate={true}
+          createLabel="Voeg toe:"
+          showAllOnFocus={true}
         />
       </div>
 
