@@ -67,20 +67,40 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
 
-  // Fetch active contractors
-  const { data: contractors = [] } = useQuery({
-    queryKey: ["contractors", projectId, "active"],
+  // First fetch the "Bouwvakkers" category for this project
+  const { data: bouwvakkersCategory } = useQuery({
+    queryKey: ["bouwvakkers-category", projectId],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contact_categories")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("naam", "Bouwvakkers")
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch active contractors from "Bouwvakkers" category only
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractors", projectId, "bouwvakkers", bouwvakkersCategory?.id],
+    queryFn: async () => {
+      if (!bouwvakkersCategory?.id) return [];
+      
       const { data, error } = await supabase
         .from("contractors")
         .select("id, naam, rol, bedrijf, is_actief")
         .eq("project_id", projectId)
         .eq("is_actief", true)
+        .eq("category_id", bouwvakkersCategory.id)
         .order("naam");
 
       if (error) throw error;
       return data as Contractor[];
     },
+    enabled: !!bouwvakkersCategory?.id,
   });
 
   // Fetch attendance for current week
