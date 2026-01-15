@@ -10,8 +10,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Trash2, RotateCcw, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface TimePreset {
   id: string;
@@ -19,6 +27,7 @@ interface TimePreset {
   start_time: string;
   end_time: string;
   sort_order: number;
+  color: string;
 }
 
 interface TimePresetsManagerProps {
@@ -27,12 +36,22 @@ interface TimePresetsManagerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+export const PRESET_COLORS = {
+  yellow: { label: "Ochtend (Geel)", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300", dot: "bg-yellow-500" },
+  orange: { label: "Middag (Oranje)", bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-300", dot: "bg-orange-500" },
+  purple: { label: "Avond (Paars)", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", dot: "bg-purple-500" },
+  blue: { label: "Blauw", bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-300", dot: "bg-blue-500" },
+  green: { label: "Groen", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", dot: "bg-green-500" },
+  pink: { label: "Roze", bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-800 dark:text-pink-300", dot: "bg-pink-500" },
+  gray: { label: "Grijs", bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-800 dark:text-gray-300", dot: "bg-gray-500" },
+};
+
 const DEFAULT_PRESETS = [
-  { label: "Ochtend", start_time: "07:00", end_time: "12:00", sort_order: 0 },
-  { label: "Middag", start_time: "12:30", end_time: "17:00", sort_order: 1 },
-  { label: "Hele dag", start_time: "07:00", end_time: "17:00", sort_order: 2 },
-  { label: "Korte dag", start_time: "07:00", end_time: "14:00", sort_order: 3 },
-  { label: "Avond", start_time: "17:00", end_time: "21:00", sort_order: 4 },
+  { label: "Ochtend", start_time: "07:00", end_time: "12:00", sort_order: 0, color: "yellow" },
+  { label: "Middag", start_time: "12:30", end_time: "17:00", sort_order: 1, color: "orange" },
+  { label: "Hele dag", start_time: "07:00", end_time: "17:00", sort_order: 2, color: "green" },
+  { label: "Korte dag", start_time: "07:00", end_time: "14:00", sort_order: 3, color: "blue" },
+  { label: "Avond", start_time: "17:00", end_time: "21:00", sort_order: 4, color: "purple" },
 ];
 
 export function TimePresetsManager({ projectId, open, onOpenChange }: TimePresetsManagerProps) {
@@ -92,6 +111,7 @@ export function TimePresetsManager({ projectId, open, onOpenChange }: TimePreset
               start_time: p.start_time,
               end_time: p.end_time,
               sort_order: index,
+              color: p.color || "gray",
             }))
           );
 
@@ -126,6 +146,7 @@ export function TimePresetsManager({ projectId, open, onOpenChange }: TimePreset
         start_time: "08:00",
         end_time: "16:00",
         sort_order: localPresets.length,
+        color: "gray",
       },
     ]);
     setHasChanges(true);
@@ -142,6 +163,7 @@ export function TimePresetsManager({ projectId, open, onOpenChange }: TimePreset
       DEFAULT_PRESETS.map((p, index) => ({
         ...p,
         id: `default-${index}`,
+        color: p.color,
       }))
     );
     setHasChanges(true);
@@ -187,58 +209,89 @@ export function TimePresetsManager({ projectId, open, onOpenChange }: TimePreset
             localPresets.map((preset, index) => (
               <div
                 key={preset.id}
-                className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg"
+                className={cn(
+                  "flex flex-col gap-2 p-3 rounded-lg border",
+                  PRESET_COLORS[preset.color as keyof typeof PRESET_COLORS]?.bg || "bg-muted/50"
+                )}
               >
-                <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0}
+                    >
+                      <GripVertical className="h-3 w-3 rotate-90" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === localPresets.length - 1}
+                    >
+                      <GripVertical className="h-3 w-3 rotate-90" />
+                    </Button>
+                  </div>
+                  <Input
+                    value={preset.label}
+                    onChange={(e) => handleUpdatePreset(index, "label", e.target.value)}
+                    placeholder="Label"
+                    className="flex-1 h-9 bg-background"
+                  />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5"
-                    onClick={() => handleMoveUp(index)}
-                    disabled={index === 0}
+                    className="h-9 w-9 text-destructive hover:text-destructive"
+                    onClick={() => handleDeletePreset(index)}
                   >
-                    <GripVertical className="h-3 w-3 rotate-90" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    onClick={() => handleMoveDown(index)}
-                    disabled={index === localPresets.length - 1}
-                  >
-                    <GripVertical className="h-3 w-3 rotate-90" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-                <Input
-                  value={preset.label}
-                  onChange={(e) => handleUpdatePreset(index, "label", e.target.value)}
-                  placeholder="Label"
-                  className="flex-1 h-9"
-                />
-                <Input
-                  type="time"
-                  value={preset.start_time}
-                  onChange={(e) => handleUpdatePreset(index, "start_time", e.target.value)}
-                  className="w-24 h-9"
-                />
-                <span className="text-muted-foreground">-</span>
-                <Input
-                  type="time"
-                  value={preset.end_time}
-                  onChange={(e) => handleUpdatePreset(index, "end_time", e.target.value)}
-                  className="w-24 h-9"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 text-destructive hover:text-destructive"
-                  onClick={() => handleDeletePreset(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2 pl-10">
+                  <Input
+                    type="time"
+                    value={preset.start_time}
+                    onChange={(e) => handleUpdatePreset(index, "start_time", e.target.value)}
+                    className="w-24 h-8 bg-background"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="time"
+                    value={preset.end_time}
+                    onChange={(e) => handleUpdatePreset(index, "end_time", e.target.value)}
+                    className="w-24 h-8 bg-background"
+                  />
+                  <Select
+                    value={preset.color || "gray"}
+                    onValueChange={(value) => handleUpdatePreset(index, "color", value)}
+                  >
+                    <SelectTrigger className="w-32 h-8 bg-background">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full",
+                          PRESET_COLORS[preset.color as keyof typeof PRESET_COLORS]?.dot || "bg-gray-500"
+                        )} />
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PRESET_COLORS).map(([key, value]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-3 h-3 rounded-full", value.dot)} />
+                            {value.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             ))
           )}
