@@ -95,6 +95,44 @@ export type Database = {
           },
         ]
       }
+      attendance_time_presets: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          label: string
+          project_id: string
+          sort_order: number
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          label: string
+          project_id: string
+          sort_order?: number
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          label?: string
+          project_id?: string
+          sort_order?: number
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_time_presets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_categories: {
         Row: {
           created_at: string | null

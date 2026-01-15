@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, Calendar, Users, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar, Users, Clock, Settings } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, isToday } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import AttendanceDialog from "./AttendanceDialog";
+import { TimePresetsManager } from "./TimePresetsManager";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProjectAttendanceProps {
@@ -56,6 +57,7 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [presetsDialogOpen, setPresetsDialogOpen] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null);
@@ -212,10 +214,16 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
             Week {getWeekNumber(currentWeekStart)}, {format(currentWeekStart, "yyyy")}
           </span>
         </div>
-        <Button onClick={handleAddNew} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Toevoegen
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setPresetsDialogOpen(true)} className="gap-2">
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">Tijden</span>
+          </Button>
+          <Button onClick={handleAddNew} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Toevoegen
+          </Button>
+        </div>
       </div>
 
       {/* Week totals */}
@@ -337,7 +345,14 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
         </div>
       </div>
 
-      {/* Dialog */}
+      {/* Time Presets Dialog */}
+      <TimePresetsManager
+        projectId={projectId}
+        open={presetsDialogOpen}
+        onOpenChange={setPresetsDialogOpen}
+      />
+
+      {/* Attendance Dialog */}
       <AttendanceDialog
         open={dialogOpen}
         onOpenChange={handleDialogClose}
