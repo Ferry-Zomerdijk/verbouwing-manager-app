@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { emptyStateMessages, getRandomCompletionMessage } from "@/lib/builderJokes";
 import { addToQueue } from "@/lib/offlineQueue";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 
 interface MobileTaskListProps {
   tasks: any[];
@@ -37,7 +39,6 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
   const [searchQuery, setSearchQuery] = useState("");
   const [activeStatuses, setActiveStatuses] = useState<StatusFilter[]>(["Te doen", "Bezig"]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedVerantwoordelijke, setSelectedVerantwoordelijke] = useState<string | null>(null);
   const [selectedDeelVanHuis, setSelectedDeelVanHuis] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -48,15 +49,28 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
       .filter(Boolean))] as string[];
   }, [tasks]);
 
+  // Pull-to-refresh functionaliteit
+  const performRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    onUpdate();
+    toast.success("Lijst vernieuwd");
+  };
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing,
+    progress,
+    shouldTrigger,
+  } = usePullToRefresh({
+    onRefresh: performRefresh,
+    threshold: 80,
+    maxPull: 120,
+  });
+
   const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
-      onUpdate();
-      toast.success("Lijst vernieuwd");
-    } finally {
-      setTimeout(() => setRefreshing(false), 500);
-    }
+    if (isRefreshing) return;
+    await performRefresh();
   };
 
   const updateTaskStatus = useMutation({
@@ -185,7 +199,23 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
     (selectedDeelVanHuis ? 1 : 0);
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="relative">
+      {/* Pull-to-refresh indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        progress={progress}
+        shouldTrigger={shouldTrigger}
+      />
+      
+      {/* Content met transform voor pull effect */}
+      <div 
+        className="space-y-4"
+        style={{ 
+          transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
+          transition: isRefreshing ? 'none' : 'transform 0.2s ease-out'
+        }}
+      >
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Taken</h2>
@@ -195,9 +225,9 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
               variant="ghost" 
               size="icon" 
               onClick={handleRefresh}
-              disabled={refreshing}
+              disabled={isRefreshing}
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           )}
           {!readOnly && onCreateTask && (
@@ -398,6 +428,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
