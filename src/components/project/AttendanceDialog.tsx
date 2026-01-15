@@ -77,11 +77,11 @@ const PRESET_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 const DEFAULT_PRESETS = [
-  { id: "default-1", label: "Ochtend", start_time: "07:00", end_time: "12:00", color: "yellow" },
-  { id: "default-2", label: "Middag", start_time: "12:30", end_time: "17:00", color: "orange" },
-  { id: "default-3", label: "Hele dag", start_time: "07:00", end_time: "17:00", color: "green" },
-  { id: "default-4", label: "Korte dag", start_time: "07:00", end_time: "14:00", color: "blue" },
-  { id: "default-5", label: "Avond", start_time: "17:00", end_time: "21:00", color: "purple" },
+  { id: "default-1", label: "Ochtend", start_time: "07:30", end_time: "12:00", color: "yellow" },
+  { id: "default-2", label: "Middag", start_time: "12:30", end_time: "16:30", color: "orange" },
+  { id: "default-3", label: "Hele dag", start_time: "07:30", end_time: "16:30", color: "green" },
+  { id: "default-4", label: "Korte dag", start_time: "07:30", end_time: "14:00", color: "blue" },
+  { id: "default-5", label: "Avond", start_time: "16:30", end_time: "21:00", color: "purple" },
 ];
 
 const AttendanceDialog = ({
@@ -96,8 +96,8 @@ const AttendanceDialog = ({
 }: AttendanceDialogProps) => {
   const [contractorId, setContractorId] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
-  const [startTime, setStartTime] = useState<string>("07:00");
-  const [endTime, setEndTime] = useState<string>("17:00");
+  const [startTime, setStartTime] = useState<string>("07:30");
+  const [endTime, setEndTime] = useState<string>("16:30");
   const [status, setStatus] = useState<AttendanceStatus>("aanwezig");
   const [notes, setNotes] = useState<string>("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -130,15 +130,15 @@ const AttendanceDialog = ({
     if (attendance) {
       setContractorId(attendance.contractor_id);
       setDate(new Date(attendance.date));
-      setStartTime(attendance.start_time || "07:00");
-      setEndTime(attendance.end_time || "17:00");
+      setStartTime(attendance.start_time || "07:30");
+      setEndTime(attendance.end_time || "16:30");
       setStatus(attendance.status);
       setNotes(attendance.notes || "");
     } else {
       setContractorId(defaultContractorId || contractors[0]?.id || "");
       setDate(defaultDate || new Date());
-      setStartTime("07:00");
-      setEndTime("17:00");
+      setStartTime("07:30");
+      setEndTime("16:30");
       setStatus("aanwezig");
       setNotes("");
     }

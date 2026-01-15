@@ -47,11 +47,11 @@ export const PRESET_COLORS = {
 };
 
 const DEFAULT_PRESETS = [
-  { label: "Ochtend", start_time: "07:00", end_time: "12:00", sort_order: 0, color: "yellow" },
-  { label: "Middag", start_time: "12:30", end_time: "17:00", sort_order: 1, color: "orange" },
-  { label: "Hele dag", start_time: "07:00", end_time: "17:00", sort_order: 2, color: "green" },
-  { label: "Korte dag", start_time: "07:00", end_time: "14:00", sort_order: 3, color: "blue" },
-  { label: "Avond", start_time: "17:00", end_time: "21:00", sort_order: 4, color: "purple" },
+  { label: "Ochtend", start_time: "07:30", end_time: "12:00", sort_order: 0, color: "yellow" },
+  { label: "Middag", start_time: "12:30", end_time: "16:30", sort_order: 1, color: "orange" },
+  { label: "Hele dag", start_time: "07:30", end_time: "16:30", sort_order: 2, color: "green" },
+  { label: "Korte dag", start_time: "07:30", end_time: "14:00", sort_order: 3, color: "blue" },
+  { label: "Avond", start_time: "16:30", end_time: "21:00", sort_order: 4, color: "purple" },
 ];
 
 export function TimePresetsManager({ projectId, open, onOpenChange }: TimePresetsManagerProps) {
