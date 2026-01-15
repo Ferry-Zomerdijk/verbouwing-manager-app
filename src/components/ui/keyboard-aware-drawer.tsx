@@ -30,16 +30,16 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
     }
   }, [isKeyboardOpen]);
 
-  // Calculate max height based on viewport
+  // Calculate max height based on viewport - lower for Android compatibility
   const maxHeight = isKeyboardOpen 
     ? `${viewportHeight - 20}px` 
-    : '90vh';
+    : '85vh';
 
   return (
     <DrawerContent
       ref={ref}
       className={cn(
-        "drawer-content-ios",
+        "drawer-content-ios flex flex-col",
         className
       )}
       style={{ 
@@ -48,9 +48,7 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
       }}
       {...props}
     >
-      <div className="overflow-y-auto flex-1 overscroll-contain">
-        {children}
-      </div>
+      {children}
     </DrawerContent>
   );
 });

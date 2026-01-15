@@ -488,18 +488,26 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <KeyboardAwareDrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
+        <KeyboardAwareDrawerContent>
+          <DrawerHeader className="text-left shrink-0">
             <DrawerTitle>Nieuwe Taak</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-4">
+          
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 -webkit-overflow-scrolling-touch">
             {formContent}
           </div>
-          <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
+          
+          {/* Sticky footer - outside scroll area */}
+          <div className="shrink-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Annuleren
             </Button>
-            <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={createTaskMutation.isPending || uploadingImages} className="flex-1 gradient-primary">
+            <Button 
+              onClick={handleSubmit} 
+              disabled={createTaskMutation.isPending || uploadingImages} 
+              className="flex-1 gradient-primary"
+            >
               {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
             </Button>
           </div>
@@ -510,7 +518,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nieuwe Taak</DialogTitle>
         </DialogHeader>

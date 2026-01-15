@@ -298,4 +298,25 @@ All colors MUST be HSL.
   .keyboard-safe-bottom {
     padding-bottom: max(env(safe-area-inset-bottom), 16px);
   }
+
+  /* Android scroll fixes */
+  .-webkit-overflow-scrolling-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure proper touch scrolling on Android and other non-iOS devices */
+  @supports not (-webkit-touch-callout: none) {
+    [data-vaul-drawer] {
+      touch-action: pan-y;
+    }
+    
+    [data-vaul-drawer-content] {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Fix for dialog/drawer scroll on mobile */
+  [role="dialog"] {
+    -webkit-overflow-scrolling: touch;
+  }
 }
