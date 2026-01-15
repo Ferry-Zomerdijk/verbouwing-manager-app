@@ -35,6 +35,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 import AiUsageWidget from "@/components/AiUsageWidget";
+import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -292,6 +293,7 @@ const Dashboard = () => {
         {/* AI Usage Widget & Upgrade Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <AiUsageWidget />
+          <TodayAttendanceWidget />
           
           {/* Upgrade Banner for Free and Basis Users */}
           {(currentTier === "free" || currentTier === "basis") && showUpgradeBanner && (
