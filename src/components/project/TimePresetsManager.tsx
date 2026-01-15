@@ -37,18 +37,19 @@ interface TimePresetsManagerProps {
 }
 
 export const PRESET_COLORS = {
-  yellow: { label: "Ochtend (Geel)", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300", dot: "bg-yellow-500" },
-  orange: { label: "Middag (Oranje)", bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-300", dot: "bg-orange-500" },
-  purple: { label: "Avond (Paars)", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", dot: "bg-purple-500" },
+  lightgreen: { label: "Licht Groen", bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", dot: "bg-emerald-400" },
+  green: { label: "Groen (Aanwezig)", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", dot: "bg-green-500" },
   blue: { label: "Blauw", bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-300", dot: "bg-blue-500" },
-  green: { label: "Groen", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", dot: "bg-green-500" },
+  yellow: { label: "Geel", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300", dot: "bg-yellow-500" },
+  orange: { label: "Oranje", bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-300", dot: "bg-orange-500" },
+  purple: { label: "Paars", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", dot: "bg-purple-500" },
   pink: { label: "Roze", bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-800 dark:text-pink-300", dot: "bg-pink-500" },
   gray: { label: "Grijs", bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-800 dark:text-gray-300", dot: "bg-gray-500" },
 };
 
 const DEFAULT_PRESETS = [
-  { label: "Ochtend", start_time: "07:30", end_time: "12:00", sort_order: 0, color: "yellow" },
-  { label: "Middag", start_time: "12:30", end_time: "16:30", sort_order: 1, color: "orange" },
+  { label: "Ochtend", start_time: "07:30", end_time: "12:00", sort_order: 0, color: "lightgreen" },
+  { label: "Middag", start_time: "12:30", end_time: "16:30", sort_order: 1, color: "lightgreen" },
   { label: "Hele dag", start_time: "07:30", end_time: "16:30", sort_order: 2, color: "green" },
   { label: "Korte dag", start_time: "07:30", end_time: "14:00", sort_order: 3, color: "blue" },
   { label: "Avond", start_time: "16:30", end_time: "21:00", sort_order: 4, color: "purple" },
