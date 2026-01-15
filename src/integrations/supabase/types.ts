@@ -38,6 +38,63 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          created_by: string | null
+          date: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          project_id: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+          updated_at: string
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          created_by?: string | null
+          date: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          project_id: string
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_categories: {
         Row: {
           created_at: string | null
@@ -1104,6 +1161,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "project_user"
+      attendance_status: "aanwezig" | "afwezig" | "ziek" | "vakantie"
       cost_category:
         | "Materiaal"
         | "Arbeid"
@@ -1265,6 +1323,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "project_user"],
+      attendance_status: ["aanwezig", "afwezig", "ziek", "vakantie"],
       cost_category: [
         "Materiaal",
         "Arbeid",
