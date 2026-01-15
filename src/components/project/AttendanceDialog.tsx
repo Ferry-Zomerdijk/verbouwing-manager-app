@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -58,12 +58,19 @@ interface AttendanceDialogProps {
   onDelete?: () => void;
 }
 
-const PREDEFINED_TIMES = [
-  { label: "Ochtend", start: "07:00", end: "12:00" },
-  { label: "Middag", start: "12:30", end: "17:00" },
-  { label: "Hele dag", start: "07:00", end: "17:00" },
-  { label: "Korte dag", start: "07:00", end: "14:00" },
-  { label: "Avond", start: "17:00", end: "21:00" },
+interface TimePreset {
+  id: string;
+  label: string;
+  start_time: string;
+  end_time: string;
+}
+
+const DEFAULT_PRESETS = [
+  { id: "default-1", label: "Ochtend", start_time: "07:00", end_time: "12:00" },
+  { id: "default-2", label: "Middag", start_time: "12:30", end_time: "17:00" },
+  { id: "default-3", label: "Hele dag", start_time: "07:00", end_time: "17:00" },
+  { id: "default-4", label: "Korte dag", start_time: "07:00", end_time: "14:00" },
+  { id: "default-5", label: "Avond", start_time: "17:00", end_time: "21:00" },
 ];
 
 const AttendanceDialog = ({
@@ -86,6 +93,27 @@ const AttendanceDialog = ({
   
   const queryClient = useQueryClient();
   const isEditing = !!attendance;
+
+  // Fetch time presets from database
+  const { data: timePresets = DEFAULT_PRESETS } = useQuery({
+    queryKey: ["attendance-presets", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_time_presets")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("sort_order");
+
+      if (error) throw error;
+      
+      // Return defaults if no presets exist
+      if (!data || data.length === 0) {
+        return DEFAULT_PRESETS;
+      }
+      return data as TimePreset[];
+    },
+    enabled: open,
+  });
 
   useEffect(() => {
     if (attendance) {
@@ -144,9 +172,9 @@ const AttendanceDialog = ({
     },
   });
 
-  const handlePredefinedTime = (start: string, end: string) => {
-    setStartTime(start);
-    setEndTime(end);
+  const handlePredefinedTime = (preset: TimePreset) => {
+    setStartTime(preset.start_time);
+    setEndTime(preset.end_time);
     setStatus("aanwezig");
   };
 
@@ -244,15 +272,15 @@ const AttendanceDialog = ({
               <div className="space-y-2">
                 <Label>Snelle selectie</Label>
                 <div className="flex flex-wrap gap-2">
-                  {PREDEFINED_TIMES.map((t) => (
+                  {timePresets.map((preset) => (
                     <Button
-                      key={t.label}
+                      key={preset.id}
                       type="button"
-                      variant={startTime === t.start && endTime === t.end ? "default" : "outline"}
+                      variant={startTime === preset.start_time && endTime === preset.end_time ? "default" : "outline"}
                       size="sm"
-                      onClick={() => handlePredefinedTime(t.start, t.end)}
+                      onClick={() => handlePredefinedTime(preset)}
                     >
-                      {t.label}
+                      {preset.label}
                     </Button>
                   ))}
                 </div>
