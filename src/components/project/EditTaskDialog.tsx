@@ -442,8 +442,8 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     return (
       <>
         <Drawer open={open} onOpenChange={handleCloseRequest}>
-          <KeyboardAwareDrawerContent className="max-h-[90vh]">
-            <DrawerHeader className="text-left">
+          <KeyboardAwareDrawerContent>
+            <DrawerHeader className="text-left shrink-0">
               <div className="flex items-center gap-2">
                 <DrawerTitle>Taak Bewerken</DrawerTitle>
                 {isDirty && (
@@ -456,7 +456,9 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
                 Bewerk de taakgegevens zoals titel, beschrijving, prioriteit, status en data.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 pb-4">
+            
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 -webkit-overflow-scrolling-touch">
               {formContent}
             </div>
           </KeyboardAwareDrawerContent>
