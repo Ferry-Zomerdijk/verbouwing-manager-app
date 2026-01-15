@@ -63,14 +63,25 @@ interface TimePreset {
   label: string;
   start_time: string;
   end_time: string;
+  color?: string;
 }
 
+const PRESET_COLORS: Record<string, { bg: string; text: string }> = {
+  yellow: { bg: "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700", text: "text-yellow-800 dark:text-yellow-300" },
+  orange: { bg: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700", text: "text-orange-800 dark:text-orange-300" },
+  purple: { bg: "bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700", text: "text-purple-800 dark:text-purple-300" },
+  blue: { bg: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700", text: "text-blue-800 dark:text-blue-300" },
+  green: { bg: "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700", text: "text-green-800 dark:text-green-300" },
+  pink: { bg: "bg-pink-100 dark:bg-pink-900/30 border-pink-300 dark:border-pink-700", text: "text-pink-800 dark:text-pink-300" },
+  gray: { bg: "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600", text: "text-gray-800 dark:text-gray-300" },
+};
+
 const DEFAULT_PRESETS = [
-  { id: "default-1", label: "Ochtend", start_time: "07:00", end_time: "12:00" },
-  { id: "default-2", label: "Middag", start_time: "12:30", end_time: "17:00" },
-  { id: "default-3", label: "Hele dag", start_time: "07:00", end_time: "17:00" },
-  { id: "default-4", label: "Korte dag", start_time: "07:00", end_time: "14:00" },
-  { id: "default-5", label: "Avond", start_time: "17:00", end_time: "21:00" },
+  { id: "default-1", label: "Ochtend", start_time: "07:00", end_time: "12:00", color: "yellow" },
+  { id: "default-2", label: "Middag", start_time: "12:30", end_time: "17:00", color: "orange" },
+  { id: "default-3", label: "Hele dag", start_time: "07:00", end_time: "17:00", color: "green" },
+  { id: "default-4", label: "Korte dag", start_time: "07:00", end_time: "14:00", color: "blue" },
+  { id: "default-5", label: "Avond", start_time: "17:00", end_time: "21:00", color: "purple" },
 ];
 
 const AttendanceDialog = ({
@@ -272,17 +283,28 @@ const AttendanceDialog = ({
               <div className="space-y-2">
                 <Label>Snelle selectie</Label>
                 <div className="flex flex-wrap gap-2">
-                  {timePresets.map((preset) => (
-                    <Button
-                      key={preset.id}
-                      type="button"
-                      variant={startTime === preset.start_time && endTime === preset.end_time ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePredefinedTime(preset)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
+                  {timePresets.map((preset) => {
+                    const isSelected = startTime === preset.start_time && endTime === preset.end_time;
+                    const colorStyle = PRESET_COLORS[preset.color || "gray"];
+                    
+                    return (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "border-2 transition-all",
+                          isSelected 
+                            ? cn(colorStyle?.bg, colorStyle?.text, "ring-2 ring-offset-1 ring-primary")
+                            : cn(colorStyle?.bg, colorStyle?.text, "hover:opacity-80")
+                        )}
+                        onClick={() => handlePredefinedTime(preset)}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
 

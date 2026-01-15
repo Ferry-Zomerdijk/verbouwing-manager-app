@@ -97,6 +97,7 @@ export type Database = {
       }
       attendance_time_presets: {
         Row: {
+          color: string | null
           created_at: string
           end_time: string
           id: string
@@ -106,6 +107,7 @@ export type Database = {
           start_time: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           end_time: string
           id?: string
@@ -115,6 +117,7 @@ export type Database = {
           start_time: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           end_time?: string
           id?: string

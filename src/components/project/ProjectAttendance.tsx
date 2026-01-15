@@ -10,7 +10,7 @@ import { nl } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import AttendanceDialog from "./AttendanceDialog";
-import { TimePresetsManager } from "./TimePresetsManager";
+import { TimePresetsManager, PRESET_COLORS } from "./TimePresetsManager";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProjectAttendanceProps {
@@ -118,6 +118,30 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
       return data as Attendance[];
     },
   });
+
+  // Fetch time presets to get colors for matching time slots
+  const { data: timePresets = [] } = useQuery({
+    queryKey: ["attendance-presets", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_time_presets")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("sort_order");
+
+      if (error) throw error;
+      return data as Array<{ id: string; label: string; start_time: string; end_time: string; color: string | null }>;
+    },
+  });
+
+  // Function to get color for a time slot based on presets
+  const getTimeSlotColor = (startTime: string | null, endTime: string | null): string | null => {
+    if (!startTime || !endTime) return null;
+    const matchingPreset = timePresets.find(
+      (p) => p.start_time === startTime && p.end_time === endTime
+    );
+    return matchingPreset?.color || null;
+  };
 
   // Create attendance map for quick lookup
   const attendanceMap = useMemo(() => {
@@ -316,19 +340,33 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
                       >
                         {attendance ? (
                           <div className="flex flex-col items-center gap-1">
-                            <Badge 
-                              variant="secondary" 
-                              className={cn("text-xs px-2", statusColors[attendance.status])}
-                            >
-                              {attendance.status === "aanwezig" && attendance.start_time && attendance.end_time ? (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {attendance.start_time.slice(0, 5)}-{attendance.end_time.slice(0, 5)}
-                                </span>
-                              ) : (
-                                statusLabels[attendance.status]
-                              )}
-                            </Badge>
+                            {(() => {
+                              const presetColor = attendance.status === "aanwezig" 
+                                ? getTimeSlotColor(attendance.start_time, attendance.end_time)
+                                : null;
+                              const colorStyle = presetColor && PRESET_COLORS[presetColor as keyof typeof PRESET_COLORS];
+                              
+                              return (
+                                <Badge 
+                                  variant="secondary" 
+                                  className={cn(
+                                    "text-xs px-2",
+                                    colorStyle 
+                                      ? cn(colorStyle.bg, colorStyle.text)
+                                      : statusColors[attendance.status]
+                                  )}
+                                >
+                                  {attendance.status === "aanwezig" && attendance.start_time && attendance.end_time ? (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {attendance.start_time.slice(0, 5)}-{attendance.end_time.slice(0, 5)}
+                                    </span>
+                                  ) : (
+                                    statusLabels[attendance.status]
+                                  )}
+                                </Badge>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="text-muted-foreground/50 hover:text-muted-foreground">
@@ -345,8 +383,9 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
         </CardContent>
       </Card>
 
-      {/* Legend */}
+      {/* Legend - Status colors + time preset colors */}
       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+        <div className="font-medium text-foreground">Status:</div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-green-500" />
           <span>Aanwezig</span>
@@ -364,6 +403,22 @@ const ProjectAttendance = ({ projectId }: ProjectAttendanceProps) => {
           <span>Vakantie</span>
         </div>
       </div>
+      
+      {/* Time presets legend */}
+      {timePresets.length > 0 && (
+        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+          <div className="font-medium text-foreground">Werktijden:</div>
+          {timePresets.map((preset) => {
+            const colorStyle = PRESET_COLORS[preset.color as keyof typeof PRESET_COLORS];
+            return (
+              <div key={preset.id} className="flex items-center gap-2">
+                <div className={cn("w-3 h-3 rounded", colorStyle?.dot || "bg-gray-500")} />
+                <span>{preset.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Time Presets Dialog */}
       <TimePresetsManager
