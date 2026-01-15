@@ -29,7 +29,7 @@ interface CreateTaskDialogProps {
 }
 
 const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableDelenVanHuis = [] }: CreateTaskDialogProps) => {
-  const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
+  
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -231,7 +231,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         verantwoordelijke: "",
         deel_van_huis: "",
       });
-      setCustomDeelVanHuis("");
+      
       setPendingImages([]);
     },
   });
@@ -243,9 +243,6 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       return;
     }
 
-    const finalDeelVanHuis = formData.deel_van_huis === "__custom__" 
-      ? customDeelVanHuis 
-      : formData.deel_van_huis;
 
     createTaskMutation.mutate({
       project_id: projectId,
@@ -256,7 +253,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       status: formData.status as TaskStatus,
       prioriteit: formData.prioriteit as TaskPriority,
       verantwoordelijke: formData.verantwoordelijke || null,
-      deel_van_huis: finalDeelVanHuis || null,
+      deel_van_huis: formData.deel_van_huis || null,
     });
   };
 
@@ -394,29 +391,15 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
       <div>
         <Label htmlFor="deel_van_huis">Deel van huis</Label>
-        <Select
+        <AutocompleteInput
+          placeholder="Typ of selecteer..."
           value={formData.deel_van_huis}
-          onValueChange={(value) => setFormData({ ...formData, deel_van_huis: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecteer of voer nieuw in" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">Geen</SelectItem>
-            {availableDelenVanHuis.map((deel) => (
-              <SelectItem key={deel} value={deel}>{deel}</SelectItem>
-            ))}
-            <SelectItem value="__custom__">+ Nieuw toevoegen...</SelectItem>
-          </SelectContent>
-        </Select>
-        {formData.deel_van_huis === "__custom__" && (
-          <Input
-            className="mt-2"
-            value={customDeelVanHuis}
-            onChange={(e) => setCustomDeelVanHuis(e.target.value)}
-            placeholder="Voer nieuw deel van huis in"
-          />
-        )}
+          onChange={(value) => setFormData({ ...formData, deel_van_huis: value })}
+          suggestions={availableDelenVanHuis}
+          allowCreate={true}
+          createLabel="Voeg toe:"
+          showAllOnFocus={true}
+        />
       </div>
 
       <div>

@@ -45,7 +45,7 @@ interface EditTaskDialogProps {
 const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVanHuis = [] }: EditTaskDialogProps) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const [customDeelVanHuis, setCustomDeelVanHuis] = useState("");
+  
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +90,6 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
   // Store initial values to compare for dirty state
   const [initialFormData, setInitialFormData] = useState(formData);
-  const [initialCustomDeelVanHuis, setInitialCustomDeelVanHuis] = useState("");
 
   const lastInitializedTaskIdRef = useRef<string | null>(null);
   const wasOpenRef = useRef(false);
@@ -110,9 +109,6 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       return;
     }
 
-    const deelVanHuis = task.deel_van_huis || "";
-    const isExisting = availableDelenVanHuis.includes(deelVanHuis);
-
     const newFormData = {
       titel: task.titel || "",
       beschrijving: task.beschrijving || "",
@@ -121,15 +117,11 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       status: task.status || "Te doen",
       prioriteit: task.prioriteit || "Middel",
       verantwoordelijke: task.verantwoordelijke || "",
-      deel_van_huis: deelVanHuis && !isExisting && deelVanHuis !== "" ? "__custom__" : deelVanHuis,
+      deel_van_huis: task.deel_van_huis || "",
     };
 
     setFormData(newFormData);
     setInitialFormData(newFormData);
-
-    const customValue = deelVanHuis && !isExisting && deelVanHuis !== "" ? deelVanHuis : "";
-    setCustomDeelVanHuis(customValue);
-    setInitialCustomDeelVanHuis(customValue);
 
     // Initialize image URLs
     const taskImageUrls = task.image_urls || [];
@@ -154,14 +146,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       formData.verantwoordelijke !== initialFormData.verantwoordelijke ||
       formData.deel_van_huis !== initialFormData.deel_van_huis;
 
-    const customChanged = 
-      formData.deel_van_huis === "__custom__" && 
-      customDeelVanHuis !== initialCustomDeelVanHuis;
-
     const imagesChanged = JSON.stringify(imageUrls) !== JSON.stringify(initialImageUrls);
 
-    return formChanged || customChanged || imagesChanged;
-  }, [formData, initialFormData, customDeelVanHuis, initialCustomDeelVanHuis, imageUrls, initialImageUrls, open]);
+    return formChanged || imagesChanged;
+  }, [formData, initialFormData, imageUrls, initialImageUrls, open]);
 
   const isDeadlineInvalid = formData.begindatum && formData.deadline && formData.deadline < formData.begindatum;
 
@@ -240,12 +228,6 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       return;
     }
 
-    const finalDeelVanHuis =
-      formData.deel_van_huis === "__custom__"
-        ? customDeelVanHuis
-        : formData.deel_van_huis === "__none__"
-          ? null
-          : formData.deel_van_huis;
 
     updateTaskMutation.mutate({
       titel: formData.titel,
@@ -255,7 +237,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       status: formData.status as any,
       prioriteit: formData.prioriteit as any,
       verantwoordelijke: formData.verantwoordelijke || null,
-      deel_van_huis: finalDeelVanHuis || null,
+      deel_van_huis: formData.deel_van_huis || null,
       image_urls: imageUrls.length > 0 ? imageUrls : null,
     });
   };
@@ -366,31 +348,15 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
       <div>
         <Label htmlFor="deel_van_huis">Deel van huis</Label>
-        <Select
-          value={formData.deel_van_huis || "__none__"}
-          onValueChange={(value) => setFormData((prev) => ({ ...prev, deel_van_huis: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecteer of voer nieuw in" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">Geen</SelectItem>
-            {availableDelenVanHuis.map((deel) => (
-              <SelectItem key={deel} value={deel}>
-                {deel}
-              </SelectItem>
-            ))}
-            <SelectItem value="__custom__">+ Nieuw toevoegen...</SelectItem>
-          </SelectContent>
-        </Select>
-        {formData.deel_van_huis === "__custom__" && (
-          <Input
-            className="mt-2"
-            value={customDeelVanHuis}
-            onChange={(e) => setCustomDeelVanHuis(e.target.value)}
-            placeholder="Voer nieuw deel van huis in"
-          />
-        )}
+        <AutocompleteInput
+          placeholder="Typ of selecteer..."
+          value={formData.deel_van_huis}
+          onChange={(value) => setFormData((prev) => ({ ...prev, deel_van_huis: value }))}
+          suggestions={availableDelenVanHuis}
+          allowCreate={true}
+          createLabel="Voeg toe:"
+          showAllOnFocus={true}
+        />
       </div>
 
       <div>
