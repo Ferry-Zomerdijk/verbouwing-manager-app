@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List, Search } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List, Search, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,8 +40,11 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
   // Use public data in readOnly mode, otherwise fetch from database
   const displayDocuments = readOnly && publicDocuments ? publicDocuments : null;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [newDocumentName, setNewDocumentName] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filesToUpload, setFilesToUpload] = useState<FileUpload[]>([]);
   const [defaultType, setDefaultType] = useState<DocumentType>("Contract");
@@ -266,6 +269,35 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
     }
   };
 
+  const handleRename = async () => {
+    if (!selectedDocument || !newDocumentName.trim()) return;
+    setRenaming(true);
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ bestandsnaam: newDocumentName.trim() })
+        .eq("id", selectedDocument.id);
+      
+      if (error) throw error;
+      
+      toast.success("Document hernoemd");
+      setRenameDialogOpen(false);
+      setSelectedDocument(null);
+      setNewDocumentName("");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const openRenameDialog = (doc: any) => {
+    setSelectedDocument(doc);
+    setNewDocumentName(doc.bestandsnaam);
+    setRenameDialogOpen(true);
+  };
+
   const typeColors: Record<string, string> = {
     Contract: "bg-blue-500",
     Offerte: "bg-purple-500",
@@ -412,16 +444,25 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                       Download
                     </Button>
                     {!readOnly && doc.source === 'document' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedDocument(doc);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openRenameDialog(doc)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDocument(doc);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardContent>
@@ -485,16 +526,25 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                           <Download className="w-4 h-4" />
                         </Button>
                         {!readOnly && doc.source === 'document' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDocument(doc);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openRenameDialog(doc)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDocument(doc);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -662,15 +712,58 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
       </Dialog>
 
       {selectedDocument && (
-        <DeleteConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title="Document Verwijderen"
-          description="Dit kan niet ongedaan worden gemaakt."
-          itemName={selectedDocument.bestandsnaam}
-          onConfirm={handleDelete}
-          loading={deleting}
-        />
+        <>
+          <DeleteConfirmationDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            title="Document Verwijderen"
+            description="Dit kan niet ongedaan worden gemaakt."
+            itemName={selectedDocument.bestandsnaam}
+            onConfirm={handleDelete}
+            loading={deleting}
+          />
+          
+          <Dialog open={renameDialogOpen} onOpenChange={(open) => {
+            setRenameDialogOpen(open);
+            if (!open) {
+              setNewDocumentName("");
+            }
+          }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Document Hernoemen</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-name">Nieuwe naam</Label>
+                  <Input
+                    id="new-name"
+                    value={newDocumentName}
+                    onChange={(e) => setNewDocumentName(e.target.value)}
+                    placeholder="Voer een nieuwe naam in"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newDocumentName.trim()) {
+                        handleRename();
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+                  Annuleren
+                </Button>
+                <Button 
+                  onClick={handleRename} 
+                  disabled={renaming || !newDocumentName.trim()}
+                  className="gradient-primary"
+                >
+                  {renaming ? "Opslaan..." : "Opslaan"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </div>
   );
