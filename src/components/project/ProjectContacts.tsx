@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, Phone, Mail, MapPin, MoreVertical, Edit, Trash2, 
-  FolderPlus, ChevronDown, ChevronRight, Check, Building2 
+  FolderPlus, ChevronDown, ChevronRight, Check, Building2, Search, X
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import CreateCategoryDialog from "./CreateCategoryDialog";
 import EditCategoryDialog from "./EditCategoryDialog";
@@ -50,6 +51,7 @@ const ProjectContacts = ({
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch categories
   const { data: categories, refetch: refetchCategories } = useQuery({
@@ -87,14 +89,26 @@ const ProjectContacts = ({
   const displayCategories = readOnly ? publicCategories : categories;
   const displayContacts = readOnly ? publicContacts : contacts;
 
+  // Filter contacts based on search query
+  const filteredContacts = displayContacts?.filter((contact: any) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const naam = contact.naam?.toLowerCase() || "";
+    const voornaam = contact.voornaam?.toLowerCase() || "";
+    const achternaam = contact.achternaam?.toLowerCase() || "";
+    const bedrijf = contact.bedrijf?.toLowerCase() || "";
+    const rol = contact.rol?.toLowerCase() || "";
+    return naam.includes(query) || voornaam.includes(query) || achternaam.includes(query) || bedrijf.includes(query) || rol.includes(query);
+  });
+
   const refetchAll = () => {
     refetchCategories();
     refetchContacts();
     queryClient.invalidateQueries({ queryKey: ["contractors", projectId] });
   };
 
-  // Group contacts by category
-  const groupedContacts = displayContacts?.reduce((acc: Record<string, any[]>, contact: any) => {
+  // Group filtered contacts by category
+  const groupedContacts = filteredContacts?.reduce((acc: Record<string, any[]>, contact: any) => {
     const categoryId = contact.category_id || "uncategorized";
     if (!acc[categoryId]) acc[categoryId] = [];
     acc[categoryId].push(contact);
@@ -345,30 +359,60 @@ const ProjectContacts = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg sm:text-2xl font-bold truncate">Contacten</h2>
-        {!readOnly && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Button 
-              variant="outline" 
-              onClick={() => setCreateCategoryOpen(true)} 
-              size="sm"
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg sm:text-2xl font-bold truncate">Contacten</h2>
+          {!readOnly && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setCreateCategoryOpen(true)} 
+                size="sm"
+              >
+                <FolderPlus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nieuwe Rubriek</span>
+              </Button>
+              <Button 
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setCreateContactOpen(true);
+                }} 
+                className="gradient-primary" 
+                size="sm"
+              >
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nieuw Contact</span>
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Zoek op naam, bedrijf of rol..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => setSearchQuery("")}
             >
-              <FolderPlus className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Nieuwe Rubriek</span>
+              <X className="w-4 h-4" />
             </Button>
-            <Button 
-              onClick={() => {
-                setSelectedCategory(null);
-                setCreateContactOpen(true);
-              }} 
-              className="gradient-primary" 
-              size="sm"
-            >
-              <Plus className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Nieuw Contact</span>
-            </Button>
-          </div>
+          )}
+        </div>
+
+        {/* Search results indicator */}
+        {searchQuery && (
+          <p className="text-sm text-muted-foreground">
+            {filteredContacts?.length || 0} contact{(filteredContacts?.length || 0) !== 1 ? "en" : ""} gevonden
+          </p>
         )}
       </div>
 
