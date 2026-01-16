@@ -63,7 +63,37 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     enabled: open && !!task?.project_id,
   });
 
-  const availableVerantwoordelijken = useMemo(() => existingVerantwoordelijken, [existingVerantwoordelijken]);
+  // Get voornamen from Bouwvakkers contacts
+  const { data: contactVoornamen = [] } = useQuery({
+    queryKey: ["contractor-voornamen", task?.project_id],
+    queryFn: async () => {
+      // First get the Bouwvakkers category
+      const { data: category } = await supabase
+        .from("contact_categories")
+        .select("id")
+        .eq("project_id", task.project_id)
+        .eq("naam", "Bouwvakkers")
+        .maybeSingle();
+
+      if (!category?.id) return [];
+
+      // Then get voornamen from active contractors in that category
+      const { data } = await supabase
+        .from("contractors")
+        .select("voornaam")
+        .eq("project_id", task.project_id)
+        .eq("category_id", category.id)
+        .eq("is_actief", true);
+
+      return data?.map(c => c.voornaam).filter(Boolean) as string[] || [];
+    },
+    enabled: open && !!task?.project_id,
+  });
+
+  const availableVerantwoordelijken = useMemo(() => {
+    const combined = new Set([...existingVerantwoordelijken, ...contactVoornamen]);
+    return Array.from(combined).sort();
+  }, [existingVerantwoordelijken, contactVoornamen]);
 
   // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
   useEffect(() => {

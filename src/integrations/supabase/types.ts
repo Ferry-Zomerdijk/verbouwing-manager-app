@@ -200,6 +200,7 @@ export type Database = {
       }
       contractors: {
         Row: {
+          achternaam: string | null
           adres: string | null
           bedrijf: string | null
           category_id: string | null
@@ -208,13 +209,15 @@ export type Database = {
           id: string
           is_actief: boolean | null
           label: string | null
-          naam: string
+          naam: string | null
           notities: string | null
           project_id: string
           rol: string | null
           telefoon: string | null
+          voornaam: string | null
         }
         Insert: {
+          achternaam?: string | null
           adres?: string | null
           bedrijf?: string | null
           category_id?: string | null
@@ -223,13 +226,15 @@ export type Database = {
           id?: string
           is_actief?: boolean | null
           label?: string | null
-          naam: string
+          naam?: string | null
           notities?: string | null
           project_id: string
           rol?: string | null
           telefoon?: string | null
+          voornaam?: string | null
         }
         Update: {
+          achternaam?: string | null
           adres?: string | null
           bedrijf?: string | null
           category_id?: string | null
@@ -238,11 +243,12 @@ export type Database = {
           id?: string
           is_actief?: boolean | null
           label?: string | null
-          naam?: string
+          naam?: string | null
           notities?: string | null
           project_id?: string
           rol?: string | null
           telefoon?: string | null
+          voornaam?: string | null
         }
         Relationships: [
           {

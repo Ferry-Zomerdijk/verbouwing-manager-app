@@ -77,7 +77,37 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     enabled: open,
   });
 
-  const availableVerantwoordelijken = useMemo(() => existingVerantwoordelijken, [existingVerantwoordelijken]);
+  // Get voornamen from Bouwvakkers contacts
+  const { data: contactVoornamen = [] } = useQuery({
+    queryKey: ["contractor-voornamen", projectId],
+    queryFn: async () => {
+      // First get the Bouwvakkers category
+      const { data: category } = await supabase
+        .from("contact_categories")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("naam", "Bouwvakkers")
+        .maybeSingle();
+
+      if (!category?.id) return [];
+
+      // Then get voornamen from active contractors in that category
+      const { data } = await supabase
+        .from("contractors")
+        .select("voornaam")
+        .eq("project_id", projectId)
+        .eq("category_id", category.id)
+        .eq("is_actief", true);
+
+      return data?.map(c => c.voornaam).filter(Boolean) as string[] || [];
+    },
+    enabled: open,
+  });
+
+  const availableVerantwoordelijken = useMemo(() => {
+    const combined = new Set([...existingVerantwoordelijken, ...contactVoornamen]);
+    return Array.from(combined).sort();
+  }, [existingVerantwoordelijken, contactVoornamen]);
 
   const isLimitReached = hasReachedLimit("maxTasks", taskCount);
 

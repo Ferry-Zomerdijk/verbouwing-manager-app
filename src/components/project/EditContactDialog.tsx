@@ -33,7 +33,8 @@ interface EditContactDialogProps {
   onOpenChange: (open: boolean) => void;
   contact: {
     id: string;
-    naam: string;
+    voornaam?: string | null;
+    achternaam?: string | null;
     bedrijf?: string | null;
     rol?: string | null;
     email?: string | null;
@@ -69,7 +70,8 @@ const EditContactDialog = ({
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    naam: "",
+    voornaam: "",
+    achternaam: "",
     bedrijf: "",
     rol: "",
     email: "",
@@ -84,7 +86,8 @@ const EditContactDialog = ({
   useEffect(() => {
     if (contact) {
       setFormData({
-        naam: contact.naam || "",
+        voornaam: contact.voornaam || "",
+        achternaam: contact.achternaam || "",
         bedrijf: contact.bedrijf || "",
         rol: contact.rol || "",
         email: contact.email || "",
@@ -100,14 +103,15 @@ const EditContactDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.naam.trim()) return;
+    if (!formData.voornaam.trim()) return;
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from("contractors")
         .update({
-          naam: formData.naam.trim(),
+          voornaam: formData.voornaam.trim(),
+          achternaam: formData.achternaam.trim() || null,
           bedrijf: formData.bedrijf.trim() || null,
           rol: formData.rol.trim() || null,
           email: formData.email.trim() || null,
@@ -136,15 +140,27 @@ const EditContactDialog = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="naam">Naam *</Label>
+          <Label htmlFor="voornaam">Voornaam *</Label>
           <Input
-            id="naam"
-            value={formData.naam}
-            onChange={(e) => setFormData({ ...formData, naam: e.target.value })}
-            placeholder="Contactpersoon naam"
+            id="voornaam"
+            value={formData.voornaam}
+            onChange={(e) => setFormData({ ...formData, voornaam: e.target.value })}
+            placeholder="Voornaam"
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="achternaam">Achternaam</Label>
+          <Input
+            id="achternaam"
+            value={formData.achternaam}
+            onChange={(e) => setFormData({ ...formData, achternaam: e.target.value })}
+            placeholder="Achternaam"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="bedrijf">Bedrijf</Label>
           <Input
@@ -153,28 +169,6 @@ const EditContactDialog = ({
             onChange={(e) => setFormData({ ...formData, bedrijf: e.target.value })}
             placeholder="Bedrijfsnaam"
           />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="category">Rubriek</Label>
-          <Select 
-            value={formData.category_id} 
-            onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecteer rubriek" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NO_CATEGORY}>Geen rubriek</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.naam}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="rol">Rol/Functie</Label>
@@ -185,6 +179,26 @@ const EditContactDialog = ({
             placeholder="Bijv. Monteur, Verkoper"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="category">Rubriek</Label>
+        <Select 
+          value={formData.category_id} 
+          onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecteer rubriek" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_CATEGORY}>Geen rubriek</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.naam}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -275,7 +289,7 @@ const EditContactDialog = ({
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
           Annuleren
         </Button>
-        <Button type="submit" disabled={loading || !formData.naam.trim()} className="flex-1 gradient-primary">
+        <Button type="submit" disabled={loading || !formData.voornaam.trim()} className="flex-1 gradient-primary">
           {loading ? "Bezig..." : "Opslaan"}
         </Button>
       </div>
