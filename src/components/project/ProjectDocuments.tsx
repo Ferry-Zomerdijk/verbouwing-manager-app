@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List, Search, Pencil } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, LayoutGrid, List, Search, Pencil, Settings, Tag } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
+import DocumentTypesManager from "./DocumentTypesManager";
 
 interface ProjectDocumentsProps {
   projectId: string;
@@ -26,16 +27,40 @@ interface ProjectDocumentsProps {
   publicDocuments?: any[];
 }
 
-type DocumentType = "Contract" | "Offerte" | "Vergunning" | "Handleiding" | "Garantie" | "Plattegrond" | "Overig";
-
 interface FileUpload {
   file: File;
   bestandsnaam: string;
-  type: DocumentType;
+  type_id: string;
 }
 
+interface DocumentTypeData {
+  id: string;
+  project_id: string;
+  naam: string;
+  kleur: string;
+  volgorde: number;
+  is_systeem: boolean;
+}
+
+const colorMapping: Record<string, string> = {
+  blue: "bg-blue-500",
+  green: "bg-green-500",
+  yellow: "bg-yellow-500",
+  red: "bg-red-500",
+  purple: "bg-purple-500",
+  orange: "bg-orange-500",
+  teal: "bg-teal-500",
+  indigo: "bg-indigo-500",
+  pink: "bg-pink-500",
+  gray: "bg-gray-500",
+  emerald: "bg-emerald-500",
+};
+
 const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false, publicDocuments }: ProjectDocumentsProps) => {
+  const queryClient = useQueryClient();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [typesManagerOpen, setTypesManagerOpen] = useState(false);
+  const [changeTypeDialogOpen, setChangeTypeDialogOpen] = useState(false);
 
   // Use public data in readOnly mode, otherwise fetch from database
   const displayDocuments = readOnly && publicDocuments ? publicDocuments : null;
@@ -43,25 +68,53 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [newDocumentName, setNewDocumentName] = useState("");
+  const [newTypeId, setNewTypeId] = useState("");
   const [uploading, setUploading] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [changingType, setChangingType] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filesToUpload, setFilesToUpload] = useState<FileUpload[]>([]);
-  const [defaultType, setDefaultType] = useState<DocumentType>("Contract");
+  const [defaultTypeId, setDefaultTypeId] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
-const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
+
+  // Fetch document types
+  const { data: documentTypes, refetch: refetchTypes } = useQuery({
+    queryKey: ["document-types", projectId],
+    queryFn: async () => {
+      // Initialize default types if needed
+      await supabase.rpc("initialize_document_types", { p_project_id: projectId });
+      
+      const { data, error } = await supabase
+        .from("document_types")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("volgorde");
+      
+      if (error) throw error;
+      return data as DocumentTypeData[];
+    },
+    enabled: !readOnly,
+  });
+
+  // Set default type when types are loaded
+  useEffect(() => {
+    if (documentTypes && documentTypes.length > 0 && !defaultTypeId) {
+      setDefaultTypeId(documentTypes[0].id);
+    }
+  }, [documentTypes, defaultTypeId]);
 
   const { data: documents, refetch } = useQuery({
     queryKey: ["documents", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("documents")
-        .select("*")
+        .select("*, document_types(id, naam, kleur)")
         .eq("project_id", projectId)
         .order("upload_datum", { ascending: false });
       
@@ -87,6 +140,32 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
     },
     enabled: isAdminOrOwner && !readOnly,
   });
+
+  // Helper to get type info from document
+  const getDocumentTypeName = (doc: any): string => {
+    if (doc.document_types?.naam) return doc.document_types.naam;
+    if (doc.type) return doc.type;
+    return "Overig";
+  };
+
+  const getDocumentTypeColor = (doc: any): string => {
+    if (doc.document_types?.kleur) {
+      return colorMapping[doc.document_types.kleur] || "bg-gray-500";
+    }
+    // Fallback for old ENUM-based types
+    const fallbackColors: Record<string, string> = {
+      Contract: "bg-blue-500",
+      Offerte: "bg-purple-500",
+      Vergunning: "bg-orange-500",
+      Handleiding: "bg-green-500",
+      Garantie: "bg-teal-500",
+      Plattegrond: "bg-indigo-500",
+      Factuur: "bg-emerald-500",
+      Tekening: "bg-purple-500",
+      Overig: "bg-gray-500",
+    };
+    return fallbackColors[doc.type] || "bg-gray-500";
+  };
 
   // Combine documents and invoices into a unified list (or use public data)
   const allDocuments = readOnly && displayDocuments 
@@ -116,31 +195,32 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
   const isLimitReached = hasReachedLimit("maxDocuments", documentCount);
 
   // Get unique document types for filter
-  const availableTypes = [...new Set(allDocuments.map(doc => doc.type))];
+  const availableTypeNames = [...new Set(allDocuments.map(doc => getDocumentTypeName(doc)))];
 
   // Filter documents by type and search query
   const filteredDocuments = allDocuments.filter(doc => {
-    const matchesType = typeFilter === "all" || doc.type === typeFilter;
+    const typeName = getDocumentTypeName(doc);
+    const matchesType = typeFilter === "all" || typeName === typeFilter;
     const matchesSearch = searchQuery === "" || 
       doc.bestandsnaam.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
   });
 
   const handleFilesSelect = useCallback((files: FileList | null) => {
-    if (!files) return;
+    if (!files || !defaultTypeId) return;
     
     const newFiles: FileUpload[] = Array.from(files).map(file => ({
       file,
       bestandsnaam: file.name,
-      type: defaultType,
+      type_id: defaultTypeId,
     }));
     
     setFilesToUpload(prev => [...prev, ...newFiles]);
-  }, [defaultType]);
+  }, [defaultTypeId]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleFilesSelect(e.target.files);
-    e.target.value = ""; // Reset input so same files can be selected again
+    e.target.value = "";
   };
 
   const updateFileInList = (index: number, updates: Partial<FileUpload>) => {
@@ -164,7 +244,7 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
     const errors: string[] = [];
 
     for (let i = 0; i < filesToUpload.length; i++) {
-      const { file, bestandsnaam, type } = filesToUpload[i];
+      const { file, bestandsnaam, type_id } = filesToUpload[i];
       setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
       try {
@@ -183,10 +263,16 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
 
         if (uploadError) throw uploadError;
 
+        // Get type name for backward compatibility with old ENUM field
+        const typeName = documentTypes?.find(t => t.id === type_id)?.naam || "Overig";
+        const validTypeNames = ["Contract", "Offerte", "Vergunning", "Handleiding", "Garantie", "Plattegrond", "Overig"] as const;
+        const enumType = validTypeNames.includes(typeName as any) ? typeName as typeof validTypeNames[number] : "Overig";
+
         const { error: dbError } = await supabase.from("documents").insert([{
           project_id: projectId,
           bestandsnaam,
-          type,
+          type: enumType,
+          type_id,
           bestand_url: fileName,
         }]);
 
@@ -292,21 +378,39 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
     }
   };
 
+  const handleChangeType = async () => {
+    if (!selectedDocument || !newTypeId) return;
+    setChangingType(true);
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ type_id: newTypeId })
+        .eq("id", selectedDocument.id);
+      
+      if (error) throw error;
+      
+      toast.success("Document type gewijzigd");
+      setChangeTypeDialogOpen(false);
+      setSelectedDocument(null);
+      setNewTypeId("");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setChangingType(false);
+    }
+  };
+
   const openRenameDialog = (doc: any) => {
     setSelectedDocument(doc);
     setNewDocumentName(doc.bestandsnaam);
     setRenameDialogOpen(true);
   };
 
-  const typeColors: Record<string, string> = {
-    Contract: "bg-blue-500",
-    Offerte: "bg-purple-500",
-    Vergunning: "bg-orange-500",
-    Handleiding: "bg-green-500",
-    Garantie: "bg-teal-500",
-    Plattegrond: "bg-indigo-500",
-    Factuur: "bg-emerald-500",
-    Overig: "bg-gray-500",
+  const openChangeTypeDialog = (doc: any) => {
+    setSelectedDocument(doc);
+    setNewTypeId(doc.type_id || "");
+    setChangeTypeDialogOpen(true);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -316,6 +420,11 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
   };
 
   const totalSize = filesToUpload.reduce((acc, f) => acc + f.file.size, 0);
+
+  const getTypeName = (typeId: string): string => {
+    const type = documentTypes?.find(t => t.id === typeId);
+    return type?.naam || "Onbekend";
+  };
 
   return (
     <div className="space-y-6">
@@ -359,7 +468,7 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
               <List className="w-4 h-4" />
             </Button>
           </div>
-          {availableTypes.length > 1 && (
+          {availableTypeNames.length > 1 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[100px] sm:w-[140px]">
                 <Filter className="w-4 h-4 shrink-0" />
@@ -367,16 +476,25 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle</SelectItem>
-                {availableTypes.map(type => (
+                {availableTypeNames.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
           {!readOnly && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTypesManagerOpen(true)}
+                className="h-9 w-9 p-0"
+                title="Types beheren"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
               {limits.maxDocuments !== -1 && (
-                <span className="text-xs text-muted-foreground hidden sm:inline">
+                <span className="text-xs text-muted-foreground hidden sm:inline ml-1">
                   {documentCount}/{limits.maxDocuments}
                 </span>
               )}
@@ -417,8 +535,8 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base truncate">{doc.bestandsnaam}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
-                          {doc.type}
+                        <Badge className={`${getDocumentTypeColor(doc)} text-white text-xs`}>
+                          {getDocumentTypeName(doc)}
                         </Badge>
                         {doc.source === 'cost' && (
                           <Badge variant="outline" className="text-xs">
@@ -445,6 +563,14 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                     </Button>
                     {!readOnly && doc.source === 'document' && (
                       <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openChangeTypeDialog(doc)}
+                          title="Type wijzigen"
+                        >
+                          <Tag className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -491,8 +617,8 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                         <div className="min-w-0">
                           <p className="font-medium truncate">{doc.bestandsnaam}</p>
                           <div className="flex items-center gap-2 sm:hidden mt-1">
-                            <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
-                              {doc.type}
+                            <Badge className={`${getDocumentTypeColor(doc)} text-white text-xs`}>
+                              {getDocumentTypeName(doc)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(doc.upload_datum), "dd MMM yyyy", { locale: nl })}
@@ -503,8 +629,8 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-2">
-                        <Badge className={`${typeColors[doc.type] || typeColors.Overig} text-white text-xs`}>
-                          {doc.type}
+                        <Badge className={`${getDocumentTypeColor(doc)} text-white text-xs`}>
+                          {getDocumentTypeName(doc)}
                         </Badge>
                         {doc.source === 'cost' && (
                           <Badge variant="outline" className="text-xs">
@@ -527,6 +653,14 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                         </Button>
                         {!readOnly && doc.source === 'document' && (
                           <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openChangeTypeDialog(doc)}
+                              title="Type wijzigen"
+                            >
+                              <Tag className="w-4 h-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -569,6 +703,7 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
         </Card>
       )}
 
+      {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={(open) => {
         setUploadDialogOpen(open);
         if (!open) {
@@ -586,20 +721,21 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
             <div>
               <Label>Standaard type voor nieuwe bestanden</Label>
               <Select
-                value={defaultType}
-                onValueChange={(value) => setDefaultType(value as DocumentType)}
+                value={defaultTypeId}
+                onValueChange={setDefaultTypeId}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue />
+                  <SelectValue placeholder="Selecteer type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Offerte">Offerte</SelectItem>
-                  <SelectItem value="Vergunning">Vergunning</SelectItem>
-                  <SelectItem value="Handleiding">Handleiding</SelectItem>
-                  <SelectItem value="Garantie">Garantie</SelectItem>
-                  <SelectItem value="Plattegrond">Plattegrond</SelectItem>
-                  <SelectItem value="Overig">Overig</SelectItem>
+                  {documentTypes?.map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded ${colorMapping[type.kleur] || 'bg-gray-500'}`} />
+                        {type.naam}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -652,20 +788,21 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
                           className="h-8 text-sm flex-1"
                         />
                         <Select
-                          value={fileUpload.type}
-                          onValueChange={(value) => updateFileInList(index, { type: value as DocumentType })}
+                          value={fileUpload.type_id}
+                          onValueChange={(value) => updateFileInList(index, { type_id: value })}
                         >
-                          <SelectTrigger className="h-8 w-[120px] text-sm">
+                          <SelectTrigger className="h-8 w-[140px] text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Contract">Contract</SelectItem>
-                            <SelectItem value="Offerte">Offerte</SelectItem>
-                            <SelectItem value="Vergunning">Vergunning</SelectItem>
-                            <SelectItem value="Handleiding">Handleiding</SelectItem>
-                            <SelectItem value="Garantie">Garantie</SelectItem>
-                            <SelectItem value="Plattegrond">Plattegrond</SelectItem>
-                            <SelectItem value="Overig">Overig</SelectItem>
+                            {documentTypes?.map(type => (
+                              <SelectItem key={type.id} value={type.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded ${colorMapping[type.kleur] || 'bg-gray-500'}`} />
+                                  {type.naam}
+                                </div>
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <Button
@@ -711,6 +848,7 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
         </DialogContent>
       </Dialog>
 
+      {/* Delete, Rename, Change Type Dialogs */}
       {selectedDocument && (
         <>
           <DeleteConfirmationDialog
@@ -763,8 +901,70 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
               </div>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={changeTypeDialogOpen} onOpenChange={(open) => {
+            setChangeTypeDialogOpen(open);
+            if (!open) {
+              setNewTypeId("");
+            }
+          }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Document Type Wijzigen</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Huidige document</Label>
+                  <p className="text-sm text-muted-foreground truncate">{selectedDocument.bestandsnaam}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-type">Nieuw type</Label>
+                  <Select value={newTypeId} onValueChange={setNewTypeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecteer een type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {documentTypes?.map(type => (
+                        <SelectItem key={type.id} value={type.id}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded ${colorMapping[type.kleur] || 'bg-gray-500'}`} />
+                            {type.naam}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setChangeTypeDialogOpen(false)}>
+                  Annuleren
+                </Button>
+                <Button 
+                  onClick={handleChangeType} 
+                  disabled={changingType || !newTypeId}
+                  className="gradient-primary"
+                >
+                  {changingType ? "Opslaan..." : "Opslaan"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
+
+      {/* Document Types Manager */}
+      <DocumentTypesManager
+        projectId={projectId}
+        open={typesManagerOpen}
+        onOpenChange={(open) => {
+          setTypesManagerOpen(open);
+          if (!open) {
+            refetchTypes();
+            refetch();
+          }
+        }}
+      />
     </div>
   );
 };

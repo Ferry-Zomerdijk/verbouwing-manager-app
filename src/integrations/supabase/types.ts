@@ -347,6 +347,44 @@ export type Database = {
         }
         Relationships: []
       }
+      document_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_systeem: boolean | null
+          kleur: string | null
+          naam: string
+          project_id: string
+          volgorde: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_systeem?: boolean | null
+          kleur?: string | null
+          naam: string
+          project_id: string
+          volgorde?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_systeem?: boolean | null
+          kleur?: string | null
+          naam?: string
+          project_id?: string
+          volgorde?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_types_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           bestand_url: string
@@ -354,6 +392,7 @@ export type Database = {
           id: string
           project_id: string
           type: Database["public"]["Enums"]["document_type"]
+          type_id: string | null
           upload_datum: string | null
         }
         Insert: {
@@ -362,6 +401,7 @@ export type Database = {
           id?: string
           project_id: string
           type: Database["public"]["Enums"]["document_type"]
+          type_id?: string | null
           upload_datum?: string | null
         }
         Update: {
@@ -370,6 +410,7 @@ export type Database = {
           id?: string
           project_id?: string
           type?: Database["public"]["Enums"]["document_type"]
+          type_id?: string | null
           upload_datum?: string | null
         }
         Relationships: [
@@ -378,6 +419,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1204,6 +1252,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_document_types: {
+        Args: { p_project_id: string }
+        Returns: undefined
       }
     }
     Enums: {
