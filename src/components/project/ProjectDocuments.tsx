@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List } from "lucide-react";
+import { Plus, Download, FileText, Trash2, Upload as UploadIcon, X, Filter, Crown, LayoutGrid, List, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,6 +49,7 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
   const [isDragging, setIsDragging] = useState(false);
 const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
 
@@ -114,10 +115,13 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
   // Get unique document types for filter
   const availableTypes = [...new Set(allDocuments.map(doc => doc.type))];
 
-  // Filter documents by type
-  const filteredDocuments = typeFilter === "all" 
-    ? allDocuments 
-    : allDocuments.filter(doc => doc.type === typeFilter);
+  // Filter documents by type and search query
+  const filteredDocuments = allDocuments.filter(doc => {
+    const matchesType = typeFilter === "all" || doc.type === typeFilter;
+    const matchesSearch = searchQuery === "" || 
+      doc.bestandsnaam.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   const handleFilesSelect = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -286,6 +290,25 @@ const [typeFilter, setTypeFilter] = useState<string>("all");
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold truncate">Documenten</h2>
         <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoeken..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-8 w-[120px] sm:w-[180px] h-9"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-1 border rounded-lg p-0.5">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
