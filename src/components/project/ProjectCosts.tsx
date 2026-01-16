@@ -66,6 +66,7 @@ const ProjectCosts = ({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [leverancierFilter, setLeverancierFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [chartsOpen, setChartsOpen] = useState(() => {
     const saved = localStorage.getItem("costs-charts-open");
@@ -109,6 +110,12 @@ const ProjectCosts = ({
     return [...new Set([...taskValues, ...costValues])].sort();
   }, [tasks, costs]);
 
+  // Get unique leveranciers from costs
+  const availableLeveranciers = useMemo(() => {
+    const leveranciers = costs?.map(c => c.leverancier).filter((v): v is string => !!v && v.trim() !== "") || [];
+    return [...new Set(leveranciers)].sort();
+  }, [costs]);
+
   // Filter costs based on selected filters and search query
   const filteredCosts = useMemo(() => {
     if (!costs) return [];
@@ -116,6 +123,7 @@ const ProjectCosts = ({
       const matchCategory = categoryFilter === "all" || cost.categorie === categoryFilter;
       const matchDeelVanHuis = deelVanHuisFilter === "all" || cost.deel_van_huis === deelVanHuisFilter;
       const matchStatus = statusFilter === "all" || cost.status === statusFilter;
+      const matchLeverancier = leverancierFilter === "all" || cost.leverancier === leverancierFilter;
       
       // Search filter - search across all text fields
       const query = searchQuery.toLowerCase().trim();
@@ -129,16 +137,17 @@ const ProjectCosts = ({
         cost.bedrag?.toString()
       ].some(field => field?.toLowerCase().includes(query));
       
-      return matchCategory && matchDeelVanHuis && matchStatus && matchSearch;
+      return matchCategory && matchDeelVanHuis && matchStatus && matchLeverancier && matchSearch;
     });
-  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, searchQuery]);
+  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, leverancierFilter, searchQuery]);
 
-  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || searchQuery.trim() !== "";
+  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || leverancierFilter !== "all" || searchQuery.trim() !== "";
 
   const clearFilters = () => {
     setCategoryFilter("all");
     setDeelVanHuisFilter("all");
     setStatusFilter("all");
+    setLeverancierFilter("all");
     setSearchQuery("");
   };
   const updateCost = async (costId: string, updates: Partial<Database["public"]["Tables"]["costs"]["Update"]>) => {
@@ -573,6 +582,20 @@ const ProjectCosts = ({
                     <SelectItem value="Factuur">Factuur</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {availableLeveranciers.length > 0 && (
+                  <Select value={leverancierFilter} onValueChange={setLeverancierFilter}>
+                    <SelectTrigger className="w-[120px] lg:w-[150px] h-8 text-xs sm:text-sm">
+                      <SelectValue placeholder="Leverancier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle leveranciers</SelectItem>
+                      {availableLeveranciers.map(leverancier => (
+                        <SelectItem key={leverancier} value={leverancier}>{leverancier}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
