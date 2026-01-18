@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity, Key } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity, Key, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -26,6 +26,7 @@ import {
 import AiUsageAnalytics from "@/components/admin/AiUsageAnalytics";
 import WebhookHealthMonitor from "@/components/admin/WebhookHealthMonitor";
 import { KeyManagement } from "@/components/admin/KeyManagement";
+import { ManageSubscriptionDialog } from "@/components/admin/ManageSubscriptionDialog";
 
 interface PlatformUser {
   id: string;
@@ -51,6 +52,8 @@ const UserManagement = () => {
   const [updating, setUpdating] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(projectId ? "project" : "platform");
+  const [manageSubscriptionDialogOpen, setManageSubscriptionDialogOpen] = useState(false);
+  const [selectedUserForSubscription, setSelectedUserForSubscription] = useState<PlatformUser | null>(null);
 
   // Load current user info
   useEffect(() => {
@@ -688,6 +691,18 @@ const UserManagement = () => {
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUserForSubscription(user);
+                                setManageSubscriptionDialogOpen(true);
+                              }}
+                              className="text-primary hover:text-primary hover:bg-primary/10"
+                              title="Abonnement beheren"
+                            >
+                              <Crown className="w-4 h-4" />
+                            </Button>
                             {user.email && (
                               <Button
                                 variant="ghost"
@@ -802,6 +817,13 @@ const UserManagement = () => {
       <CreatePlatformUserDialog
         open={createPlatformUserDialogOpen}
         onOpenChange={setCreatePlatformUserDialogOpen}
+      />
+
+      <ManageSubscriptionDialog
+        open={manageSubscriptionDialogOpen}
+        onOpenChange={setManageSubscriptionDialogOpen}
+        user={selectedUserForSubscription}
+        onSuccess={() => refetchPlatformUsers()}
       />
     </div>
   );
