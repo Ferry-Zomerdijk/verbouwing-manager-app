@@ -352,11 +352,15 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
             value={formData.begindatum}
             onChange={(e) => {
               const newBegindatum = e.target.value;
-              setFormData((prev) => ({
-                ...prev,
-                begindatum: newBegindatum,
-                deadline: prev.deadline || newBegindatum,
-              }));
+              setFormData((prev) => {
+                // Auto-update deadline if empty OR if deadline is before new begindatum
+                const shouldUpdateDeadline = !prev.deadline || prev.deadline < newBegindatum;
+                return {
+                  ...prev,
+                  begindatum: newBegindatum,
+                  deadline: shouldUpdateDeadline ? newBegindatum : prev.deadline
+                };
+              });
             }}
           />
         </div>
