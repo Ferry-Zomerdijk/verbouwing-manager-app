@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
 import { EditPlatformUserDialog } from "@/components/EditPlatformUserDialog";
+import { CreatePlatformUserDialog } from "@/components/CreatePlatformUserDialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -42,6 +43,7 @@ const UserManagement = () => {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editPlatformUserDialogOpen, setEditPlatformUserDialogOpen] = useState(false);
+  const [createPlatformUserDialogOpen, setCreatePlatformUserDialogOpen] = useState(false);
   const [selectedProjectUser, setSelectedProjectUser] = useState<any>(null);
   const [selectedPlatformUser, setSelectedPlatformUser] = useState<PlatformUser | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -639,7 +641,13 @@ const UserManagement = () => {
             <TabsContent value="platform">
               <Card>
                 <CardHeader>
-                  <CardTitle>Platform Gebruikers</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Platform Gebruikers</span>
+                    <Button onClick={() => setCreatePlatformUserDialogOpen(true)} size="sm">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Nieuwe Gebruiker
+                    </Button>
+                  </CardTitle>
                   <CardDescription>
                     Beheer admin rechten voor alle gebruikers op het platform
                   </CardDescription>
@@ -789,6 +797,11 @@ const UserManagement = () => {
         open={editPlatformUserDialogOpen}
         onOpenChange={setEditPlatformUserDialogOpen}
         user={selectedPlatformUser}
+      />
+
+      <CreatePlatformUserDialog
+        open={createPlatformUserDialogOpen}
+        onOpenChange={setCreatePlatformUserDialogOpen}
       />
     </div>
   );
