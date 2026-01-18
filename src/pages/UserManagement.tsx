@@ -33,6 +33,7 @@ interface PlatformUser {
   naam: string | null;
   email: string | null;
   isAdmin: boolean;
+  subscriptionTier: "free" | "basis" | "pro";
 }
 
 const UserManagement = () => {
@@ -161,14 +162,26 @@ const UserManagement = () => {
 
       if (rolesError) throw rolesError;
 
+      // Fetch active subscriptions
+      const { data: subscriptions, error: subsError } = await supabase
+        .from("subscriptions")
+        .select("user_id, tier, status")
+        .in("status", ["active", "trialing"]);
+
+      if (subsError) throw subsError;
+
       const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
 
-      return (profiles || []).map(profile => ({
-        id: profile.id,
-        naam: profile.naam,
-        email: profile.email,
-        isAdmin: adminUserIds.has(profile.id),
-      }));
+      return (profiles || []).map(profile => {
+        const userSub = subscriptions?.find(s => s.user_id === profile.id);
+        return {
+          id: profile.id,
+          naam: profile.naam,
+          email: profile.email,
+          isAdmin: adminUserIds.has(profile.id),
+          subscriptionTier: (userSub?.tier || "free") as "free" | "basis" | "pro",
+        };
+      });
     },
     enabled: isAdmin,
   });
@@ -338,6 +351,17 @@ const UserManagement = () => {
       return email[0].toUpperCase();
     }
     return "?";
+  };
+
+  const getTierBadge = (tier: "free" | "basis" | "pro") => {
+    switch (tier) {
+      case "pro":
+        return <Badge className="bg-primary text-primary-foreground text-xs">Pro</Badge>;
+      case "basis":
+        return <Badge className="bg-blue-500 text-white text-xs">Basis</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-xs">Gratis</Badge>;
+    }
   };
 
   const handleBack = () => {
@@ -674,6 +698,7 @@ const UserManagement = () => {
                             <div>
                               <div className="font-medium flex items-center gap-2">
                                 {user.naam || "Onbekend"}
+                                {getTierBadge(user.subscriptionTier)}
                                 {user.id === currentUserId && (
                                   <span className="text-xs text-muted-foreground">(jij)</span>
                                 )}
