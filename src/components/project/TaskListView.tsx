@@ -408,16 +408,14 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
                         </Button>
                       </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onSelect={(e) => {
-                            e.preventDefault();
+                          <DropdownMenuItem onSelect={() => {
                             setTimeout(() => setEditTask({ ...task }), 10);
                           }}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Details / Updates
                           </DropdownMenuItem>
                         <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
+                          onSelect={() => {
                             setTimeout(() => setDeleteTask(task), 10);
                           }}
                           className="text-destructive"
