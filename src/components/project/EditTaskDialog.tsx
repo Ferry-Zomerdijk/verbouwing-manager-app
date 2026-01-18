@@ -33,6 +33,7 @@ import TaskUpdatesSection from "./TaskUpdatesSection";
 import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
 import { AutocompleteInput } from "./AutocompleteInput";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -344,14 +345,11 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="begindatum">Begindatum</Label>
-          <Input
-            id="begindatum"
-            type="date"
+        <div className="space-y-2">
+          <Label>Begindatum</Label>
+          <DatePicker
             value={formData.begindatum}
-            onChange={(e) => {
-              const newBegindatum = e.target.value;
+            onChange={(newBegindatum) => {
               setFormData((prev) => {
                 // Auto-update deadline if empty OR if deadline is before new begindatum
                 const shouldUpdateDeadline = !prev.deadline || prev.deadline < newBegindatum;
@@ -362,20 +360,20 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
                 };
               });
             }}
+            placeholder="Selecteer datum"
           />
         </div>
 
-        <div>
-          <Label htmlFor="deadline">Deadline</Label>
-          <Input
-            id="deadline"
-            type="date"
+        <div className="space-y-2">
+          <Label>Deadline</Label>
+          <DatePicker
             value={formData.deadline}
-            min={formData.begindatum || undefined}
-            onChange={(e) => setFormData((prev) => ({ ...prev, deadline: e.target.value }))}
+            onChange={(value) => setFormData((prev) => ({ ...prev, deadline: value }))}
+            minDate={formData.begindatum || undefined}
+            placeholder="Selecteer datum"
           />
           {formData.begindatum && formData.deadline && formData.deadline < formData.begindatum && (
-            <p className="text-sm text-destructive mt-1">Deadline kan niet voor begindatum liggen</p>
+            <p className="text-sm text-destructive">Deadline kan niet voor begindatum liggen</p>
           )}
         </div>
       </div>
