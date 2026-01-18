@@ -100,8 +100,7 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={(e) => {
-                  e.preventDefault();
+                <DropdownMenuItem onSelect={() => {
                   setTimeout(() => setEditDialogOpen(true), 10);
                 }}>
                   <Edit className="w-4 h-4 mr-2" />
@@ -109,8 +108,7 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
                 </DropdownMenuItem>
                 {canDelete && (
                   <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
+                    onSelect={() => {
                       setTimeout(() => setDeleteDialogOpen(true), 10);
                     }}
                     className="text-destructive"
