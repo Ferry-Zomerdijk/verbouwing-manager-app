@@ -79,12 +79,25 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
 
   const getDeadlineStatus = () => {
     if (!task.deadline) return null;
-    const deadline = new Date(task.deadline);
-    const today = new Date();
-    
     if (task.status === "Gereed") return null;
-    if (isPast(deadline)) return "overdue";
-    if (isWithinInterval(deadline, { start: today, end: addDays(today, 3) })) return "soon";
+    
+    // Parse deadline als lokale datum (YYYY-MM-DD)
+    const [year, month, day] = task.deadline.split('-').map(Number);
+    const deadlineDate = new Date(year, month - 1, day); // Middernacht van deadline dag
+    
+    // Vandaag om middernacht (start van de dag)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Overdue: deadline datum is VOOR vandaag
+    if (deadlineDate < today) return "overdue";
+    
+    // Soon: deadline is vandaag of binnen 3 dagen
+    const threeDaysFromNow = new Date(today);
+    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    
+    if (deadlineDate <= threeDaysFromNow) return "soon";
+    
     return null;
   };
 
