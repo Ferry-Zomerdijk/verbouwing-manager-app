@@ -96,6 +96,29 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     return Array.from(combined).sort();
   }, [existingVerantwoordelijken, contactVoornamen]);
 
+  // Fetch task types
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["task-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_types")
+        .select("id, naam, kleur")
+        .order("volgorde", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: open,
+  });
+
+  const getTaskTypeColorClass = (kleur: string) => {
+    const colorMap: Record<string, string> = {
+      blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
+      green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
+      red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
+    };
+    return colorMap[kleur] || "bg-gray-500";
+  };
+
   // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
   useEffect(() => {
     if (open && titleInputRef.current) {
@@ -115,6 +138,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     prioriteit: "Middel",
     verantwoordelijke: "",
     deel_van_huis: "",
+    type_id: "",
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
@@ -149,6 +173,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       prioriteit: task.prioriteit || "Middel",
       verantwoordelijke: task.verantwoordelijke || "",
       deel_van_huis: task.deel_van_huis || "",
+      type_id: task.type_id || "",
     };
 
     setFormData(newFormData);
@@ -175,7 +200,8 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       formData.status !== initialFormData.status ||
       formData.prioriteit !== initialFormData.prioriteit ||
       formData.verantwoordelijke !== initialFormData.verantwoordelijke ||
-      formData.deel_van_huis !== initialFormData.deel_van_huis;
+      formData.deel_van_huis !== initialFormData.deel_van_huis ||
+      formData.type_id !== initialFormData.type_id;
 
     const imagesChanged = JSON.stringify(imageUrls) !== JSON.stringify(initialImageUrls);
 
@@ -269,6 +295,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       prioriteit: formData.prioriteit as any,
       verantwoordelijke: formData.verantwoordelijke || null,
       deel_van_huis: formData.deel_van_huis || null,
+      type_id: formData.type_id || null,
       image_urls: imageUrls.length > 0 ? imageUrls : null,
     });
   };
@@ -339,6 +366,28 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
               <SelectItem value="Te doen">Te doen</SelectItem>
               <SelectItem value="Bezig">Bezig</SelectItem>
               <SelectItem value="Gereed">Gereed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="type">Type taak</Label>
+          <Select
+            value={formData.type_id}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, type_id: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecteer type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {taskTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
+                    {type.naam}
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

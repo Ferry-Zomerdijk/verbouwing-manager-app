@@ -43,6 +43,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     prioriteit: "Middel",
     verantwoordelijke: "",
     deel_van_huis: "",
+    type_id: "",
   });
 
   const isMobile = useIsMobile();
@@ -101,6 +102,20 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         .eq("is_actief", true);
 
       return data?.map(c => c.voornaam).filter(Boolean) as string[] || [];
+    },
+    enabled: open,
+  });
+
+  // Fetch task types
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["task-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_types")
+        .select("id, naam, kleur")
+        .order("volgorde", { ascending: true });
+      if (error) throw error;
+      return data;
     },
     enabled: open,
   });
@@ -179,6 +194,15 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   type TaskPriority = "Hoog" | "Laag" | "Middel";
   type TaskStatus = "Te doen" | "Bezig" | "Gereed";
 
+  const getTaskTypeColorClass = (kleur: string) => {
+    const colorMap: Record<string, string> = {
+      blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
+      green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
+      red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
+    };
+    return colorMap[kleur] || "bg-gray-500";
+  };
+
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: {
       project_id: string;
@@ -190,6 +214,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       prioriteit: TaskPriority;
       verantwoordelijke: string | null;
       deel_van_huis: string | null;
+      type_id: string | null;
     }) => {
       // Offline: genereer lokaal ID en queue
       if (!navigator.onLine) {
@@ -261,6 +286,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         prioriteit: "Middel",
         verantwoordelijke: "",
         deel_van_huis: "",
+        type_id: "",
       });
       
       setPendingImages([]);
@@ -285,6 +311,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       prioriteit: formData.prioriteit as TaskPriority,
       verantwoordelijke: formData.verantwoordelijke || null,
       deel_van_huis: formData.deel_van_huis || null,
+      type_id: formData.type_id || null,
     });
   };
 
@@ -382,6 +409,28 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
               <SelectItem value="Te doen">Te doen</SelectItem>
               <SelectItem value="Bezig">Bezig</SelectItem>
               <SelectItem value="Gereed">Gereed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="type">Type taak</Label>
+          <Select
+            value={formData.type_id}
+            onValueChange={(value) => setFormData({ ...formData, type_id: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecteer type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {taskTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
+                    {type.naam}
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

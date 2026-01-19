@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity, Key, Crown } from "lucide-react";
+import { ArrowLeft, Users, Shield, UserPlus, Trash2, Home, Mail, Clock, X, RefreshCw, Copy, Pencil, KeyRound, MessageCircle, Sparkles, Activity, Key, Crown, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { InviteProjectUserDialog } from "@/components/project/InviteProjectUserDialog";
 import { EditProjectUserDialog } from "@/components/project/EditProjectUserDialog";
@@ -27,6 +27,7 @@ import AiUsageAnalytics from "@/components/admin/AiUsageAnalytics";
 import WebhookHealthMonitor from "@/components/admin/WebhookHealthMonitor";
 import { KeyManagement } from "@/components/admin/KeyManagement";
 import { ManageSubscriptionDialog } from "@/components/admin/ManageSubscriptionDialog";
+import TaskTypesManager from "@/components/admin/TaskTypesManager";
 
 interface PlatformUser {
   id: string;
@@ -55,6 +56,7 @@ const UserManagement = () => {
   const [activeTab, setActiveTab] = useState(projectId ? "project" : "platform");
   const [manageSubscriptionDialogOpen, setManageSubscriptionDialogOpen] = useState(false);
   const [selectedUserForSubscription, setSelectedUserForSubscription] = useState<PlatformUser | null>(null);
+  const [taskTypesDialogOpen, setTaskTypesDialogOpen] = useState(false);
 
   // Load current user info
   useEffect(() => {
@@ -461,6 +463,12 @@ const UserManagement = () => {
                 Webhooks
               </TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="task-types" className="gap-2">
+                <Tag className="w-4 h-4" />
+                Taaktypes
+              </TabsTrigger>
+            )}
             {projectId && (
               <TabsTrigger value="keys" className="gap-2">
                 <Key className="w-4 h-4" />
@@ -793,6 +801,31 @@ const UserManagement = () => {
             </TabsContent>
           )}
 
+          {/* Task Types Tab */}
+          {isAdmin && (
+            <TabsContent value="task-types">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Taaktypes Beheren</span>
+                    <Button onClick={() => setTaskTypesDialogOpen(true)} size="sm">
+                      <Tag className="w-4 h-4 mr-2" />
+                      Types Beheren
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>
+                    Beheer de taaktypes die beschikbaar zijn voor alle projecten
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Klik op "Types Beheren" om taaktypes toe te voegen, te bewerken of te verwijderen.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
           {/* Key Management Tab */}
           {projectId && (
             <TabsContent value="keys">
@@ -849,6 +882,11 @@ const UserManagement = () => {
         onOpenChange={setManageSubscriptionDialogOpen}
         user={selectedUserForSubscription}
         onSuccess={() => refetchPlatformUsers()}
+      />
+
+      <TaskTypesManager
+        open={taskTypesDialogOpen}
+        onOpenChange={setTaskTypesDialogOpen}
       />
     </div>
   );
