@@ -12,6 +12,7 @@ export interface TaskFiltersType {
   search: string;
   statuses: string[];
   priorities: string[];
+  taskTypes: string[];
   verantwoordelijke: string | null;
   deelVanHuis: string | null;
   begindatumVan: string | null;
@@ -20,11 +21,18 @@ export interface TaskFiltersType {
   deadlineTot: string | null;
 }
 
+interface TaskType {
+  id: string;
+  naam: string;
+  kleur: string;
+}
+
 interface TaskFiltersProps {
   filters: TaskFiltersType;
   onFiltersChange: (filters: TaskFiltersType) => void;
   availableVerantwoordelijken: string[];
   availableDelenVanHuis: string[];
+  availableTaskTypes?: TaskType[];
   activeCount: number;
 }
 
@@ -36,15 +44,32 @@ export const TaskFilters = ({
   onFiltersChange,
   availableVerantwoordelijken,
   availableDelenVanHuis,
+  availableTaskTypes = [],
   activeCount,
 }: TaskFiltersProps) => {
   const [isOpen, setIsOpen] = useState(true);
+
+  const getTaskTypeColorClass = (kleur: string) => {
+    const colorMap: Record<string, string> = {
+      blue: "bg-blue-500",
+      orange: "bg-orange-500",
+      purple: "bg-purple-500",
+      green: "bg-green-500",
+      yellow: "bg-yellow-500",
+      gray: "bg-gray-500",
+      red: "bg-red-500",
+      pink: "bg-pink-500",
+      cyan: "bg-cyan-500",
+    };
+    return colorMap[kleur] || "bg-gray-500";
+  };
 
   const handleReset = () => {
     onFiltersChange({
       search: "",
       statuses: ALL_STATUSES,
       priorities: ALL_PRIORITIES,
+      taskTypes: [],
       verantwoordelijke: null,
       deelVanHuis: null,
       begindatumVan: null,
@@ -52,6 +77,13 @@ export const TaskFilters = ({
       deadlineVan: null,
       deadlineTot: null,
     });
+  };
+
+  const toggleTaskType = (typeId: string) => {
+    const newTypes = filters.taskTypes.includes(typeId)
+      ? filters.taskTypes.filter((t) => t !== typeId)
+      : [...filters.taskTypes, typeId];
+    onFiltersChange({ ...filters, taskTypes: newTypes });
   };
 
   const toggleStatus = (status: string) => {
@@ -158,6 +190,31 @@ export const TaskFilters = ({
                   ))}
                 </div>
               </div>
+
+              {/* Task Type */}
+              {availableTaskTypes.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Type taak</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTaskTypes.map((type) => (
+                      <div key={type.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`type-${type.id}`}
+                          checked={filters.taskTypes.length === 0 || filters.taskTypes.includes(type.id)}
+                          onCheckedChange={() => toggleTaskType(type.id)}
+                        />
+                        <label
+                          htmlFor={`type-${type.id}`}
+                          className="text-sm cursor-pointer flex items-center gap-1.5"
+                        >
+                          <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
+                          {type.naam}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Verantwoordelijke */}
               <div className="space-y-2">

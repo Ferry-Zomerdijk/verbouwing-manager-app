@@ -24,6 +24,16 @@ interface TaskCardProps {
   availableDelenVanHuis?: string[];
 }
 
+const getTaskTypeColorClass = (kleur: string | null) => {
+  if (!kleur) return "bg-gray-500";
+  const colorMap: Record<string, string> = {
+    blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
+    green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
+    red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
+  };
+  return colorMap[kleur] || "bg-gray-500";
+};
+
 const priorityColors = {
   Laag: "bg-blue-500",
   Middel: "bg-amber-500",
@@ -121,10 +131,15 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
             </DropdownMenu>
           </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge className={`${priorityColors[task.prioriteit as keyof typeof priorityColors]} text-white text-xs`}>
             {task.prioriteit}
           </Badge>
+          {task.task_type && (
+            <Badge className={`${getTaskTypeColorClass(task.task_type.kleur)} text-white text-xs`}>
+              {task.task_type.naam}
+            </Badge>
+          )}
         </div>
 
         {task.deadline && (

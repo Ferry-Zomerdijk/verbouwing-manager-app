@@ -55,6 +55,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
         search: "",
         statuses: ["Te doen", "Bezig", "Gereed"],
         priorities: ["Laag", "Middel", "Hoog"],
+        taskTypes: [],
         verantwoordelijke: null,
         deelVanHuis: null,
         begindatumVan: null,
@@ -64,19 +65,24 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       };
     }
     const saved = localStorage.getItem(STORAGE_KEYS.FILTERS);
-    return saved
-      ? JSON.parse(saved)
-      : {
-          search: "",
-          statuses: ["Te doen", "Bezig", "Gereed"],
-          priorities: ["Laag", "Middel", "Hoog"],
-          verantwoordelijke: null,
-          deelVanHuis: null,
-          begindatumVan: null,
-          begindatumTot: null,
-          deadlineVan: null,
-          deadlineTot: null,
-        };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure taskTypes exists for backward compatibility
+      if (!parsed.taskTypes) parsed.taskTypes = [];
+      return parsed;
+    }
+    return {
+      search: "",
+      statuses: ["Te doen", "Bezig", "Gereed"],
+      priorities: ["Laag", "Middel", "Hoog"],
+      taskTypes: [],
+      verantwoordelijke: null,
+      deelVanHuis: null,
+      begindatumVan: null,
+      begindatumTot: null,
+      deadlineVan: null,
+      deadlineTot: null,
+    };
   });
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -107,10 +113,10 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   const { data: tasks, refetch } = useQuery({
     queryKey: ["tasks", projectId],
     queryFn: async () => {
-      // Fetch tasks
+      // Fetch tasks with task_type join
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("*, begindatum, deel_van_huis")
+        .select("*, begindatum, deel_van_huis, type_id, task_type:task_types(id, naam, kleur)")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       
@@ -141,6 +147,19 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       })) as any[];
     },
     enabled: !readOnly,
+  });
+
+  // Fetch task types for filtering
+  const { data: taskTypes = [] } = useQuery({
+    queryKey: ["task-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_types")
+        .select("id, naam, kleur")
+        .order("volgorde", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Use public tasks in readOnly mode
@@ -252,6 +271,11 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
         if (new Date(task.begindatum) > new Date(filters.begindatumTot)) return false;
       }
 
+      // Task type filter
+      if (filters.taskTypes.length > 0 && !filters.taskTypes.includes(task.type_id || "")) {
+        return false;
+      }
+
       // Deadline range filter
       if (filters.deadlineVan && task.deadline) {
         if (new Date(task.deadline) < new Date(filters.deadlineVan)) return false;
@@ -270,6 +294,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
     if (filters.search) count++;
     if (filters.statuses.length < 3) count++;
     if (filters.priorities.length < 3) count++;
+    if (filters.taskTypes.length > 0) count++;
     if (filters.verantwoordelijke) count++;
     if (filters.deelVanHuis) count++;
     if (filters.begindatumVan || filters.begindatumTot) count++;
@@ -432,6 +457,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
         onFiltersChange={setFilters}
         availableVerantwoordelijken={availableVerantwoordelijken}
         availableDelenVanHuis={availableDelenVanHuis}
+        availableTaskTypes={taskTypes}
         activeCount={activeFiltersCount}
       />
 

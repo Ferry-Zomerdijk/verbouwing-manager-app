@@ -38,6 +38,16 @@ const statusConfig = {
   "Gereed": { color: "bg-green-500/20 text-green-700" },
 };
 
+const getTaskTypeColorClass = (kleur: string | null) => {
+  if (!kleur) return "bg-gray-500";
+  const colorMap: Record<string, string> = {
+    blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
+    green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
+    red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
+  };
+  return colorMap[kleur] || "bg-gray-500";
+};
+
 const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, availableDelenVanHuis = [] }: MobileTaskCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -120,11 +130,18 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
           swiped === "left" ? "translate-x-[-20px] bg-destructive/5" : ""
         } ${swiped === "right" ? "translate-x-[20px] bg-primary/5" : ""}`}
       >
-        {/* Header row: Priority badge & Status selector */}
+        {/* Header row: Priority badge, Type badge & Status selector */}
         <div className="flex items-center justify-between mb-3">
-          <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
-            {task.prioriteit || "Geen"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
+              {task.prioriteit || "Geen"}
+            </Badge>
+            {task.task_type && (
+              <Badge className={`${getTaskTypeColorClass(task.task_type.kleur)} text-white text-xs px-2 py-1`}>
+                {task.task_type.naam}
+              </Badge>
+            )}
+          </div>
           
           <Select
             value={task.status}

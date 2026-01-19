@@ -1053,6 +1053,36 @@ export type Database = {
           },
         ]
       }
+      task_types: {
+        Row: {
+          created_at: string | null
+          icoon: string | null
+          id: string
+          is_systeem: boolean | null
+          kleur: string | null
+          naam: string
+          volgorde: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          icoon?: string | null
+          id?: string
+          is_systeem?: boolean | null
+          kleur?: string | null
+          naam: string
+          volgorde?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          icoon?: string | null
+          id?: string
+          is_systeem?: boolean | null
+          kleur?: string | null
+          naam?: string
+          volgorde?: number | null
+        }
+        Relationships: []
+      }
       task_updates: {
         Row: {
           content: string
@@ -1101,6 +1131,7 @@ export type Database = {
           project_id: string
           status: Database["public"]["Enums"]["task_status"] | null
           titel: string
+          type_id: string | null
           updated_at: string | null
           verantwoordelijke: string | null
         }
@@ -1116,6 +1147,7 @@ export type Database = {
           project_id: string
           status?: Database["public"]["Enums"]["task_status"] | null
           titel: string
+          type_id?: string | null
           updated_at?: string | null
           verantwoordelijke?: string | null
         }
@@ -1131,6 +1163,7 @@ export type Database = {
           project_id?: string
           status?: Database["public"]["Enums"]["task_status"] | null
           titel?: string
+          type_id?: string | null
           updated_at?: string | null
           verantwoordelijke?: string | null
         }
@@ -1140,6 +1173,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "task_types"
             referencedColumns: ["id"]
           },
         ]
