@@ -14,7 +14,7 @@ import { ImagePlus, X, Loader2, ChevronLeft, ChevronRight, Check, Calendar } fro
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 
 interface MobileTaskWizardProps {
@@ -395,53 +395,152 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
           {currentStep === 2 && (
             <div className="space-y-5">
               {/* Date inputs using native date picker */}
-              <div className="space-y-2">
-                <Label className="text-base font-medium">Wanneer?</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <span className="text-sm text-muted-foreground">Startdatum</span>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                      <Input
-                        type="date"
-                        value={formData.begindatum}
-                        onChange={(e) => {
-                          const newDate = e.target.value;
-                          setFormData(prev => ({
-                            ...prev,
-                            begindatum: newDate,
-                            deadline: !prev.deadline || prev.deadline < newDate ? newDate : prev.deadline
-                          }));
-                        }}
-                        className="h-14 text-base pl-11 pr-3"
-                      />
+              {(() => {
+                const todayStr = format(new Date(), "yyyy-MM-dd");
+                
+                const setStartToday = () => {
+                  setFormData(prev => ({
+                    ...prev,
+                    begindatum: todayStr,
+                    deadline: !prev.deadline || prev.deadline < todayStr ? todayStr : prev.deadline
+                  }));
+                };
+
+                const setDeadlineToday = () => {
+                  const minDate = formData.begindatum || todayStr;
+                  setFormData(prev => ({
+                    ...prev,
+                    deadline: todayStr >= minDate ? todayStr : minDate
+                  }));
+                };
+
+                const setDeadlineNextWeek = () => {
+                  const baseDate = formData.begindatum ? parseISO(formData.begindatum) : new Date();
+                  const nextWeek = format(addDays(baseDate, 7), "yyyy-MM-dd");
+                  setFormData(prev => ({ ...prev, deadline: nextWeek }));
+                };
+
+                const clearStartDate = () => {
+                  setFormData(prev => ({ ...prev, begindatum: "" }));
+                };
+
+                const clearDeadline = () => {
+                  setFormData(prev => ({ ...prev, deadline: "" }));
+                };
+
+                return (
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Wanneer?</Label>
+                    
+                    {/* Startdatum */}
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground">Startdatum</span>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          type="date"
+                          value={formData.begindatum}
+                          onChange={(e) => {
+                            const newDate = e.target.value;
+                            setFormData(prev => ({
+                              ...prev,
+                              begindatum: newDate,
+                              deadline: !prev.deadline || prev.deadline < newDate ? newDate : prev.deadline
+                            }));
+                          }}
+                          className="h-14 text-base pl-11 pr-3"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={formData.begindatum === todayStr ? "default" : "outline"}
+                          size="sm"
+                          onClick={setStartToday}
+                          className={cn(
+                            "h-10 px-4 text-sm",
+                            formData.begindatum === todayStr && "gradient-primary"
+                          )}
+                        >
+                          Vandaag
+                        </Button>
+                        {formData.begindatum && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearStartDate}
+                            className="h-10 px-3 text-muted-foreground"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Wissen
+                          </Button>
+                        )}
+                      </div>
+                      {formData.begindatum && (
+                        <p className="text-xs text-muted-foreground pl-1">
+                          {formatDateDisplay(formData.begindatum)}
+                        </p>
+                      )}
                     </div>
-                    {formData.begindatum && (
-                      <p className="text-xs text-muted-foreground pl-1">
-                        {formatDateDisplay(formData.begindatum)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <span className="text-sm text-muted-foreground">Deadline</span>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                      <Input
-                        type="date"
-                        value={formData.deadline}
-                        min={formData.begindatum || undefined}
-                        onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                        className="h-14 text-base pl-11 pr-3"
-                      />
+
+                    {/* Deadline */}
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground">Deadline</span>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                        <Input
+                          type="date"
+                          value={formData.deadline}
+                          min={formData.begindatum || undefined}
+                          onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                          className="h-14 text-base pl-11 pr-3"
+                        />
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          type="button"
+                          variant={formData.deadline === todayStr ? "default" : "outline"}
+                          size="sm"
+                          onClick={setDeadlineToday}
+                          className={cn(
+                            "h-10 px-4 text-sm",
+                            formData.deadline === todayStr && "gradient-primary"
+                          )}
+                        >
+                          Vandaag
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={setDeadlineNextWeek}
+                          className="h-10 px-4 text-sm"
+                        >
+                          +1 week
+                        </Button>
+                        {formData.deadline && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearDeadline}
+                            className="h-10 px-3 text-muted-foreground"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Wissen
+                          </Button>
+                        )}
+                      </div>
+                      {formData.deadline && (
+                        <p className="text-xs text-muted-foreground pl-1">
+                          {formatDateDisplay(formData.deadline)}
+                        </p>
+                      )}
                     </div>
-                    {formData.deadline && (
-                      <p className="text-xs text-muted-foreground pl-1">
-                        {formatDateDisplay(formData.deadline)}
-                      </p>
-                    )}
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Verantwoordelijke - Quick select buttons */}
               <div className="space-y-2">
