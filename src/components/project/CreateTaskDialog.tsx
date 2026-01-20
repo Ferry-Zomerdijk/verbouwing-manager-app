@@ -20,6 +20,7 @@ import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuery } from "@tanstack/react-query";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
+import MobileTaskWizard from "./MobileTaskWizard";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -566,34 +567,16 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     </form>
   );
 
+  // Use the new wizard for mobile
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <KeyboardAwareDrawerContent>
-          <DrawerHeader className="text-left shrink-0">
-            <DrawerTitle>Nieuwe Taak</DrawerTitle>
-          </DrawerHeader>
-          
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 -webkit-overflow-scrolling-touch">
-            {formContent}
-          </div>
-          
-          {/* Sticky footer - outside scroll area */}
-          <div className="shrink-0 p-4 bg-background border-t flex gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={createTaskMutation.isPending || uploadingImages} 
-              className="flex-1 gradient-primary"
-            >
-              {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
-            </Button>
-          </div>
-        </KeyboardAwareDrawerContent>
-      </Drawer>
+      <MobileTaskWizard
+        open={open}
+        onOpenChange={onOpenChange}
+        projectId={projectId}
+        onSuccess={onSuccess}
+        availableDelenVanHuis={availableDelenVanHuis}
+      />
     );
   }
 
