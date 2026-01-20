@@ -644,27 +644,48 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
                 </select>
               </div>
 
-              {/* Deel van huis - Native select + custom input */}
+              {/* Deel van huis - Native select or custom input */}
               <div className="space-y-2">
                 <Label className="text-base font-medium">Deel van huis</Label>
                 {availableDelenVanHuis.length > 0 ? (
-                  <select
+                  <>
+                    <select
+                      value={availableDelenVanHuis.includes(formData.deel_van_huis) ? formData.deel_van_huis : "__custom__"}
+                      onChange={(e) => {
+                        if (e.target.value === "__custom__") {
+                          setFormData({ ...formData, deel_van_huis: "" });
+                        } else {
+                          setFormData({ ...formData, deel_van_huis: e.target.value });
+                        }
+                      }}
+                      className="native-select w-full h-12 rounded-lg border border-input bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Selecteer locatie...</option>
+                      {availableDelenVanHuis.map((deel) => (
+                        <option key={deel} value={deel}>{deel}</option>
+                      ))}
+                      <option value="__custom__">Anders...</option>
+                    </select>
+                    {(!availableDelenVanHuis.includes(formData.deel_van_huis) && formData.deel_van_huis !== "") || 
+                     (formData.deel_van_huis === "" && !availableDelenVanHuis.includes(formData.deel_van_huis)) ? null : null}
+                    {!availableDelenVanHuis.includes(formData.deel_van_huis) && (
+                      <Input
+                        value={formData.deel_van_huis}
+                        onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
+                        placeholder="Typ een nieuwe locatie..."
+                        className="h-12 text-base"
+                        autoFocus
+                      />
+                    )}
+                  </>
+                ) : (
+                  <Input
                     value={formData.deel_van_huis}
                     onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
-                    className="native-select w-full h-12 rounded-lg border border-input bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">Selecteer of typ hieronder...</option>
-                    {availableDelenVanHuis.map((deel) => (
-                      <option key={deel} value={deel}>{deel}</option>
-                    ))}
-                  </select>
-                ) : null}
-                <Input
-                  value={formData.deel_van_huis}
-                  onChange={(e) => setFormData({ ...formData, deel_van_huis: e.target.value })}
-                  placeholder={availableDelenVanHuis.length > 0 ? "Of typ een nieuwe locatie..." : "Typ een locatie..."}
-                  className="h-12 text-base"
-                />
+                    placeholder="Typ een locatie..."
+                    className="h-12 text-base"
+                  />
+                )}
               </div>
 
               {/* Foto's */}
