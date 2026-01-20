@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check, Bell } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check, Bell, Info, RefreshCw, Download, CheckCircle2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { APP_VERSION, getFormattedBuildDate, getPlatformInfo } from "@/lib/version";
+import { useAppUpdate } from "@/hooks/useAppUpdate";
 
 interface AccountSettingsDialogProps {
   open: boolean;
@@ -42,6 +44,8 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
 
   const isMobile = useIsMobile();
   const { currentTier, subscription, openPortal, isOpeningPortal } = useSubscription();
+  const { updateAvailable, isChecking, checkForUpdate, applyUpdate, getLastCheckedText } = useAppUpdate();
+  const platformInfo = getPlatformInfo();
 
   const tierNames: Record<string, string> = {
     free: "Gratis",
@@ -490,6 +494,75 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
         >
           Wachtwoord Wijzigen
         </Button>
+      </div>
+
+      {/* About App Section */}
+      <div className="border-t pt-6 space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <Info className="w-4 h-4" />
+          Over deze app
+        </h3>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="text-muted-foreground">Versie</div>
+            <div className="font-medium">{APP_VERSION}</div>
+            
+            <div className="text-muted-foreground">Build</div>
+            <div className="font-medium">{getFormattedBuildDate()}</div>
+            
+            <div className="text-muted-foreground">Platform</div>
+            <div className="font-medium">{platformInfo.displayName}</div>
+          </div>
+
+          {updateAvailable ? (
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <Download className="w-4 h-4" />
+                <span className="font-medium text-sm">Update beschikbaar!</span>
+              </div>
+              <Button 
+                onClick={applyUpdate} 
+                className="w-full"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Update installeren
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const hasUpdate = await checkForUpdate();
+                  if (!hasUpdate) {
+                    toast.success("Je hebt de nieuwste versie!");
+                  }
+                }}
+                disabled={isChecking}
+                className="w-full"
+                size="sm"
+              >
+                {isChecking ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Controleren...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Controleer op updates
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-green-500" />
+                {getLastCheckedText()}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Onboarding Section */}

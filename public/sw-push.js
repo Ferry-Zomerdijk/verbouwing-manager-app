@@ -99,3 +99,11 @@ self.addEventListener('pushsubscriptionchange', function(event) {
     })
   );
 });
+
+// Handle skip waiting message for updates
+self.addEventListener('message', function(event) {
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.log('[SW] Skip waiting requested, activating new service worker');
+    self.skipWaiting();
+  }
+});
