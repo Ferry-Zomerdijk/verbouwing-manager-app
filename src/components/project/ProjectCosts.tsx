@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown, Settings } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import { InlineEditableCell } from "./InlineEditableCell";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileCostList from "./MobileCostList";
+import { CostPayersManager, useCostPayers } from "./CostPayersManager";
 import type { Database } from "@/integrations/supabase/types";
 
 interface ProjectCostsProps {
@@ -73,6 +74,10 @@ const ProjectCosts = ({
     const saved = localStorage.getItem("costs-charts-open");
     return saved !== null ? JSON.parse(saved) : false;
   });
+  const [payersManagerOpen, setPayersManagerOpen] = useState(false);
+  
+  // Get custom payer options for this project
+  const { data: payerOptions = [] } = useCostPayers(projectId);
   
   const {
     data: costs,
@@ -247,12 +252,21 @@ const ProjectCosts = ({
   }, [filteredCosts]);
 
   // Betaald door chart data
-  const BETAALD_DOOR_COLORS: Record<string, string> = {
-    Ron: "#3b82f6",
-    Monique: "#ec4899",
-    Gezamenlijk: "#8b5cf6",
-    Ntb: "#94a3b8"
-  };
+  // Generate colors for payers dynamically
+  const BETAALD_DOOR_COLORS: Record<string, string> = useMemo(() => {
+    const defaultColors: Record<string, string> = {
+      Ron: "#3b82f6",
+      Monique: "#ec4899",
+      Gezamenlijk: "#8b5cf6",
+      Ntb: "#94a3b8"
+    };
+    const colorPalette = ["#3b82f6", "#ec4899", "#8b5cf6", "#22c55e", "#f97316", "#06b6d4", "#eab308", "#94a3b8"];
+    const colors: Record<string, string> = {};
+    payerOptions.forEach((payer, index) => {
+      colors[payer] = defaultColors[payer] || colorPalette[index % colorPalette.length];
+    });
+    return colors;
+  }, [payerOptions]);
 
   const betaaldDoorChartData = useMemo(() => {
     const byBetaaldDoor = filteredCosts.reduce((acc, cost) => {
@@ -262,16 +276,17 @@ const ProjectCosts = ({
       return acc;
     }, {} as Record<string, number>);
     
-    // Order: Ron, Monique, Gezamenlijk, Ntb
-    const order = ["Ron", "Monique", "Gezamenlijk", "Ntb"];
-    return order
+    // Use payerOptions order, then any other values
+    const order = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
+    const allPayers = [...new Set([...order, ...Object.keys(byBetaaldDoor)])];
+    return allPayers
       .filter(name => byBetaaldDoor[name] > 0)
       .map(name => ({
         name,
         value: byBetaaldDoor[name],
         color: BETAALD_DOOR_COLORS[name] || "#6b7280"
       }));
-  }, [filteredCosts]);
+  }, [filteredCosts, payerOptions, BETAALD_DOOR_COLORS]);
 
   // Time series data - costs per month
   const timeSeriesData = useMemo(() => {
@@ -352,14 +367,23 @@ const ProjectCosts = ({
   // Mobile view
   if (isMobile) {
     return (
-      <MobileCostList
-        costs={filteredCosts}
-        projectId={projectId}
-        availableDelenVanHuis={availableDelenVanHuis}
-        totalBudget={totalBudget}
-        onUpdate={refetch}
-        onExport={handleExportToExcel}
-      />
+      <>
+        <MobileCostList
+          costs={filteredCosts}
+          projectId={projectId}
+          availableDelenVanHuis={availableDelenVanHuis}
+          totalBudget={totalBudget}
+          onUpdate={refetch}
+          onExport={handleExportToExcel}
+          payerOptions={payerOptions}
+          onOpenPayersManager={() => setPayersManagerOpen(true)}
+        />
+        <CostPayersManager
+          projectId={projectId}
+          open={payersManagerOpen}
+          onOpenChange={setPayersManagerOpen}
+        />
+      </>
     );
   }
 
@@ -368,6 +392,10 @@ const ProjectCosts = ({
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold">Kosten</h2>
         <div className="flex items-center gap-1 sm:gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPayersManagerOpen(true)} className="h-8 sm:h-9">
+            <Settings className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Betalers</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={handleExportToExcel} disabled={filteredCosts.length === 0} className="h-8 sm:h-9">
             <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Exporteer</span>
@@ -902,6 +930,12 @@ const ProjectCosts = ({
           />
         </>
       )}
+      
+      <CostPayersManager
+        projectId={projectId}
+        open={payersManagerOpen}
+        onOpenChange={setPayersManagerOpen}
+      />
     </div>;
 };
 export default ProjectCosts;

@@ -11,8 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, FileText, ExternalLink, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-const BETAALD_DOOR_OPTIONS = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
+import { useCostPayers } from "./CostPayersManager";
 
 interface EditCostDialogProps {
   open: boolean;
@@ -37,6 +36,11 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
   });
 
   const isMobile = useIsMobile();
+  
+  // Get project_id from cost to fetch payer options
+  const projectId = cost?.project_id;
+  const { data: payerOptions = [] } = useCostPayers(projectId || "");
+  const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
 
   useEffect(() => {
     if (cost) {
@@ -184,7 +188,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BETAALD_DOOR_OPTIONS.map((option) => (
+              {betaaldDoorOptions.map((option) => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
               ))}
             </SelectContent>

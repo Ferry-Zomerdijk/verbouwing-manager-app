@@ -1,6 +1,4 @@
 import { useState } from "react";
-
-const BETAALD_DOOR_OPTIONS = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
@@ -18,6 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAiUsage } from "@/hooks/useAiUsage";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { useCostPayers } from "./CostPayersManager";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -48,6 +47,10 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const navigate = useNavigate();
   const { canUseAi, remaining, limit, isUnlimited, isLoading: isLoadingAi, refetch: refetchAiUsage } = useAiUsage();
   const { currentTier } = useSubscription();
+  
+  // Get custom payer options for this project
+  const { data: payerOptions = [] } = useCostPayers(projectId);
+  const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
 
   const validateFile = (file: File): boolean => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -459,7 +462,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {BETAALD_DOOR_OPTIONS.map((option) => (
+                {betaaldDoorOptions.map((option) => (
                   <SelectItem key={option} value={option}>{option}</SelectItem>
                 ))}
               </SelectContent>

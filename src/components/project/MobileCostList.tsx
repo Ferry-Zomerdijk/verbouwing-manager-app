@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle, Search, X } from "lucide-react";
+import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle, Search, X, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { emptyStateMessages } from "@/lib/builderJokes";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -21,6 +21,8 @@ interface MobileCostListProps {
   totalBudget?: number;
   onUpdate: () => void;
   onExport: () => void;
+  payerOptions?: string[];
+  onOpenPayersManager?: () => void;
 }
 
 const CATEGORY_CHART_COLORS: Record<string, string> = {
@@ -35,7 +37,7 @@ const CATEGORY_CHART_COLORS: Record<string, string> = {
 
 const statusOptions = ["Schatting", "Offerte", "Factuur"] as const;
 const categoryOptions = ["Materiaal", "Arbeid", "Vergunningen", "Kluswerkzaamheden", "Decoratie", "Meubels", "Overig"] as const;
-const betaaldDoorOptions = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
+const defaultBetaaldDoorOptions = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
 
 export const MobileCostList = ({
   costs,
@@ -43,8 +45,11 @@ export const MobileCostList = ({
   availableDelenVanHuis,
   totalBudget = 0,
   onUpdate,
-  onExport
+  onExport,
+  payerOptions = [],
+  onOpenPayersManager
 }: MobileCostListProps) => {
+  const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : [...defaultBetaaldDoorOptions];
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -125,6 +130,15 @@ export const MobileCostList = ({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
+          {onOpenPayersManager && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onOpenPayersManager}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="icon"
