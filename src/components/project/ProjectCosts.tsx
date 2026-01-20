@@ -246,6 +246,33 @@ const ProjectCosts = ({
     }));
   }, [filteredCosts]);
 
+  // Betaald door chart data
+  const BETAALD_DOOR_COLORS: Record<string, string> = {
+    Ron: "#3b82f6",
+    Monique: "#ec4899",
+    Gezamenlijk: "#8b5cf6",
+    Ntb: "#94a3b8"
+  };
+
+  const betaaldDoorChartData = useMemo(() => {
+    const byBetaaldDoor = filteredCosts.reduce((acc, cost) => {
+      const betaaldDoor = cost.betaald_door || "Ntb";
+      if (!acc[betaaldDoor]) acc[betaaldDoor] = 0;
+      acc[betaaldDoor] += parseFloat(cost.bedrag.toString());
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Order: Ron, Monique, Gezamenlijk, Ntb
+    const order = ["Ron", "Monique", "Gezamenlijk", "Ntb"];
+    return order
+      .filter(name => byBetaaldDoor[name] > 0)
+      .map(name => ({
+        name,
+        value: byBetaaldDoor[name],
+        color: BETAALD_DOOR_COLORS[name] || "#6b7280"
+      }));
+  }, [filteredCosts]);
+
   // Time series data - costs per month
   const timeSeriesData = useMemo(() => {
     if (!filteredCosts.length) return [];
@@ -416,19 +443,63 @@ const ProjectCosts = ({
                   </div>
 
                   <div className="border rounded-lg p-3 sm:p-4">
-                    <h4 className="text-sm font-medium mb-3 sm:mb-4">Kosten per Status</h4>
+                    <h4 className="text-sm font-medium mb-3 sm:mb-4">Betaald door</h4>
                     <div className="h-[220px] lg:h-[280px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={statusChartData} layout="vertical">
-                          <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 11 }} />
-                          <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 11 }} />
+                        <PieChart>
+                          <Pie
+                            data={betaaldDoorChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            paddingAngle={2}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
+                          >
+                            {betaaldDoorChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
                           <Tooltip 
                             formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
                           />
-                          <Bar dataKey="value" radius={[0, 4, 4, 0]} />
-                        </BarChart>
+                        </PieChart>
                       </ResponsiveContainer>
                     </div>
+                    {/* Summary cards under the pie chart */}
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      {betaaldDoorChartData.map(item => (
+                        <div key={item.name} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                          <div 
+                            className="w-3 h-3 rounded-full shrink-0" 
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-muted-foreground truncate">{item.name}</p>
+                            <p className="text-sm font-medium">€{item.value.toLocaleString("nl-NL")}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Chart - full width */}
+                <div className="border rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm font-medium mb-3 sm:mb-4">Kosten per Status</h4>
+                  <div className="h-[180px] lg:h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={statusChartData} layout="vertical">
+                        <XAxis type="number" tickFormatter={(value) => `€${value.toLocaleString("nl-NL")}`} tick={{ fontSize: 11 }} />
+                        <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 11 }} />
+                        <Tooltip 
+                          formatter={(value: number) => [`€${value.toLocaleString("nl-NL")}`, "Bedrag"]}
+                        />
+                        <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
 
