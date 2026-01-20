@@ -30,10 +30,10 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
     }
   }, [isKeyboardOpen]);
 
-  // Calculate max height based on viewport - lower for Android compatibility
+  // Calculate max height based on viewport - use 95dvh for near-fullscreen experience
   const maxHeight = isKeyboardOpen 
     ? `${viewportHeight - 20}px` 
-    : '85vh';
+    : '95dvh';
 
   return (
     <DrawerContent
