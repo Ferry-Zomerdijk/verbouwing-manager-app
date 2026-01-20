@@ -335,4 +335,18 @@ All colors MUST be HSL.
   [role="dialog"] {
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Fullscreen drawer support with dynamic viewport height */
+  .drawer-fullscreen {
+    height: 95dvh;
+    max-height: 95dvh;
+  }
+
+  /* Fallback for browsers without dvh support */
+  @supports not (height: 95dvh) {
+    .drawer-fullscreen {
+      height: 95vh;
+      max-height: 95vh;
+    }
+  }
 }

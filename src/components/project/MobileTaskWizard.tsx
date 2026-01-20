@@ -324,7 +324,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   return (
     <Drawer open={open} onOpenChange={handleClose}>
-      <KeyboardAwareDrawerContent className="max-h-[92vh] flex flex-col">
+      <KeyboardAwareDrawerContent className="h-[95dvh] max-h-[95dvh] flex flex-col">
         {/* Header with step indicator */}
         <DrawerHeader className="shrink-0 pb-2">
           <div className="flex items-center gap-3">
