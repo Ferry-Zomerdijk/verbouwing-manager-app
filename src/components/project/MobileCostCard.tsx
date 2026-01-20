@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Download, Pencil, Trash2, MapPin, FileText, Building2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Pencil, Trash2, MapPin, FileText, Building2, Wallet } from "lucide-react";
 import { useSwipeable } from "react-swipeable";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -161,6 +161,13 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <span>{cost.deel_van_huis}</span>
+              </div>
+            )}
+
+            {cost.betaald_door && cost.betaald_door !== "Ntb" && (
+              <div className="flex items-center gap-2 text-sm">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <span>Betaald door: <strong>{cost.betaald_door}</strong></span>
               </div>
             )}
 

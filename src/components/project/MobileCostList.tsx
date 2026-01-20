@@ -35,6 +35,7 @@ const CATEGORY_CHART_COLORS: Record<string, string> = {
 
 const statusOptions = ["Schatting", "Offerte", "Factuur"] as const;
 const categoryOptions = ["Materiaal", "Arbeid", "Vergunningen", "Kluswerkzaamheden", "Decoratie", "Meubels", "Overig"] as const;
+const betaaldDoorOptions = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
 
 export const MobileCostList = ({
   costs,
@@ -47,6 +48,7 @@ export const MobileCostList = ({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [betaaldDoorFilter, setBetaaldDoorFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -57,6 +59,7 @@ export const MobileCostList = ({
     return costs.filter(cost => {
       const matchStatus = !statusFilter || cost.status === statusFilter;
       const matchCategory = !categoryFilter || cost.categorie === categoryFilter;
+      const matchBetaaldDoor = !betaaldDoorFilter || cost.betaald_door === betaaldDoorFilter;
       
       // Search filter - search across all text fields
       const query = searchQuery.toLowerCase().trim();
@@ -66,13 +69,14 @@ export const MobileCostList = ({
         cost.deel_van_huis,
         cost.categorie,
         cost.status,
+        cost.betaald_door,
         cost.koppeling_begrotingspost,
         cost.bedrag?.toString()
       ].some(field => field?.toLowerCase().includes(query));
       
-      return matchStatus && matchCategory && matchSearch;
+      return matchStatus && matchCategory && matchBetaaldDoor && matchSearch;
     });
-  }, [costs, statusFilter, categoryFilter, searchQuery]);
+  }, [costs, statusFilter, categoryFilter, betaaldDoorFilter, searchQuery]);
 
   const totalCosts = filteredCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
 
@@ -98,11 +102,12 @@ export const MobileCostList = ({
     setTimeout(() => setRefreshing(false), 500);
   };
 
-  const hasActiveFilters = statusFilter || categoryFilter || searchQuery.trim();
+  const hasActiveFilters = statusFilter || categoryFilter || betaaldDoorFilter || searchQuery.trim();
 
   const clearFilters = () => {
     setStatusFilter(null);
     setCategoryFilter(null);
+    setBetaaldDoorFilter(null);
     setSearchQuery("");
   };
 
@@ -209,7 +214,7 @@ export const MobileCostList = ({
               Filters
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
-                  {(statusFilter ? 1 : 0) + (categoryFilter ? 1 : 0)}
+                  {(statusFilter ? 1 : 0) + (categoryFilter ? 1 : 0) + (betaaldDoorFilter ? 1 : 0)}
                 </Badge>
               )}
             </div>
@@ -246,6 +251,23 @@ export const MobileCostList = ({
                   onClick={() => setCategoryFilter(categoryFilter === category ? null : category)}
                 >
                   {category}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Betaald door Filter Chips */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Betaald door</p>
+            <div className="flex flex-wrap gap-3">
+              {betaaldDoorOptions.map(option => (
+                <Badge
+                  key={option}
+                  variant={betaaldDoorFilter === option ? "default" : "outline"}
+                  className="cursor-pointer min-h-[40px] px-4 py-2 text-sm"
+                  onClick={() => setBetaaldDoorFilter(betaaldDoorFilter === option ? null : option)}
+                >
+                  {option}
                 </Badge>
               ))}
             </div>

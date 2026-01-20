@@ -67,6 +67,7 @@ const ProjectCosts = ({
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [leverancierFilter, setLeverancierFilter] = useState<string>("all");
+  const [betaaldDoorFilter, setBetaaldDoorFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [chartsOpen, setChartsOpen] = useState(() => {
     const saved = localStorage.getItem("costs-charts-open");
@@ -124,6 +125,7 @@ const ProjectCosts = ({
       const matchDeelVanHuis = deelVanHuisFilter === "all" || cost.deel_van_huis === deelVanHuisFilter;
       const matchStatus = statusFilter === "all" || cost.status === statusFilter;
       const matchLeverancier = leverancierFilter === "all" || cost.leverancier === leverancierFilter;
+      const matchBetaaldDoor = betaaldDoorFilter === "all" || cost.betaald_door === betaaldDoorFilter;
       
       // Search filter - search across all text fields
       const query = searchQuery.toLowerCase().trim();
@@ -133,21 +135,23 @@ const ProjectCosts = ({
         cost.deel_van_huis,
         cost.categorie,
         cost.status,
+        cost.betaald_door,
         cost.koppeling_begrotingspost,
         cost.bedrag?.toString()
       ].some(field => field?.toLowerCase().includes(query));
       
-      return matchCategory && matchDeelVanHuis && matchStatus && matchLeverancier && matchSearch;
+      return matchCategory && matchDeelVanHuis && matchStatus && matchLeverancier && matchBetaaldDoor && matchSearch;
     });
-  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, leverancierFilter, searchQuery]);
+  }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, leverancierFilter, betaaldDoorFilter, searchQuery]);
 
-  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || leverancierFilter !== "all" || searchQuery.trim() !== "";
+  const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || leverancierFilter !== "all" || betaaldDoorFilter !== "all" || searchQuery.trim() !== "";
 
   const clearFilters = () => {
     setCategoryFilter("all");
     setDeelVanHuisFilter("all");
     setStatusFilter("all");
     setLeverancierFilter("all");
+    setBetaaldDoorFilter("all");
     setSearchQuery("");
   };
   const updateCost = async (costId: string, updates: Partial<Database["public"]["Tables"]["costs"]["Update"]>) => {
@@ -290,6 +294,7 @@ const ProjectCosts = ({
       "Datum": format(new Date(cost.datum), "dd-MM-yyyy"),
       "Status": cost.status || "Schatting",
       "Categorie": cost.categorie,
+      "Betaald door": cost.betaald_door || "Ntb",
       "Deel van huis": cost.deel_van_huis || "",
       "Leverancier": cost.leverancier || "",
       "Beschrijving": cost.beschrijving || "",
@@ -305,6 +310,7 @@ const ProjectCosts = ({
       { wch: 12 }, // Datum
       { wch: 12 }, // Status
       { wch: 18 }, // Categorie
+      { wch: 12 }, // Betaald door
       { wch: 15 }, // Deel van huis
       { wch: 20 }, // Leverancier
       { wch: 40 }, // Beschrijving
@@ -597,6 +603,19 @@ const ProjectCosts = ({
                   </Select>
                 )}
 
+                <Select value={betaaldDoorFilter} onValueChange={setBetaaldDoorFilter}>
+                  <SelectTrigger className="w-[120px] lg:w-[140px] h-8 text-xs sm:text-sm">
+                    <SelectValue placeholder="Betaald door" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle betalers</SelectItem>
+                    <SelectItem value="Ron">Ron</SelectItem>
+                    <SelectItem value="Monique">Monique</SelectItem>
+                    <SelectItem value="Gezamenlijk">Gezamenlijk</SelectItem>
+                    <SelectItem value="Ntb">Ntb</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
                     <X className="w-4 h-4 mr-1" />
@@ -620,6 +639,7 @@ const ProjectCosts = ({
                   <TableHead className="whitespace-nowrap">Datum</TableHead>
                   <TableHead className="whitespace-nowrap">Status</TableHead>
                   <TableHead className="whitespace-nowrap">Categorie</TableHead>
+                  <TableHead className="hidden lg:table-cell whitespace-nowrap">Betaald door</TableHead>
                   <TableHead className="hidden lg:table-cell whitespace-nowrap">Deel van huis</TableHead>
                   <TableHead className="hidden md:table-cell whitespace-nowrap">Leverancier</TableHead>
                   <TableHead className="hidden lg:table-cell">Beschrijving</TableHead>
@@ -684,6 +704,21 @@ const ProjectCosts = ({
                             {val}
                           </Badge>
                         ) : null}
+                      />
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <InlineEditableCell
+                        type="select"
+                        value={cost.betaald_door || "Ntb"}
+                        options={[
+                          { value: "Ron", label: "Ron" },
+                          { value: "Monique", label: "Monique" },
+                          { value: "Gezamenlijk", label: "Gezamenlijk" },
+                          { value: "Ntb", label: "Ntb" }
+                        ]}
+                        onSave={async (value) => {
+                          await updateCost(cost.id, { betaald_door: value || "Ntb" });
+                        }}
                       />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">

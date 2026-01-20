@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Upload, FileText, ExternalLink, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+const BETAALD_DOOR_OPTIONS = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
+
 interface EditCostDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,6 +33,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     factuur_url: "",
     deel_van_huis: "",
     status: "Schatting",
+    betaald_door: "Ntb",
   });
 
   const isMobile = useIsMobile();
@@ -46,6 +49,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         factuur_url: cost.factuur_url || "",
         deel_van_huis: cost.deel_van_huis || "",
         status: cost.status || "Schatting",
+        betaald_door: cost.betaald_door || "Ntb",
       });
     }
   }, [cost]);
@@ -102,6 +106,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
           factuur_url: formData.factuur_url || null,
           deel_van_huis: formData.deel_van_huis || null,
           status: formData.status as any,
+          betaald_door: formData.betaald_door,
         })
         .eq("id", cost.id);
 
@@ -165,6 +170,23 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
               <SelectItem value="Schatting">Schatting</SelectItem>
               <SelectItem value="Offerte">Offerte</SelectItem>
               <SelectItem value="Factuur">Factuur</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="betaald_door">Betaald door</Label>
+          <Select
+            value={formData.betaald_door}
+            onValueChange={(value) => setFormData({ ...formData, betaald_door: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BETAALD_DOOR_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+const BETAALD_DOOR_OPTIONS = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { KeyboardAwareDrawerContent } from "@/components/ui/keyboard-aware-drawer";
@@ -39,6 +41,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     beschrijving: "",
     deel_van_huis: "",
     status: "Schatting",
+    betaald_door: "Ntb",
   });
 
   const isMobile = useIsMobile();
@@ -143,6 +146,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           beschrijving: extracted.beschrijving || "",
           deel_van_huis: formData.deel_van_huis,
           status: "Factuur",
+          betaald_door: formData.betaald_door,
         });
 
         // Refetch AI usage to update remaining count
@@ -188,6 +192,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         factuur_url: uploadedFilePath || null,
         deel_van_huis: formData.deel_van_huis || null,
         status: formData.status as any,
+        betaald_door: formData.betaald_door,
       }]);
 
       if (error) throw error;
@@ -203,6 +208,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         beschrijving: "",
         deel_van_huis: "",
         status: "Schatting",
+        betaald_door: "Ntb",
       });
       setSelectedFile(null);
       setUploadedFilePath(null);
@@ -439,6 +445,23 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
                 <SelectItem value="Schatting">Schatting</SelectItem>
                 <SelectItem value="Offerte">Offerte</SelectItem>
                 <SelectItem value="Factuur">Factuur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="betaald_door">Betaald door</Label>
+            <Select
+              value={formData.betaald_door}
+              onValueChange={(value) => setFormData({ ...formData, betaald_door: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BETAALD_DOOR_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

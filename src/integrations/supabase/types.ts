@@ -271,6 +271,7 @@ export type Database = {
         Row: {
           bedrag: number
           beschrijving: string | null
+          betaald_door: string | null
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at: string | null
           datum: string
@@ -286,6 +287,7 @@ export type Database = {
         Insert: {
           bedrag: number
           beschrijving?: string | null
+          betaald_door?: string | null
           categorie: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
@@ -301,6 +303,7 @@ export type Database = {
         Update: {
           bedrag?: number
           beschrijving?: string | null
+          betaald_door?: string | null
           categorie?: Database["public"]["Enums"]["cost_category"]
           created_at?: string | null
           datum?: string
