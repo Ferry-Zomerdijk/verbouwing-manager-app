@@ -14,6 +14,7 @@ import { ImagePlus, X, Loader2, ChevronLeft, ChevronRight, Check, Calendar } fro
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { cn } from "@/lib/utils";
+import { AutocompleteInput } from "./AutocompleteInput";
 import { format, parseISO, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 
@@ -567,12 +568,16 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
                   </div>
                 )}
                 
-                {/* Custom input */}
-                <Input
+                {/* Autocomplete input met suggesties */}
+                <AutocompleteInput
                   value={formData.verantwoordelijke}
-                  onChange={(e) => setFormData({ ...formData, verantwoordelijke: e.target.value })}
-                  placeholder="Of typ een andere naam..."
+                  onChange={(value) => setFormData({ ...formData, verantwoordelijke: value })}
+                  suggestions={availableVerantwoordelijken}
+                  placeholder="Typ een naam..."
                   className="h-12 text-base"
+                  allowCreate={true}
+                  createLabel="Nieuw"
+                  showAllOnFocus={true}
                 />
               </div>
             </div>
