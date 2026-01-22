@@ -17,6 +17,12 @@ import { addToQueue } from "@/lib/offlineQueue";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 
+interface TaskType {
+  id: string;
+  naam: string;
+  kleur: string;
+}
+
 interface MobileTaskListProps {
   tasks: any[];
   projectId: string;
@@ -24,6 +30,7 @@ interface MobileTaskListProps {
   canDelete?: boolean;
   onCreateTask?: () => void;
   availableDelenVanHuis?: string[];
+  availableTaskTypes?: TaskType[];
   readOnly?: boolean;
 }
 
@@ -35,12 +42,28 @@ const statusColors: Record<StatusFilter, string> = {
   "Gereed": "bg-green-500/20 text-green-700 hover:bg-green-500/30",
 };
 
-const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask, availableDelenVanHuis = [], readOnly = false }: MobileTaskListProps) => {
+const getTaskTypeColorClass = (kleur: string) => {
+  const colorMap: Record<string, string> = {
+    blue: "bg-blue-500",
+    orange: "bg-orange-500",
+    purple: "bg-purple-500",
+    green: "bg-green-500",
+    yellow: "bg-yellow-500",
+    gray: "bg-gray-500",
+    red: "bg-red-500",
+    pink: "bg-pink-500",
+    cyan: "bg-cyan-500",
+  };
+  return colorMap[kleur] || "bg-gray-500";
+};
+
+const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreateTask, availableDelenVanHuis = [], availableTaskTypes = [], readOnly = false }: MobileTaskListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeStatuses, setActiveStatuses] = useState<StatusFilter[]>(["Te doen", "Bezig"]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedVerantwoordelijke, setSelectedVerantwoordelijke] = useState<string | null>(null);
   const [selectedDeelVanHuis, setSelectedDeelVanHuis] = useState<string | null>(null);
+  const [selectedTaskTypes, setSelectedTaskTypes] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const availableVerantwoordelijken = useMemo(() => {
@@ -123,11 +146,20 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
     );
   };
 
+  const toggleTaskType = (typeId: string) => {
+    setSelectedTaskTypes(prev =>
+      prev.includes(typeId)
+        ? prev.filter(t => t !== typeId)
+        : [...prev, typeId]
+    );
+  };
+
   const clearFilters = () => {
     setActiveStatuses(["Te doen", "Bezig", "Gereed"]);
     setSearchQuery("");
     setSelectedVerantwoordelijke(null);
     setSelectedDeelVanHuis(null);
+    setSelectedTaskTypes([]);
   };
 
   const filteredTasks = useMemo(() => {
@@ -165,6 +197,13 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
             return false;
           }
         }
+
+        // Taaktype filter
+        if (selectedTaskTypes.length > 0) {
+          if (!selectedTaskTypes.includes(task.type_id)) {
+            return false;
+          }
+        }
         
         return true;
       })
@@ -175,7 +214,7 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         if (!b.begindatum) return -1;
         return new Date(a.begindatum).getTime() - new Date(b.begindatum).getTime();
       });
-  }, [tasks, activeStatuses, searchQuery, selectedVerantwoordelijke, selectedDeelVanHuis]);
+  }, [tasks, activeStatuses, searchQuery, selectedVerantwoordelijke, selectedDeelVanHuis, selectedTaskTypes]);
 
   const statusCounts = useMemo(() => ({
     "Te doen": tasks.filter(t => t.status === "Te doen").length,
@@ -196,7 +235,8 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
     (3 - activeStatuses.length) + 
     (searchQuery ? 1 : 0) + 
     (selectedVerantwoordelijke ? 1 : 0) + 
-    (selectedDeelVanHuis ? 1 : 0);
+    (selectedDeelVanHuis ? 1 : 0) +
+    selectedTaskTypes.length;
 
   return (
     <div ref={containerRef} className="relative">
@@ -345,6 +385,22 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 <X className="w-3 h-3" />
               </Badge>
             )}
+            
+            {selectedTaskTypes.map(typeId => {
+              const taskType = availableTaskTypes.find(t => t.id === typeId);
+              return taskType && (
+                <Badge 
+                  key={typeId}
+                  variant="secondary" 
+                  className="gap-1 text-xs cursor-pointer hover:bg-secondary/80" 
+                  onClick={() => toggleTaskType(typeId)}
+                >
+                  <div className={`w-2 h-2 rounded-full ${getTaskTypeColorClass(taskType.kleur)}`} />
+                  {taskType.naam}
+                  <X className="w-3 h-3" />
+                </Badge>
+              );
+            })}
           </div>
         )}
         <CollapsibleContent className="pt-3">
@@ -407,6 +463,30 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
                 </Select>
               </div>
             </div>
+
+            {/* Taaktype filters */}
+            {availableTaskTypes.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Type taak</Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableTaskTypes.map((type) => (
+                    <Badge
+                      key={type.id}
+                      variant="outline"
+                      className={`cursor-pointer transition-colors min-h-[36px] px-3 py-1.5 text-sm gap-1.5 ${
+                        selectedTaskTypes.includes(type.id)
+                          ? "bg-primary/20 text-primary border-primary/30"
+                          : "bg-transparent text-muted-foreground"
+                      }`}
+                      onClick={() => toggleTaskType(type.id)}
+                    >
+                      <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
+                      {type.naam}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {activeFilterCount > 0 && (
               <Button variant="ghost" onClick={clearFilters} className="h-10 text-sm">
