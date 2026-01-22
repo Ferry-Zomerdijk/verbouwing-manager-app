@@ -39,6 +39,7 @@ interface EditContactDialogProps {
     rol?: string | null;
     email?: string | null;
     telefoon?: string | null;
+    website?: string | null;
     adres?: string | null;
     notities?: string | null;
     label?: string | null;
@@ -76,6 +77,7 @@ const EditContactDialog = ({
     rol: "",
     email: "",
     telefoon: "",
+    website: "",
     adres: "",
     notities: "",
     label: "",
@@ -92,6 +94,7 @@ const EditContactDialog = ({
         rol: contact.rol || "",
         email: contact.email || "",
         telefoon: contact.telefoon || "",
+        website: contact.website || "",
         adres: contact.adres || "",
         notities: contact.notities || "",
         label: contact.label || "",
@@ -116,6 +119,7 @@ const EditContactDialog = ({
           rol: formData.rol.trim() || null,
           email: formData.email.trim() || null,
           telefoon: formData.telefoon.trim() || null,
+          website: formData.website.trim() || null,
           adres: formData.adres.trim() || null,
           notities: formData.notities.trim() || null,
           label: formData.label.trim() || null,
@@ -222,6 +226,17 @@ const EditContactDialog = ({
             placeholder="06-12345678"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="website">Website</Label>
+        <Input
+          id="website"
+          type="url"
+          value={formData.website}
+          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+          placeholder="https://www.voorbeeld.nl"
+        />
       </div>
 
       <div className="space-y-2">

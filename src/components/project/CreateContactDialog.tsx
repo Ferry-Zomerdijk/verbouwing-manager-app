@@ -65,6 +65,7 @@ const CreateContactDialog = ({
     rol: "",
     email: "",
     telefoon: "",
+    website: "",
     adres: "",
     notities: "",
     label: "",
@@ -92,6 +93,7 @@ const CreateContactDialog = ({
         rol: formData.rol.trim() || null,
         email: formData.email.trim() || null,
         telefoon: formData.telefoon.trim() || null,
+        website: formData.website.trim() || null,
         adres: formData.adres.trim() || null,
         notities: formData.notities.trim() || null,
         label: formData.label.trim() || null,
@@ -109,6 +111,7 @@ const CreateContactDialog = ({
         rol: "",
         email: "",
         telefoon: "",
+        website: "",
         adres: "",
         notities: "",
         label: "",
@@ -210,6 +213,17 @@ const CreateContactDialog = ({
             placeholder="06-12345678"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="website">Website</Label>
+        <Input
+          id="website"
+          type="url"
+          value={formData.website}
+          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+          placeholder="https://www.voorbeeld.nl"
+        />
       </div>
 
       <div className="space-y-2">

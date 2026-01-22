@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, Phone, Mail, MapPin, MoreVertical, Edit, Trash2, 
-  FolderPlus, ChevronDown, ChevronRight, Check, Building2, Search, X
+  FolderPlus, ChevronDown, ChevronRight, Check, Building2, Search, X, Globe
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -255,6 +255,17 @@ const ProjectContacts = ({
           >
             <Phone className="w-4 h-4 shrink-0" />
             {contact.telefoon}
+          </a>
+        )}
+        {contact.website && (
+          <a 
+            href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm hover:text-primary transition-smooth"
+          >
+            <Globe className="w-4 h-4 shrink-0" />
+            <span className="truncate">{contact.website.replace(/^https?:\/\//, '')}</span>
           </a>
         )}
         {contact.adres && (

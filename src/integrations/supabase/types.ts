@@ -215,6 +215,7 @@ export type Database = {
           rol: string | null
           telefoon: string | null
           voornaam: string | null
+          website: string | null
         }
         Insert: {
           achternaam?: string | null
@@ -232,6 +233,7 @@ export type Database = {
           rol?: string | null
           telefoon?: string | null
           voornaam?: string | null
+          website?: string | null
         }
         Update: {
           achternaam?: string | null
@@ -249,6 +251,7 @@ export type Database = {
           rol?: string | null
           telefoon?: string | null
           voornaam?: string | null
+          website?: string | null
         }
         Relationships: [
           {
