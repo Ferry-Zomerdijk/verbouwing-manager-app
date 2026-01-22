@@ -382,6 +382,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
           canDelete={canDelete}
           onCreateTask={readOnly ? undefined : () => setCreateDialogOpen(true)}
           availableDelenVanHuis={availableDelenVanHuis}
+          availableTaskTypes={taskTypes}
           readOnly={readOnly}
         />
         
