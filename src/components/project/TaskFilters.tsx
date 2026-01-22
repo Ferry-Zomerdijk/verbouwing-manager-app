@@ -133,6 +133,105 @@ export const TaskFilters = ({
           </div>
         </CollapsibleTrigger>
 
+        {/* Actieve filters als verwijderbare chips */}
+        {activeCount > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 py-2 border-t border-border bg-muted/30">
+            {filters.search && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, search: "" })}
+              >
+                Zoeken: "{filters.search}"
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+            
+            {filters.statuses.length < 3 && filters.statuses.map(status => (
+              <Badge 
+                key={status} 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => toggleStatus(status)}
+              >
+                Status: {status}
+                <X className="w-3 h-3" />
+              </Badge>
+            ))}
+            
+            {filters.priorities.length < 3 && filters.priorities.map(priority => (
+              <Badge 
+                key={priority} 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => togglePriority(priority)}
+              >
+                Prioriteit: {priority}
+                <X className="w-3 h-3" />
+              </Badge>
+            ))}
+            
+            {filters.taskTypes.length > 0 && filters.taskTypes.map(typeId => {
+              const taskType = availableTaskTypes.find(t => t.id === typeId);
+              return taskType && (
+                <Badge 
+                  key={typeId} 
+                  variant="secondary" 
+                  className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                  onClick={() => toggleTaskType(typeId)}
+                >
+                  Type: {taskType.naam}
+                  <X className="w-3 h-3" />
+                </Badge>
+              );
+            })}
+            
+            {filters.verantwoordelijke && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, verantwoordelijke: null })}
+              >
+                Verantwoordelijke: {filters.verantwoordelijke}
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+            
+            {filters.deelVanHuis && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, deelVanHuis: null })}
+              >
+                Locatie: {filters.deelVanHuis}
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+            
+            {(filters.begindatumVan || filters.begindatumTot) && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, begindatumVan: null, begindatumTot: null })}
+              >
+                Begindatum: {filters.begindatumVan || "..."} - {filters.begindatumTot || "..."}
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+            
+            {(filters.deadlineVan || filters.deadlineTot) && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, deadlineVan: null, deadlineTot: null })}
+              >
+                Deadline: {filters.deadlineVan || "..."} - {filters.deadlineTot || "..."}
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+          </div>
+        )}
+
         <CollapsibleContent>
           <div className="p-4 space-y-4 border-t border-border">
             {/* Search */}
