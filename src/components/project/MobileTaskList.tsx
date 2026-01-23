@@ -352,14 +352,14 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
         {/* Actieve filters als verwijderbare chips (zichtbaar wanneer filters ingeklapt) */}
         {activeFilterCount > 0 && !filtersOpen && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {activeStatuses.length < 3 && activeStatuses.map(status => (
+            {(["Te doen", "Bezig", "Gereed"] as StatusFilter[]).filter(s => !activeStatuses.includes(s)).map(excludedStatus => (
               <Badge 
-                key={status} 
+                key={excludedStatus} 
                 variant="secondary" 
                 className="gap-1 text-xs cursor-pointer hover:bg-secondary/80" 
-                onClick={() => toggleStatus(status)}
+                onClick={() => toggleStatus(excludedStatus)}
               >
-                {status}
+                Zonder: {excludedStatus}
                 <X className="w-3 h-3" />
               </Badge>
             ))}
