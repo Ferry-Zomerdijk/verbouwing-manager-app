@@ -147,26 +147,26 @@ export const TaskFilters = ({
               </Badge>
             )}
             
-            {filters.statuses.length < 3 && filters.statuses.map(status => (
+            {ALL_STATUSES.filter(s => !filters.statuses.includes(s)).map(excludedStatus => (
               <Badge 
-                key={status} 
+                key={excludedStatus} 
                 variant="secondary" 
                 className="gap-1 cursor-pointer hover:bg-secondary/80" 
-                onClick={() => toggleStatus(status)}
+                onClick={() => toggleStatus(excludedStatus)}
               >
-                Status: {status}
+                Zonder: {excludedStatus}
                 <X className="w-3 h-3" />
               </Badge>
             ))}
             
-            {filters.priorities.length < 3 && filters.priorities.map(priority => (
+            {ALL_PRIORITIES.filter(p => !filters.priorities.includes(p)).map(excludedPriority => (
               <Badge 
-                key={priority} 
+                key={excludedPriority} 
                 variant="secondary" 
                 className="gap-1 cursor-pointer hover:bg-secondary/80" 
-                onClick={() => togglePriority(priority)}
+                onClick={() => togglePriority(excludedPriority)}
               >
-                Prioriteit: {priority}
+                Zonder: {excludedPriority}
                 <X className="w-3 h-3" />
               </Badge>
             ))}
