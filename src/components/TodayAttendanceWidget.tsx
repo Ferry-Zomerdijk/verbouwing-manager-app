@@ -27,37 +27,46 @@ const TodayAttendanceWidget = () => {
   const { data: todayAttendance = [], isLoading } = useQuery({
     queryKey: ["today-attendance", today],
     queryFn: async () => {
-      // Fetch today's attendance with contractor and project info
-      const { data, error } = await supabase
-        .from("attendance")
-        .select(`
-          id,
-          project_id,
-          contractor_id,
-          date,
-          start_time,
-          end_time,
-          status,
-          contractors!inner(naam),
-          projects!inner(naam)
-        `)
-        .eq("date", today)
-        .eq("status", "aanwezig")
-        .order("start_time");
+      try {
+        // Fetch today's attendance with contractor and project info
+        // Using regular joins instead of !inner to prevent RLS from hiding results
+        const { data, error } = await supabase
+          .from("attendance")
+          .select(`
+            id,
+            project_id,
+            contractor_id,
+            date,
+            start_time,
+            end_time,
+            status,
+            contractors(naam),
+            projects(naam)
+          `)
+          .eq("date", today)
+          .eq("status", "aanwezig")
+          .order("start_time");
 
-      if (error) throw error;
+        if (error) {
+          console.error("Attendance query error:", error);
+          return [];
+        }
 
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        project_id: item.project_id,
-        contractor_id: item.contractor_id,
-        date: item.date,
-        start_time: item.start_time,
-        end_time: item.end_time,
-        status: item.status,
-        contractor_naam: item.contractors?.naam || "Onbekend",
-        project_naam: item.projects?.naam || "Onbekend project",
-      })) as TodayAttendance[];
+        return (data || []).map((item: any) => ({
+          id: item.id,
+          project_id: item.project_id,
+          contractor_id: item.contractor_id,
+          date: item.date,
+          start_time: item.start_time,
+          end_time: item.end_time,
+          status: item.status,
+          contractor_naam: item.contractors?.naam || "Onbekend",
+          project_naam: item.projects?.naam || "Onbekend project",
+        })) as TodayAttendance[];
+      } catch (err) {
+        console.error("Attendance fetch failed:", err);
+        return [];
+      }
     },
   });
 
