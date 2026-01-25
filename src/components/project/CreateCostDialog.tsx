@@ -529,7 +529,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Nieuwe Kostenpost</DrawerTitle>
+            <DrawerTitle>Nieuwe kostenpost</DrawerTitle>
             <DrawerDescription>
               Voeg een kostenpost toe of upload een factuur.
             </DrawerDescription>
@@ -558,7 +558,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nieuwe Kostenpost</DialogTitle>
+          <DialogTitle>Nieuwe kostenpost</DialogTitle>
           <DialogDescription>
             Voeg een nieuwe kostenpost toe door handmatig gegevens in te voeren of een factuur te uploaden.
           </DialogDescription>

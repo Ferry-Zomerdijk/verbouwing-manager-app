@@ -77,7 +77,7 @@ export const ProjectUsersManager = ({ open, onOpenChange, projectId }: ProjectUs
                 className="w-full"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Nieuwe Gebruiker Uitnodigen
+                Nieuwe gebruiker uitnodigen
               </Button>
             ) : (
               <div className="space-y-3">
@@ -87,7 +87,7 @@ export const ProjectUsersManager = ({ open, onOpenChange, projectId }: ProjectUs
                   variant="secondary"
                 >
                   <Lock className="w-4 h-4 mr-2" />
-                  Nieuwe Gebruiker Uitnodigen
+                  Nieuwe gebruiker uitnodigen
                 </Button>
                 <UpgradePrompt 
                   currentTier={currentTier} 

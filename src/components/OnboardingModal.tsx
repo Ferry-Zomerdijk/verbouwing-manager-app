@@ -35,11 +35,11 @@ const steps = [
   },
   {
     id: "projects",
-    title: "Projecten Aanmaken",
+    title: "Projecten aanmaken",
     description: "Begin met het aanmaken van je eerste renovatieproject. Voeg details toe zoals budget, planning en beschrijving.",
     icon: Home,
     tips: [
-      "Klik op 'Nieuw Project' om te starten",
+      "Klik op 'Nieuw project' om te starten",
       "Stel een budget en planning in",
       "Volg de voortgang in één oogopslag"
     ]

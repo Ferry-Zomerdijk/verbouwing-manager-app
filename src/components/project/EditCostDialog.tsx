@@ -320,7 +320,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Kosten Bewerken</DrawerTitle>
+            <DrawerTitle>Kosten bewerken</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
@@ -346,7 +346,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Kosten Bewerken</DialogTitle>
+          <DialogTitle>Kosten bewerken</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

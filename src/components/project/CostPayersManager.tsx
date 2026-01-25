@@ -162,7 +162,7 @@ export function CostPayersManager({ projectId, open, onOpenChange }: CostPayersM
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Betalers Beheren</DialogTitle>
+          <DialogTitle>Betalers beheren</DialogTitle>
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">

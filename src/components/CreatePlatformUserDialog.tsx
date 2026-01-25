@@ -98,7 +98,7 @@ export const CreatePlatformUserDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Nieuwe Gebruiker Toevoegen
+            Nieuwe gebruiker toevoegen
           </DialogTitle>
           <DialogDescription>
             Maak een nieuwe gebruiker aan op het platform. De gebruiker ontvangt een email om een wachtwoord in te stellen.

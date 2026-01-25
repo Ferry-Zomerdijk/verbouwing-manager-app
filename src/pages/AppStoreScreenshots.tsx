@@ -24,10 +24,10 @@ const screenshots: ScreenshotData[] = [
   },
   {
     id: "project",
-    title: "Project Details",
+    title: "Projectdetails",
     description: "Volledige controle over elk project",
     gradient: "from-blue-500/20 via-blue-400/10 to-background",
-    features: ["Taken beheer", "Kosten overzicht", "Documenten"],
+    features: ["Takenbeheer", "Kostenoverzicht", "Documenten"],
   },
   {
     id: "tasks",

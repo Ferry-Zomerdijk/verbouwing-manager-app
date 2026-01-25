@@ -335,7 +335,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
               </Button>
             )}
             <div className="flex-1">
-              <DrawerTitle className="text-lg">Nieuwe Taak</DrawerTitle>
+              <DrawerTitle className="text-lg">Nieuwe taak</DrawerTitle>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Stap {currentStep} van 3: {STEPS[currentStep - 1].description}
               </p>
@@ -786,7 +786,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
               ) : (
                 <>
                   <Check className="mr-2 h-5 w-5" />
-                  Taak Aanmaken
+                  Taak aanmaken
                 </>
               )}
             </Button>

@@ -123,7 +123,7 @@ const CreateCategoryDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Nieuwe Rubriek</DrawerTitle>
+            <DrawerTitle>Nieuwe rubriek</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{formContent}</div>
         </KeyboardAwareDrawerContent>
@@ -135,7 +135,7 @@ const CreateCategoryDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nieuwe Rubriek</DialogTitle>
+          <DialogTitle>Nieuwe rubriek</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

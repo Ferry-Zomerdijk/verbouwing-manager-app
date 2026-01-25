@@ -677,10 +677,10 @@ const UserManagement = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Platform Gebruikers</span>
+                    <span>Platformgebruikers</span>
                     <Button onClick={() => setCreatePlatformUserDialogOpen(true)} size="sm">
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Nieuwe Gebruiker
+                      Nieuwe gebruiker
                     </Button>
                   </CardTitle>
                   <CardDescription>

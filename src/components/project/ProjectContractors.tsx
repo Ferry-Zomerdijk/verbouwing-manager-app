@@ -69,7 +69,7 @@ const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: 
         {!readOnly && (
           <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
             <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nieuwe Aannemer</span>
+            <span className="hidden sm:inline">Nieuwe aannemer</span>
           </Button>
         )}
       </div>

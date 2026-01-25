@@ -97,7 +97,7 @@ const EditCategoryDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Rubriek Bewerken</DrawerTitle>
+            <DrawerTitle>Rubriek bewerken</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{formContent}</div>
         </KeyboardAwareDrawerContent>
@@ -109,7 +109,7 @@ const EditCategoryDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rubriek Bewerken</DialogTitle>
+          <DialogTitle>Rubriek bewerken</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

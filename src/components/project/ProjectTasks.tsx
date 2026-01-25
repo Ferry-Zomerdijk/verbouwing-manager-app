@@ -41,7 +41,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
         <h2 className="text-2xl font-bold">Taken</h2>
         <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
-          Nieuwe Taak
+          Nieuwe taak
         </Button>
       </div>
 

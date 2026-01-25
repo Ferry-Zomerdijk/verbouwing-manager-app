@@ -161,7 +161,7 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Aannemer Bewerken</DrawerTitle>
+            <DrawerTitle>Aannemer bewerken</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
@@ -187,7 +187,7 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Aannemer Bewerken</DialogTitle>
+          <DialogTitle>Aannemer bewerken</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

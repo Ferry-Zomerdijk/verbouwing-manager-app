@@ -517,7 +517,7 @@ function generateSubscriptionEmailHtml(
               <!-- Period Info -->
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 24px 0;">
                 Je abonnement verlengt automatisch op <strong>${formattedDate}</strong>. 
-                Je kunt je abonnement op elk moment beheren via je account instellingen.
+                Je kunt je abonnement op elk moment beheren via je accountinstellingen.
               </p>
               
               <!-- CTA Button -->

@@ -76,12 +76,12 @@ function generateExpiryReminderEmailHtml(
                 </h2>
                 <p style="color: #1e3a8a; font-size: 14px; line-height: 1.6; margin: 0;">
                   Als je automatische verlenging hebt ingeschakeld, wordt je abonnement automatisch verlengd. 
-                  Als je dit niet wilt, kun je je abonnement opzeggen via je account instellingen.
+                  Als je dit niet wilt, kun je je abonnement opzeggen via je accountinstellingen.
                 </p>
               </div>
               
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 24px 0;">
-                Wil je je abonnement beheren of wijzigen? Je kunt dit eenvoudig doen via je account instellingen.
+                Wil je je abonnement beheren of wijzigen? Je kunt dit eenvoudig doen via je accountinstellingen.
               </p>
               
               <!-- CTA Button -->
