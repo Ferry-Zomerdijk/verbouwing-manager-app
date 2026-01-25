@@ -167,7 +167,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
     }
   };
 
-  const isDeadlineWarning = (deadline: string | null) => {
+  const isDeadlineToday = (deadline: string | null) => {
     if (!deadline) return false;
     // Parse de deadline als lokale datum (niet UTC)
     const [year, month, day] = deadline.split('-').map(Number);
@@ -176,8 +176,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-    return diffDays <= 3 && diffDays >= 0;
+    return deadlineDate.getTime() === today.getTime();
   };
 
   const isDeadlineOverdue = (deadline: string | null) => {
@@ -298,7 +297,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
                       className={
                         isDeadlineOverdue(task.deadline)
                           ? "text-red-600 dark:text-red-400 font-medium"
-                          : isDeadlineWarning(task.deadline)
+                          : isDeadlineToday(task.deadline)
                           ? "text-orange-600 dark:text-orange-400 font-medium"
                           : ""
                       }

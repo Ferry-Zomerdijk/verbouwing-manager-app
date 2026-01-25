@@ -6,8 +6,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, X, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, parseISO, isValid } from "date-fns";
-import { nl } from "date-fns/locale";
+import { nl, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InlineEditableCellProps {
   value: string | null;
@@ -19,13 +20,13 @@ interface InlineEditableCellProps {
   displayRenderer?: (value: string | null) => React.ReactNode;
 }
 
-const formatDisplayValue = (val: string | null, fieldType: string): string | null => {
+const formatDisplayValue = (val: string | null, fieldType: string, locale: typeof nl | typeof enUS): string | null => {
   if (!val) return null;
   if (fieldType === "date") {
     try {
       const date = parseISO(val);
       if (isValid(date)) {
-        return format(date, "d MMM yyyy", { locale: nl });
+        return format(date, "d MMM yyyy", { locale });
       }
     } catch {
       return val;
@@ -49,6 +50,8 @@ export const InlineEditableCell = ({
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { language } = useLanguage();
+  const calendarLocale = language === 'nl' ? nl : enUS;
 
   // Sync localValue met prop wanneer die verandert (bijv. na refetch)
   useEffect(() => {
@@ -122,7 +125,7 @@ export const InlineEditableCell = ({
       >
         {displayRenderer 
           ? displayRenderer(localValue) 
-          : (formatDisplayValue(localValue, type) || <span className="text-muted-foreground italic">{placeholder}</span>)
+          : (formatDisplayValue(localValue, type, calendarLocale) || <span className="text-muted-foreground italic">{placeholder}</span>)
         }
       </div>
     );

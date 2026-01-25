@@ -102,11 +102,8 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
     // Overdue: deadline datum is VOOR vandaag
     if (deadlineDate < today) return "overdue";
     
-    // Soon: deadline is vandaag of binnen 3 dagen
-    const threeDaysFromNow = new Date(today);
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-    
-    if (deadlineDate <= threeDaysFromNow) return "soon";
+    // Soon: deadline is alleen vandaag (niet meer binnen 3 dagen)
+    if (deadlineDate.getTime() === today.getTime()) return "soon";
     
     return null;
   };

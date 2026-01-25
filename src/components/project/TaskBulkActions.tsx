@@ -2,10 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Trash2, CalendarIcon, CalendarCheck } from "lucide-react";
+import { format } from "date-fns";
+import { nl, enUS } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TaskBulkActionsProps {
   selectedTaskIds: string[];
@@ -15,6 +20,10 @@ interface TaskBulkActionsProps {
 export const TaskBulkActions = ({ selectedTaskIds, onSuccess }: TaskBulkActionsProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
+  const { language } = useLanguage();
+  const calendarLocale = language === 'nl' ? nl : enUS;
 
   const handleBulkStatusChange = async (status: "Te doen" | "Bezig" | "Gereed") => {
     setIsUpdating(true);
@@ -72,6 +81,52 @@ export const TaskBulkActions = ({ selectedTaskIds, onSuccess }: TaskBulkActionsP
       onSuccess();
     } catch (error) {
       toast.error("Fout bij toewijzen van verantwoordelijke");
+      console.error(error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleBulkStartDateChange = async (date: Date | undefined) => {
+    if (!date) return;
+    setIsUpdating(true);
+    try {
+      const dateStr = format(date, "yyyy-MM-dd");
+      const { error } = await supabase
+        .from("tasks")
+        .update({ begindatum: dateStr })
+        .in("id", selectedTaskIds);
+
+      if (error) throw error;
+
+      toast.success(`Begindatum van ${selectedTaskIds.length} taken bijgewerkt`);
+      setStartDateOpen(false);
+      onSuccess();
+    } catch (error) {
+      toast.error("Fout bij bijwerken van begindatum");
+      console.error(error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleBulkDeadlineChange = async (date: Date | undefined) => {
+    if (!date) return;
+    setIsUpdating(true);
+    try {
+      const dateStr = format(date, "yyyy-MM-dd");
+      const { error } = await supabase
+        .from("tasks")
+        .update({ deadline: dateStr })
+        .in("id", selectedTaskIds);
+
+      if (error) throw error;
+
+      toast.success(`Deadline van ${selectedTaskIds.length} taken bijgewerkt`);
+      setDeadlineOpen(false);
+      onSuccess();
+    } catch (error) {
+      toast.error("Fout bij bijwerken van deadline");
       console.error(error);
     } finally {
       setIsUpdating(false);
@@ -144,6 +199,40 @@ export const TaskBulkActions = ({ selectedTaskIds, onSuccess }: TaskBulkActionsP
               />
             </div>
 
+            <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" disabled={isUpdating}>
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {language === 'nl' ? 'Begindatum' : 'Start date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  onSelect={handleBulkStartDateChange}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover open={deadlineOpen} onOpenChange={setDeadlineOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" disabled={isUpdating}>
+                  <CalendarCheck className="h-4 w-4 mr-2" />
+                  Deadline
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  onSelect={handleBulkDeadlineChange}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
             <Button
               variant="destructive"
               size="sm"
@@ -151,7 +240,7 @@ export const TaskBulkActions = ({ selectedTaskIds, onSuccess }: TaskBulkActionsP
               disabled={isUpdating}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Verwijderen
+              {language === 'nl' ? 'Verwijderen' : 'Delete'}
             </Button>
           </div>
         </div>

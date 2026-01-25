@@ -1,6 +1,6 @@
 import * as React from "react";
 import { format, parse } from "date-fns";
-import { nl } from "date-fns/locale";
+import { nl, enUS } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DatePickerProps {
   value: string; // Format: "YYYY-MM-DD"
@@ -24,12 +25,15 @@ interface DatePickerProps {
 export function DatePicker({
   value,
   onChange,
-  placeholder = "Selecteer datum",
+  placeholder,
   disabled,
   minDate,
   className,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const { language } = useLanguage();
+  const calendarLocale = language === 'nl' ? nl : enUS;
+  const defaultPlaceholder = language === 'nl' ? "Selecteer datum" : "Select date";
 
   // Convert string date to Date object
   const selectedDate = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
@@ -58,9 +62,9 @@ export function DatePicker({
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {selectedDate ? (
-            format(selectedDate, "d MMMM yyyy", { locale: nl })
+            format(selectedDate, "d MMMM yyyy", { locale: calendarLocale })
           ) : (
-            <span>{placeholder}</span>
+            <span>{placeholder || defaultPlaceholder}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -71,7 +75,6 @@ export function DatePicker({
           onSelect={handleSelect}
           disabled={minDateObj ? (date) => date < minDateObj : undefined}
           initialFocus
-          locale={nl}
           className="pointer-events-auto"
         />
       </PopoverContent>
