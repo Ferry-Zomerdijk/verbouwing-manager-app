@@ -33,8 +33,13 @@ const DeleteConfirmationDialog = ({
 }: DeleteConfirmationDialogProps) => {
   const handleConfirm = async (e: React.MouseEvent) => {
     e.preventDefault();
-    await onConfirm();
-    onOpenChange(false);
+    try {
+      await onConfirm();
+      onOpenChange(false);
+    } catch (error) {
+      // Dialog blijft open zodat de gebruiker de foutmelding kan zien
+      console.error("Delete confirmation error:", error);
+    }
   };
 
   return (
