@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
 import MobileTaskWizard from "./MobileTaskWizard";
+import { UI } from "@/lib/uiTexts";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -557,10 +558,10 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       {!isMobile && (
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Annuleren
+            {UI.actions.cancel}
           </Button>
           <Button type="submit" disabled={createTaskMutation.isPending || uploadingImages} className="gradient-primary">
-            {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak aanmaken"}
+            {createTaskMutation.isPending || uploadingImages ? UI.actions.processing : UI.tasks.buttons.create}
           </Button>
         </div>
       )}
@@ -584,7 +585,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nieuwe taak</DialogTitle>
+          <DialogTitle>{UI.tasks.dialogs.createTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

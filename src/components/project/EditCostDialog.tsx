@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Upload, FileText, ExternalLink, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCostPayers } from "./CostPayersManager";
+import { UI } from "@/lib/uiTexts";
 
 interface EditCostDialogProps {
   open: boolean;
@@ -320,21 +321,21 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Kosten bewerken</DrawerTitle>
+            <DrawerTitle>{UI.costs.dialogs.editTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading || uploading} 
               className="flex-1 gradient-primary"
             >
-              {loading ? "Opslaan..." : "Opslaan"}
+              {loading ? UI.actions.saving : UI.actions.save}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -346,7 +347,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Kosten bewerken</DialogTitle>
+          <DialogTitle>{UI.costs.dialogs.editTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

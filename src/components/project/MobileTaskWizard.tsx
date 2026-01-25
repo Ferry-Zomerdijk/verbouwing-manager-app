@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { format, parseISO, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
+import { UI } from "@/lib/uiTexts";
 
 interface MobileTaskWizardProps {
   open: boolean;
@@ -335,7 +336,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
               </Button>
             )}
             <div className="flex-1">
-              <DrawerTitle className="text-lg">Nieuwe taak</DrawerTitle>
+              <DrawerTitle className="text-lg">{UI.tasks.dialogs.createTitle}</DrawerTitle>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Stap {currentStep} van 3: {STEPS[currentStep - 1].description}
               </p>

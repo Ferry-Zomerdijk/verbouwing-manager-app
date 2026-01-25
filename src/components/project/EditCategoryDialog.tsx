@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { UI } from "@/lib/uiTexts";
 
 interface EditCategoryDialogProps {
   open: boolean;
@@ -83,10 +84,10 @@ const EditCategoryDialog = ({
 
       <div className="flex gap-2 pt-4">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-          Annuleren
+          {UI.actions.cancel}
         </Button>
         <Button type="submit" disabled={loading || !naam.trim()} className="flex-1 gradient-primary">
-          {loading ? "Bezig..." : "Opslaan"}
+          {loading ? UI.actions.processing : UI.actions.save}
         </Button>
       </div>
     </form>
@@ -97,7 +98,7 @@ const EditCategoryDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Rubriek bewerken</DrawerTitle>
+            <DrawerTitle>{UI.contacts.dialogs.categoryEditTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{formContent}</div>
         </KeyboardAwareDrawerContent>
@@ -109,7 +110,7 @@ const EditCategoryDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rubriek bewerken</DialogTitle>
+          <DialogTitle>{UI.contacts.dialogs.categoryEditTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

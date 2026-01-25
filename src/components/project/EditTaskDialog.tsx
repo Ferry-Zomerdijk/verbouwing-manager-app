@@ -34,6 +34,7 @@ import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
+import { UI } from "@/lib/uiTexts";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -306,30 +307,30 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       {isDirty && (
         <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span className="text-sm">Je hebt niet-opgeslagen wijzigingen</span>
+          <span className="text-sm">{UI.tasks.messages.unsavedChanges}</span>
         </div>
       )}
 
       <div>
-        <Label htmlFor="titel">Titel *</Label>
+        <Label htmlFor="titel">{UI.tasks.labels.title} *</Label>
         <Input
           id="titel"
           ref={titleInputRef}
           value={formData.titel}
           onChange={(e) => setFormData((prev) => ({ ...prev, titel: e.target.value }))}
-          placeholder="Taak titel"
+          placeholder={UI.tasks.placeholders.title}
           required
         />
       </div>
 
       <div>
-        <Label htmlFor="beschrijving">Beschrijving</Label>
+        <Label htmlFor="beschrijving">{UI.tasks.labels.description}</Label>
         <Textarea
           id="beschrijving"
           name="beschrijving"
           value={formData.beschrijving}
           onChange={(e) => setFormData((prev) => ({ ...prev, beschrijving: e.target.value }))}
-          placeholder="Taak beschrijving..."
+          placeholder={UI.tasks.placeholders.description}
           rows={3}
           className="text-base"
         />
@@ -500,18 +501,18 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Niet-opgeslagen wijzigingen
+            {UI.confirmations.unsavedTitle}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Je hebt wijzigingen gemaakt die nog niet zijn opgeslagen. Weet je zeker dat je wilt sluiten? Je wijzigingen gaan verloren.
+            {UI.confirmations.unsavedDescription}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleCancelClose}>
-            Terug naar bewerken
+            {UI.confirmations.backToEditing}
           </AlertDialogCancel>
           <AlertDialogAction onClick={handleConfirmClose} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Sluiten zonder opslaan
+            {UI.confirmations.closeWithoutSaving}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -526,7 +527,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <KeyboardAwareDrawerContent>
             <DrawerHeader className="text-left shrink-0">
               <div className="flex items-center gap-2">
-                <DrawerTitle>Taak bewerken</DrawerTitle>
+                <DrawerTitle>{UI.tasks.dialogs.editTitle}</DrawerTitle>
                 {isDirty && (
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                     Niet opgeslagen
@@ -556,7 +557,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <DialogTitle>Taak bewerken</DialogTitle>
+              <DialogTitle>{UI.tasks.dialogs.editTitle}</DialogTitle>
               {isDirty && (
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                   Niet opgeslagen

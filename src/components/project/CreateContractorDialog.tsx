@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuery } from "@tanstack/react-query";
+import { UI } from "@/lib/uiTexts";
 
 interface CreateContractorDialogProps {
   open: boolean;
@@ -197,10 +198,10 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
       {!isMobile && (
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Annuleren
+            {UI.actions.cancel}
           </Button>
           <Button type="submit" disabled={loading} className="gradient-primary">
-            {loading ? "Opslaan..." : "Opslaan"}
+            {loading ? UI.actions.saving : UI.actions.save}
           </Button>
         </div>
       )}
@@ -212,21 +213,21 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Nieuwe aannemer</DrawerTitle>
+            <DrawerTitle>{UI.contractors.dialogs.createTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading} 
               className="flex-1 gradient-primary"
             >
-              {loading ? "Opslaan..." : "Opslaan"}
+              {loading ? UI.actions.saving : UI.actions.save}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -238,7 +239,7 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nieuwe aannemer</DialogTitle>
+          <DialogTitle>{UI.contractors.dialogs.createTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

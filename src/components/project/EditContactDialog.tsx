@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { UI } from "@/lib/uiTexts";
 
 interface EditContactDialogProps {
   open: boolean;
@@ -302,10 +303,10 @@ const EditContactDialog = ({
 
       <div className="flex gap-2 pt-4">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-          Annuleren
+          {UI.actions.cancel}
         </Button>
         <Button type="submit" disabled={loading || !formData.voornaam.trim()} className="flex-1 gradient-primary">
-          {loading ? "Bezig..." : "Opslaan"}
+          {loading ? UI.actions.processing : UI.actions.save}
         </Button>
       </div>
     </form>
@@ -316,7 +317,7 @@ const EditContactDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader>
-            <DrawerTitle>Contact Bewerken</DrawerTitle>
+            <DrawerTitle>{UI.contacts.dialogs.editTitle}</DrawerTitle>
           </DrawerHeader>
           <ScrollArea className="px-4 pb-6 max-h-[calc(90vh-80px)]">
             {formContent}
@@ -330,7 +331,7 @@ const EditContactDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Contact Bewerken</DialogTitle>
+          <DialogTitle>{UI.contacts.dialogs.editTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>
