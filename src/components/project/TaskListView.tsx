@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil, ShoppingCart, CheckSquare, Users, Settings, HelpCircle, Tag, LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -30,7 +30,40 @@ interface Task {
   deadline: string | null;
   project_id: string;
   latest_update?: string | null;
+  type_id: string | null;
+  task_type: {
+    id: string;
+    naam: string;
+    kleur: string;
+    icoon: string;
+  } | null;
 }
+
+// Icoon mapping voor taaktypes
+const taskTypeIconMap: Record<string, LucideIcon> = {
+  'shopping-cart': ShoppingCart,
+  'check-square': CheckSquare,
+  'users': Users,
+  'settings': Settings,
+  'help-circle': HelpCircle,
+  'tag': Tag,
+};
+
+// Kleur mapping voor taaktype iconen
+const getTaskTypeIconColor = (kleur: string | null): string => {
+  const colorMap: Record<string, string> = {
+    blue: "text-blue-500",
+    orange: "text-orange-500",
+    purple: "text-purple-500",
+    green: "text-green-500",
+    yellow: "text-yellow-500",
+    gray: "text-gray-500",
+    red: "text-red-500",
+    pink: "text-pink-500",
+    cyan: "text-cyan-500",
+  };
+  return colorMap[kleur || "gray"] || "text-gray-500";
+};
 
 interface TaskListViewProps {
   tasks: Task[];
@@ -232,6 +265,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
               <TableHead>
                 <SortButton column="prioriteit" label="Prioriteit" />
               </TableHead>
+              <TableHead className="w-12 text-center">Type</TableHead>
               <TableHead>
                 <SortButton column="titel" label="Titel" />
               </TableHead>
@@ -347,6 +381,31 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
                         <SelectItem value="Laag">Laag</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    {task.task_type ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center justify-center">
+                              {(() => {
+                                const IconComponent = taskTypeIconMap[task.task_type.icoon] || Tag;
+                                return (
+                                  <IconComponent 
+                                    className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
+                                  />
+                                );
+                              })()}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {task.task_type.naam}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="font-medium max-w-xs" onClick={(e) => e.stopPropagation()}>
                     <div className="flex flex-col gap-0.5">
