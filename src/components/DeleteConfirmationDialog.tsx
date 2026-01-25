@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UI } from "@/lib/uiTexts";
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
@@ -53,13 +54,13 @@ const DeleteConfirmationDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Annuleren</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{UI.actions.cancel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}
             className="bg-destructive hover:bg-destructive/90"
           >
-            {loading ? "Verwijderen..." : "Verwijderen"}
+            {loading ? UI.actions.deleting : UI.actions.delete}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

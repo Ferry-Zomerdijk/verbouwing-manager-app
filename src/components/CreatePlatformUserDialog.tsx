@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
+import { UI } from "@/lib/uiTexts";
 
 interface CreatePlatformUserDialogProps {
   open: boolean;
@@ -98,7 +99,7 @@ export const CreatePlatformUserDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Nieuwe gebruiker toevoegen
+            {UI.users.dialogs.createTitle}
           </DialogTitle>
           <DialogDescription>
             Maak een nieuwe gebruiker aan op het platform. De gebruiker ontvangt een email om een wachtwoord in te stellen.
@@ -173,16 +174,16 @@ export const CreatePlatformUserDialog = ({
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Bezig...
+                  {UI.actions.processing}
                 </>
               ) : (
-                "Gebruiker Maken"
+                UI.actions.create
               )}
             </Button>
           </DialogFooter>

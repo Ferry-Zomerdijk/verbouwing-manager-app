@@ -15,6 +15,7 @@ import CreateContractorDialog from "./CreateContractorDialog";
 import EditContractorDialog from "./EditContractorDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
+import { UI } from "@/lib/uiTexts";
 
 interface ProjectContractorsProps {
   projectId: string;
@@ -65,11 +66,11 @@ const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg sm:text-2xl font-bold truncate">Aannemers</h2>
+        <h2 className="text-lg sm:text-2xl font-bold truncate">{UI.contractors.title}</h2>
         {!readOnly && (
           <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary shrink-0" size="sm">
             <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nieuwe aannemer</span>
+            <span className="hidden sm:inline">{UI.contractors.buttons.new}</span>
           </Button>
         )}
       </div>
@@ -152,7 +153,7 @@ const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: 
       ) : (
         <Card className="shadow-card">
           <CardContent className="py-16 text-center">
-            <p className="text-muted-foreground">Nog geen aannemers toegevoegd</p>
+            <p className="text-muted-foreground">{UI.contractors.messages.noContractors}</p>
           </CardContent>
         </Card>
       )}
@@ -163,7 +164,7 @@ const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: 
         projectId={projectId}
         onSuccess={() => {
           refetch();
-          toast.success("Aannemer toegevoegd!");
+          toast.success(UI.contractors.messages.created);
         }}
       />
 
@@ -175,7 +176,7 @@ const ProjectContractors = ({ projectId, readOnly = false, publicContractors }: 
             contractor={selectedContractor}
             onSuccess={() => {
               refetch();
-              toast.success("Aannemer bijgewerkt!");
+              toast.success(UI.contractors.messages.updated);
             }}
           />
 
