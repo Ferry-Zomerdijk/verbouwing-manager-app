@@ -71,7 +71,7 @@ interface TaskListViewProps {
   availableDelenVanHuis?: string[];
 }
 
-type SortKey = "titel" | "status" | "prioriteit" | "verantwoordelijke" | "deel_van_huis" | "begindatum" | "deadline";
+type SortKey = "titel" | "status" | "prioriteit" | "verantwoordelijke" | "deel_van_huis" | "begindatum" | "deadline" | "type_id";
 type SortDirection = "asc" | "desc";
 
 const statusColors = {
@@ -265,7 +265,9 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
               <TableHead>
                 <SortButton column="prioriteit" label="Prioriteit" />
               </TableHead>
-              <TableHead className="w-12 text-center">Type</TableHead>
+              <TableHead className="w-12 text-center">
+                <SortButton column="type_id" label="Type" />
+              </TableHead>
               <TableHead>
                 <SortButton column="titel" label="Titel" />
               </TableHead>
