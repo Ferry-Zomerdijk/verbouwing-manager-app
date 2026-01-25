@@ -7,6 +7,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { OnlineProvider } from "./hooks/useOnlineStatus";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { SyncIndicator } from "./components/SyncIndicator";
 import { PwaInstallPrompt } from "./components/PwaInstallPrompt";
@@ -56,36 +57,38 @@ const App = () => (
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
       }}
     >
-      <OnlineProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <OfflineIndicator />
-          <SyncIndicator />
-          <PwaInstallPrompt />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/project/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-              <Route path="/project-tasks/:id" element={<ProtectedRoute><ProjectTasksView /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
-              <Route path="/accept-invite/:token" element={<AcceptInvite />} />
-              <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/install" element={<Install />} />
-              <Route path="/app-store-screenshots" element={<ProtectedRoute requiredRole="admin"><AppStoreScreenshots /></ProtectedRoute>} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </OnlineProvider>
+      <LanguageProvider>
+        <OnlineProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <OfflineIndicator />
+            <SyncIndicator />
+            <PwaInstallPrompt />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/project/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+                <Route path="/project-tasks/:id" element={<ProtectedRoute><ProjectTasksView /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
+                <Route path="/accept-invite/:token" element={<AcceptInvite />} />
+                <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/install" element={<Install />} />
+                <Route path="/app-store-screenshots" element={<ProtectedRoute requiredRole="admin"><AppStoreScreenshots /></ProtectedRoute>} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </OnlineProvider>
+      </LanguageProvider>
     </PersistQueryClientProvider>
   </ErrorBoundary>
 );
