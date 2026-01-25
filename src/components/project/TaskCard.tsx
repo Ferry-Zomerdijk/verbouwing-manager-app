@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, MoreVertical, Edit, Trash2, MessageSquare } from "lucide-react";
+import { Calendar, User, MoreVertical, Edit, Trash2, MessageSquare, ShoppingCart, CheckSquare, Users, Settings, HelpCircle, Tag, LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -24,14 +24,30 @@ interface TaskCardProps {
   availableDelenVanHuis?: string[];
 }
 
-const getTaskTypeColorClass = (kleur: string | null) => {
-  if (!kleur) return "bg-gray-500";
+// Icoon mapping voor taaktypes
+const taskTypeIconMap: Record<string, LucideIcon> = {
+  'shopping-cart': ShoppingCart,
+  'check-square': CheckSquare,
+  'users': Users,
+  'settings': Settings,
+  'help-circle': HelpCircle,
+  'tag': Tag,
+};
+
+// Kleur mapping voor taaktype iconen
+const getTaskTypeIconColor = (kleur: string | null): string => {
   const colorMap: Record<string, string> = {
-    blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
-    green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
-    red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
+    blue: "text-blue-500",
+    orange: "text-orange-500",
+    purple: "text-purple-500",
+    green: "text-green-500",
+    yellow: "text-yellow-500",
+    gray: "text-gray-500",
+    red: "text-red-500",
+    pink: "text-pink-500",
+    cyan: "text-cyan-500",
   };
-  return colorMap[kleur] || "bg-gray-500";
+  return colorMap[kleur || "gray"] || "text-gray-500";
 };
 
 const priorityColors = {
@@ -135,11 +151,15 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
           <Badge className={`${priorityColors[task.prioriteit as keyof typeof priorityColors]} text-white text-xs`}>
             {task.prioriteit}
           </Badge>
-          {task.task_type && (
-            <Badge className={`${getTaskTypeColorClass(task.task_type.kleur)} text-white text-xs`}>
-              {task.task_type.naam}
-            </Badge>
-          )}
+          {task.task_type && (() => {
+            const IconComponent = taskTypeIconMap[task.task_type.icoon] || Tag;
+            return (
+              <IconComponent 
+                className={`h-4 w-4 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
+                aria-label={task.task_type.naam}
+              />
+            );
+          })()}
         </div>
 
         {task.deadline && (
