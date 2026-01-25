@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil, ShoppingCart, CheckSquare, Users, Settings, HelpCircle, Tag, LucideIcon } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
+import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 interface Task {
   id: string;
@@ -38,32 +39,6 @@ interface Task {
     icoon: string;
   } | null;
 }
-
-// Icoon mapping voor taaktypes
-const taskTypeIconMap: Record<string, LucideIcon> = {
-  'shopping-cart': ShoppingCart,
-  'check-square': CheckSquare,
-  'users': Users,
-  'settings': Settings,
-  'help-circle': HelpCircle,
-  'tag': Tag,
-};
-
-// Kleur mapping voor taaktype iconen
-const getTaskTypeIconColor = (kleur: string | null): string => {
-  const colorMap: Record<string, string> = {
-    blue: "text-blue-500",
-    orange: "text-orange-500",
-    purple: "text-purple-500",
-    green: "text-green-500",
-    yellow: "text-yellow-500",
-    gray: "text-gray-500",
-    red: "text-red-500",
-    pink: "text-pink-500",
-    cyan: "text-cyan-500",
-  };
-  return colorMap[kleur || "gray"] || "text-gray-500";
-};
 
 interface TaskListViewProps {
   tasks: Task[];
@@ -391,7 +366,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
                           <TooltipTrigger asChild>
                             <span className="inline-flex items-center justify-center">
                               {(() => {
-                                const IconComponent = taskTypeIconMap[task.task_type.icoon] || Tag;
+                                const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
                                 return (
                                   <IconComponent 
                                     className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
