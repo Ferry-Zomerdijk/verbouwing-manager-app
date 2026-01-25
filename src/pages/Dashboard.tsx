@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone, X } from "lucide-react";
+import { Plus, Home, LogOut, Keyboard, Settings, Users, ChevronDown, AlertCircle, RefreshCw, Crown, Mail, Smartphone, X, Globe } from "lucide-react";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import CoffeeBreakTimer from "@/components/CoffeeBreakTimer";
 import WeatherExcuseButton from "@/components/WeatherExcuseButton";
@@ -36,10 +36,12 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 import AiUsageWidget from "@/components/AiUsageWidget";
 import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { language, setLanguage, t } = useLanguage();
   const { currentTier, limits } = useSubscription();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false);
@@ -257,7 +259,11 @@ const Dashboard = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
                     <Settings className="w-4 h-4 mr-2" />
-                    Mijn Account
+                    {t.navigation.settings}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage(language === 'nl' ? 'en' : 'nl')}>
+                    <Globe className="w-4 h-4 mr-2" />
+                    {language === 'nl' ? '🇬🇧 English' : '🇳🇱 Nederlands'}
                   </DropdownMenuItem>
                   {userInfo.isAdmin && (
                     <>
@@ -279,7 +285,7 @@ const Dashboard = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
-                    Uitloggen
+                    {t.navigation.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

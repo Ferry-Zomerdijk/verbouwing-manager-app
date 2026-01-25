@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, BookUser, Users, Home, ChevronDown, LogOut, Share2, Key, CalendarDays } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, BookUser, Users, Home, ChevronDown, LogOut, Share2, Key, CalendarDays, Globe } from "lucide-react";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,6 +38,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -46,6 +47,7 @@ const ProjectDetail = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { language, setLanguage, t } = useLanguage();
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
     email: null,
@@ -268,14 +270,18 @@ const ProjectDetail = () => {
                   </div>
                   <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
                     <Settings className="w-4 h-4 mr-2" />
-                    Mijn Account
+                    {t.navigation.settings}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage(language === 'nl' ? 'en' : 'nl')}>
+                    <Globe className="w-4 h-4 mr-2" />
+                    {language === 'nl' ? '🇬🇧 English' : '🇳🇱 Nederlands'}
                   </DropdownMenuItem>
                   {(userInfo.isAdmin || isAdminOrOwner) && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => navigate(`/users?project=${id}`)}>
                         <Users className="w-4 h-4 mr-2" />
-                        Gebruikers Beheren
+                        {t.users.dialogs.projectUsersTitle}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -285,7 +291,7 @@ const ProjectDetail = () => {
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Uitloggen
+                    {t.navigation.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
