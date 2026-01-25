@@ -17,6 +17,7 @@ import { useAiUsage } from "@/hooks/useAiUsage";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { useCostPayers } from "./CostPayersManager";
+import { UI } from "@/lib/uiTexts";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -529,7 +530,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Nieuwe kostenpost</DrawerTitle>
+            <DrawerTitle>{UI.costs.dialogs.createTitle}</DrawerTitle>
             <DrawerDescription>
               Voeg een kostenpost toe of upload een factuur.
             </DrawerDescription>
@@ -539,14 +540,14 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading || processingOCR} 
               className="flex-1"
             >
-              {loading ? "Bezig..." : "Toevoegen"}
+              {loading ? UI.actions.processing : UI.actions.add}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -558,9 +559,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nieuwe kostenpost</DialogTitle>
+          <DialogTitle>{UI.costs.dialogs.createTitle}</DialogTitle>
           <DialogDescription>
-            Voeg een nieuwe kostenpost toe door handmatig gegevens in te voeren of een factuur te uploaden.
+            {UI.costs.dialogs.createDescription}
           </DialogDescription>
         </DialogHeader>
         {formContent}

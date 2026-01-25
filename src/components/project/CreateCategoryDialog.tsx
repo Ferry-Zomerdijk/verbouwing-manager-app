@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { UI } from "@/lib/uiTexts";
 
 interface CreateCategoryDialogProps {
   open: boolean;
@@ -109,10 +110,10 @@ const CreateCategoryDialog = ({
 
       <div className="flex gap-2 pt-4">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-          Annuleren
+          {UI.actions.cancel}
         </Button>
         <Button type="submit" disabled={loading || !naam.trim()} className="flex-1 gradient-primary">
-          {loading ? "Bezig..." : "Aanmaken"}
+          {loading ? UI.actions.processing : UI.actions.create}
         </Button>
       </div>
     </form>
@@ -123,7 +124,7 @@ const CreateCategoryDialog = ({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Nieuwe rubriek</DrawerTitle>
+            <DrawerTitle>{UI.contacts.dialogs.categoryCreateTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6">{formContent}</div>
         </KeyboardAwareDrawerContent>
@@ -135,7 +136,7 @@ const CreateCategoryDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nieuwe rubriek</DialogTitle>
+          <DialogTitle>{UI.contacts.dialogs.categoryCreateTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

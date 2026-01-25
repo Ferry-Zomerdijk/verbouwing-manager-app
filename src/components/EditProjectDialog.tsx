@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UI } from "@/lib/uiTexts";
 
 interface EditProjectDialogProps {
   open: boolean;
@@ -193,21 +194,21 @@ const EditProjectDialog = ({ open, onOpenChange, onSuccess, project }: EditProje
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Project bewerken</DrawerTitle>
+            <DrawerTitle>{UI.projects.dialogs.editTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading} 
               className="flex-1 gradient-primary"
             >
-              {loading ? "Opslaan..." : "Opslaan"}
+              {loading ? UI.actions.saving : UI.actions.save}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -219,7 +220,7 @@ const EditProjectDialog = ({ open, onOpenChange, onSuccess, project }: EditProje
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Project bewerken</DialogTitle>
+          <DialogTitle>{UI.projects.dialogs.editTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

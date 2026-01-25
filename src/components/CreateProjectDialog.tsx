@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { renovationTemplates, RenovationTemplate } from "@/lib/renovationTemplates";
 import { ClipboardList, ShowerHead, ChefHat, Home, Building2, Layers, Building } from "lucide-react";
+import { UI } from "@/lib/uiTexts";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -352,10 +353,10 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
       {!isMobile && (
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Annuleren
+            {UI.actions.cancel}
           </Button>
           <Button type="submit" disabled={loading} className="gradient-primary">
-            {loading ? "Bezig..." : "Project aanmaken"}
+            {loading ? UI.actions.processing : UI.projects.buttons.create}
           </Button>
         </div>
       )}
@@ -367,21 +368,21 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Nieuw Renovatieproject</DrawerTitle>
+            <DrawerTitle>{UI.projects.dialogs.createTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading} 
               className="flex-1 gradient-primary"
             >
-              {loading ? "Bezig..." : "Aanmaken"}
+              {loading ? UI.actions.processing : UI.actions.create}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -393,7 +394,7 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nieuw Renovatieproject</DialogTitle>
+          <DialogTitle>{UI.projects.dialogs.createTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

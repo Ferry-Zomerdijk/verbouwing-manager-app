@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UI } from "@/lib/uiTexts";
 
 interface EditContractorDialogProps {
   open: boolean;
@@ -146,10 +147,10 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
       {!isMobile && (
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Annuleren
+            {UI.actions.cancel}
           </Button>
           <Button type="submit" disabled={loading} className="gradient-primary">
-            {loading ? "Opslaan..." : "Opslaan"}
+            {loading ? UI.actions.saving : UI.actions.save}
           </Button>
         </div>
       )}
@@ -161,21 +162,21 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Aannemer bewerken</DrawerTitle>
+            <DrawerTitle>{UI.contractors.dialogs.editTitle}</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
           </div>
           <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Annuleren
+              {UI.actions.cancel}
             </Button>
             <Button 
               onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
               disabled={loading} 
               className="flex-1 gradient-primary"
             >
-              {loading ? "Opslaan..." : "Opslaan"}
+              {loading ? UI.actions.saving : UI.actions.save}
             </Button>
           </div>
         </KeyboardAwareDrawerContent>
@@ -187,7 +188,7 @@ const EditContractorDialog = ({ open, onOpenChange, contractor, onSuccess }: Edi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Aannemer bewerken</DialogTitle>
+          <DialogTitle>{UI.contractors.dialogs.editTitle}</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>
