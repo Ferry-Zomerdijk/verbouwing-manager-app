@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, MoreVertical, Edit, Trash2, MessageSquare, ShoppingCart, CheckSquare, Users, Settings, HelpCircle, Tag, LucideIcon } from "lucide-react";
+import { Calendar, User, MoreVertical, Edit, Trash2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -16,6 +16,7 @@ import EditTaskDialog from "./EditTaskDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 interface TaskCardProps {
   task: any;
@@ -23,32 +24,6 @@ interface TaskCardProps {
   canDelete?: boolean;
   availableDelenVanHuis?: string[];
 }
-
-// Icoon mapping voor taaktypes
-const taskTypeIconMap: Record<string, LucideIcon> = {
-  'shopping-cart': ShoppingCart,
-  'check-square': CheckSquare,
-  'users': Users,
-  'settings': Settings,
-  'help-circle': HelpCircle,
-  'tag': Tag,
-};
-
-// Kleur mapping voor taaktype iconen
-const getTaskTypeIconColor = (kleur: string | null): string => {
-  const colorMap: Record<string, string> = {
-    blue: "text-blue-500",
-    orange: "text-orange-500",
-    purple: "text-purple-500",
-    green: "text-green-500",
-    yellow: "text-yellow-500",
-    gray: "text-gray-500",
-    red: "text-red-500",
-    pink: "text-pink-500",
-    cyan: "text-cyan-500",
-  };
-  return colorMap[kleur || "gray"] || "text-gray-500";
-};
 
 const priorityColors = {
   Laag: "bg-blue-500",
@@ -152,7 +127,7 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
             {task.prioriteit}
           </Badge>
           {task.task_type && (() => {
-            const IconComponent = taskTypeIconMap[task.task_type.icoon] || Tag;
+            const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
             return (
               <IconComponent 
                 className={`h-4 w-4 ${getTaskTypeIconColor(task.task_type.kleur)}`} 

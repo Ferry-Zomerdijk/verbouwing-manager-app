@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronDown, MapPin, User, Pencil, Trash2, MessageSquare, ShoppingCart, CheckSquare, Users, Settings, HelpCircle, Tag, LucideIcon } from "lucide-react";
+import { Calendar, ChevronDown, MapPin, User, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -17,6 +17,7 @@ import EditTaskDialog from "./EditTaskDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 interface MobileTaskCardProps {
   task: any;
@@ -36,32 +37,6 @@ const statusConfig = {
   "Te doen": { color: "bg-muted text-muted-foreground" },
   "Bezig": { color: "bg-primary/20 text-primary" },
   "Gereed": { color: "bg-green-500/20 text-green-700" },
-};
-
-// Icoon mapping voor taaktypes
-const taskTypeIconMap: Record<string, LucideIcon> = {
-  'shopping-cart': ShoppingCart,
-  'check-square': CheckSquare,
-  'users': Users,
-  'settings': Settings,
-  'help-circle': HelpCircle,
-  'tag': Tag,
-};
-
-// Kleur mapping voor taaktype iconen
-const getTaskTypeIconColor = (kleur: string | null): string => {
-  const colorMap: Record<string, string> = {
-    blue: "text-blue-500",
-    orange: "text-orange-500",
-    purple: "text-purple-500",
-    green: "text-green-500",
-    yellow: "text-yellow-500",
-    gray: "text-gray-500",
-    red: "text-red-500",
-    pink: "text-pink-500",
-    cyan: "text-cyan-500",
-  };
-  return colorMap[kleur || "gray"] || "text-gray-500";
 };
 
 const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, availableDelenVanHuis = [] }: MobileTaskCardProps) => {
@@ -150,7 +125,7 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
               {task.prioriteit || "Geen"}
             </Badge>
             {task.task_type && (() => {
-              const IconComponent = taskTypeIconMap[task.task_type.icoon] || Tag;
+              const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
               return (
                 <IconComponent 
                   className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
