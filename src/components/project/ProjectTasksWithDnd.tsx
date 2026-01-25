@@ -445,10 +445,10 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
             </>
           )}
           {!readOnly && (
-            <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Nieuwe Taak
-            </Button>
+          <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Nieuwe taak
+          </Button>
           )}
         </div>
       </div>

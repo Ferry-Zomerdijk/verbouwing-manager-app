@@ -212,7 +212,7 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Nieuwe Aannemer</DrawerTitle>
+            <DrawerTitle>Nieuwe aannemer</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
@@ -238,7 +238,7 @@ const CreateContractorDialog = ({ open, onOpenChange, projectId, onSuccess }: Cr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nieuwe Aannemer</DialogTitle>
+          <DialogTitle>Nieuwe aannemer</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

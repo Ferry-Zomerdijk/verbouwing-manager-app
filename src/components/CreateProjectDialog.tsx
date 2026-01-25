@@ -355,7 +355,7 @@ const CreateProjectDialog = ({ open, onOpenChange, onSuccess }: CreateProjectDia
             Annuleren
           </Button>
           <Button type="submit" disabled={loading} className="gradient-primary">
-            {loading ? "Bezig..." : "Project Aanmaken"}
+            {loading ? "Bezig..." : "Project aanmaken"}
           </Button>
         </div>
       )}

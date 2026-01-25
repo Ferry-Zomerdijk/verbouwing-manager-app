@@ -102,7 +102,7 @@ const TodayAttendanceWidget = () => {
             <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
-            Vandaag Aanwezig
+            Vandaag aanwezig
           </CardTitle>
           <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
             {totalPresent} {totalPresent === 1 ? "persoon" : "personen"}

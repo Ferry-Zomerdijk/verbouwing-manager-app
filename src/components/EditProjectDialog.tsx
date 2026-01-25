@@ -193,7 +193,7 @@ const EditProjectDialog = ({ open, onOpenChange, onSuccess, project }: EditProje
       <Drawer open={open} onOpenChange={onOpenChange}>
         <KeyboardAwareDrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Project Bewerken</DrawerTitle>
+            <DrawerTitle>Project bewerken</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
             {formContent}
@@ -219,7 +219,7 @@ const EditProjectDialog = ({ open, onOpenChange, onSuccess, project }: EditProje
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Project Bewerken</DialogTitle>
+          <DialogTitle>Project bewerken</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

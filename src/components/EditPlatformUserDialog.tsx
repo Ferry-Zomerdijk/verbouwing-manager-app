@@ -63,7 +63,7 @@ export const EditPlatformUserDialog = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Platform Gebruiker Bewerken</DialogTitle>
+          <DialogTitle>Platformgebruiker bewerken</DialogTitle>
           <DialogDescription>
             Wijzig de gegevens van deze gebruiker.
           </DialogDescription>

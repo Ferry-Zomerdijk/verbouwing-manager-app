@@ -225,9 +225,9 @@ const AiUsageAnalytics = () => {
       {/* Cost Overview Card */}
       <Card className="border-chart-1/30 bg-gradient-to-br from-chart-1/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="text-lg flex items-center gap-2">
             <Euro className="w-5 h-5 text-chart-1" />
-            AI Kosten Overzicht
+            AI-kostenoverzicht
           </CardTitle>
           <CardDescription>
             Geschatte kosten op basis van {formatCurrency(COST_PER_SCAN)} per scan (Gemini 2.5 Flash)

@@ -560,7 +560,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             Annuleren
           </Button>
           <Button type="submit" disabled={createTaskMutation.isPending || uploadingImages} className="gradient-primary">
-            {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak Aanmaken"}
+            {createTaskMutation.isPending || uploadingImages ? "Bezig..." : "Taak aanmaken"}
           </Button>
         </div>
       )}
@@ -584,7 +584,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nieuwe Taak</DialogTitle>
+          <DialogTitle>Nieuwe taak</DialogTitle>
         </DialogHeader>
         {formContent}
       </DialogContent>

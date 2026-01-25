@@ -402,7 +402,7 @@ const ProjectCosts = ({
           </Button>
           <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary h-8 sm:h-9" size="sm">
             <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Nieuwe Kostenpost</span>
+            <span className="hidden sm:inline">Nieuwe kostenpost</span>
           </Button>
         </div>
       </div>

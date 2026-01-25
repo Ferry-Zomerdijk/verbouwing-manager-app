@@ -526,7 +526,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <KeyboardAwareDrawerContent>
             <DrawerHeader className="text-left shrink-0">
               <div className="flex items-center gap-2">
-                <DrawerTitle>Taak Bewerken</DrawerTitle>
+                <DrawerTitle>Taak bewerken</DrawerTitle>
                 {isDirty && (
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                     Niet opgeslagen
@@ -556,7 +556,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <DialogTitle>Taak Bewerken</DialogTitle>
+              <DialogTitle>Taak bewerken</DialogTitle>
               {isDirty && (
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                   Niet opgeslagen

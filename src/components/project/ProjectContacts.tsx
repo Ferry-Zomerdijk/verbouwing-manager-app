@@ -381,7 +381,7 @@ const ProjectContacts = ({
                 size="sm"
               >
                 <FolderPlus className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nieuwe Rubriek</span>
+                <span className="hidden sm:inline">Nieuwe rubriek</span>
               </Button>
               <Button 
                 onClick={() => {
@@ -392,7 +392,7 @@ const ProjectContacts = ({
                 size="sm"
               >
                 <Plus className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nieuw Contact</span>
+                <span className="hidden sm:inline">Nieuw contact</span>
               </Button>
             </div>
           )}
