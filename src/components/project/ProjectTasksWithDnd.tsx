@@ -155,7 +155,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id, naam, kleur")
+        .select("id, naam, kleur, icoon")
         .order("volgorde", { ascending: true });
       if (error) throw error;
       return data;
