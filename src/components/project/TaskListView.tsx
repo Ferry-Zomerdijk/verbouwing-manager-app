@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,15 +62,57 @@ const priorityColors = {
 };
 
 export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskListViewProps) => {
-  const [primarySort, setPrimarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
-  const [secondarySort, setSecondarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
+  // Extract projectId from first task
+  const projectId = tasks[0]?.project_id;
+
+  const [primarySort, setPrimarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(() => {
+    if (!projectId) return null;
+    try {
+      const stored = localStorage.getItem(`task-sort-${projectId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.primary || null;
+      }
+    } catch {
+      // Fallback bij parse error
+    }
+    return null;
+  });
+
+  const [secondarySort, setSecondarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(() => {
+    if (!projectId) return null;
+    try {
+      const stored = localStorage.getItem(`task-sort-${projectId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.secondary || null;
+      }
+    } catch {
+      // Fallback bij parse error
+    }
+    return null;
+  });
+
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const queryClient = useQueryClient();
 
-  // Extract projectId from first task
-  const projectId = tasks[0]?.project_id;
+  // Opslaan van sorteervoorkeuren in localStorage
+  useEffect(() => {
+    if (!projectId) return;
+    
+    const sortData = {
+      primary: primarySort,
+      secondary: secondarySort,
+    };
+    
+    if (primarySort) {
+      localStorage.setItem(`task-sort-${projectId}`, JSON.stringify(sortData));
+    } else {
+      localStorage.removeItem(`task-sort-${projectId}`);
+    }
+  }, [primarySort, secondarySort, projectId]);
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Task> }) => {
