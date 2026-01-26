@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUpDown, MoreVertical, Trash2, MessageSquare, Pencil } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Trash2, MessageSquare, Pencil, X } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -62,8 +62,11 @@ const priorityColors = {
 };
 
 export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskListViewProps) => {
-  const [sortKey, setSortKey] = useState<SortKey>("begindatum");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [primarySort, setPrimarySort] = useState<{ key: SortKey; direction: SortDirection }>({
+    key: "begindatum",
+    direction: "asc"
+  });
+  const [secondarySort, setSecondarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -129,23 +132,57 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
   };
 
   const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
+    // Klik op primaire kolom → wissel richting
+    if (primarySort.key === key) {
+      setPrimarySort(prev => ({ 
+        ...prev, 
+        direction: prev.direction === "asc" ? "desc" : "asc" 
+      }));
+      return;
     }
+    
+    // Klik op secundaire kolom → wissel richting
+    if (secondarySort?.key === key) {
+      setSecondarySort(prev => prev ? { 
+        ...prev, 
+        direction: prev.direction === "asc" ? "desc" : "asc" 
+      } : null);
+      return;
+    }
+    
+    // Klik op nieuwe kolom → wordt secundaire sortering
+    setSecondarySort({ key, direction: "asc" });
   };
 
   const sortedTasks = [...tasks].sort((a, b) => {
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
-
-    if (aVal === null || aVal === undefined) return 1;
-    if (bVal === null || bVal === undefined) return -1;
-
-    const comparison = aVal > bVal ? 1 : -1;
-    return sortDirection === "asc" ? comparison : -comparison;
+    // Primaire vergelijking
+    const aVal1 = a[primarySort.key];
+    const bVal1 = b[primarySort.key];
+    
+    if (aVal1 === null || aVal1 === undefined) {
+      if (bVal1 !== null && bVal1 !== undefined) return 1;
+    }
+    if (bVal1 === null || bVal1 === undefined) {
+      if (aVal1 !== null && aVal1 !== undefined) return -1;
+    }
+    
+    if (aVal1 !== bVal1 && aVal1 != null && bVal1 != null) {
+      const comp = aVal1 > bVal1 ? 1 : -1;
+      return primarySort.direction === "asc" ? comp : -comp;
+    }
+    
+    // Secundaire vergelijking (alleen als primaire gelijk of beide null)
+    if (!secondarySort) return 0;
+    
+    const aVal2 = a[secondarySort.key];
+    const bVal2 = b[secondarySort.key];
+    
+    if (aVal2 === null || aVal2 === undefined) return 1;
+    if (bVal2 === null || bVal2 === undefined) return -1;
+    if (aVal2 === bVal2) return 0;
+    
+    const comp2 = aVal2 > bVal2 ? 1 : -1;
+    return secondarySort.direction === "asc" ? comp2 : -comp2;
   });
 
   const toggleTaskSelection = (taskId: string) => {
@@ -199,12 +236,26 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
     return deadlineDate < today;
   };
 
-  const SortButton = ({ column, label }: { column: SortKey; label: string }) => (
-    <Button variant="ghost" size="sm" onClick={() => handleSort(column)} className="h-8 -ml-3">
-      {label}
-      <ArrowUpDown className="ml-2 h-3 w-3" />
-    </Button>
-  );
+  const SortButton = ({ column, label }: { column: SortKey; label: string }) => {
+    const isPrimary = primarySort.key === column;
+    const isSecondary = secondarySort?.key === column;
+    const direction = isPrimary 
+      ? primarySort.direction 
+      : isSecondary 
+      ? secondarySort?.direction 
+      : null;
+
+    return (
+      <Button variant="ghost" size="sm" onClick={() => handleSort(column)} className="h-8 -ml-3">
+        {isPrimary && <span className="text-xs mr-1 text-primary font-bold">①</span>}
+        {isSecondary && <span className="text-xs mr-1 text-muted-foreground">②</span>}
+        {label}
+        {direction === "asc" && <ArrowUp className="ml-1 h-3 w-3" />}
+        {direction === "desc" && <ArrowDown className="ml-1 h-3 w-3" />}
+        {!direction && <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />}
+      </Button>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -216,6 +267,21 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
             onUpdate();
           }}
         />
+      )}
+
+      {secondarySort && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Sortering: <strong className="text-foreground">①</strong> {primarySort.key === "deel_van_huis" ? "Deel" : primarySort.key === "begindatum" ? "Begindatum" : primarySort.key === "deadline" ? "Deadline" : primarySort.key === "status" ? "Status" : primarySort.key === "prioriteit" ? "Prioriteit" : primarySort.key === "verantwoordelijke" ? "Verantw." : primarySort.key === "type_id" ? "Type" : "Titel"} → <strong className="text-foreground">②</strong> {secondarySort.key === "deel_van_huis" ? "Deel" : secondarySort.key === "begindatum" ? "Begindatum" : secondarySort.key === "deadline" ? "Deadline" : secondarySort.key === "status" ? "Status" : secondarySort.key === "prioriteit" ? "Prioriteit" : secondarySort.key === "verantwoordelijke" ? "Verantw." : secondarySort.key === "type_id" ? "Type" : "Titel"}</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSecondarySort(null)}
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Reset
+          </Button>
+        </div>
       )}
 
       <div className="border rounded-lg overflow-hidden">
