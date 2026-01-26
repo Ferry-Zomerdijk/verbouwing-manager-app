@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { Search, X, ChevronDown } from "lucide-react";
 import { AutocompleteInput } from "./AutocompleteInput";
+import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 export interface TaskFiltersType {
   search: string;
@@ -25,6 +26,7 @@ interface TaskType {
   id: string;
   naam: string;
   kleur: string;
+  icoon: string;
 }
 
 interface TaskFiltersProps {
@@ -134,8 +136,39 @@ export const TaskFilters = ({
         </CollapsibleTrigger>
 
         {/* Actieve filters als verwijderbare chips */}
-        {activeCount > 0 && (
+        {(activeCount > 0 || filters.search || filters.taskTypes.length > 0) && (
           <div className="flex flex-wrap gap-2 px-4 py-2 border-t border-border bg-muted/30">
+            {/* Zoekterm chip */}
+            {filters.search && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => onFiltersChange({ ...filters, search: "" })}
+              >
+                Zoeken: "{filters.search}"
+                <X className="w-3 h-3" />
+              </Badge>
+            )}
+
+            {/* Taaktype chips */}
+            {filters.taskTypes.map(typeId => {
+              const taskType = availableTaskTypes.find(t => t.id === typeId);
+              if (!taskType) return null;
+              const IconComponent = taskTypeIconMap[taskType.icoon] || DefaultTaskTypeIcon;
+              return (
+                <Badge 
+                  key={typeId}
+                  variant="secondary" 
+                  className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                  onClick={() => toggleTaskType(typeId)}
+                >
+                  <IconComponent className={`h-3 w-3 ${getTaskTypeIconColor(taskType.kleur)}`} />
+                  {taskType.naam}
+                  <X className="w-3 h-3" />
+                </Badge>
+              );
+            })}
+
             {ALL_PRIORITIES.filter(p => !filters.priorities.includes(p)).map(excludedPriority => (
               <Badge 
                 key={excludedPriority} 
@@ -196,8 +229,31 @@ export const TaskFilters = ({
 
         <CollapsibleContent>
           <div className="p-4 space-y-4 border-t border-border">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Zoeken */}
+            <div className="space-y-2">
+              <Label>Zoeken</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Zoek op titel of beschrijving..."
+                  value={filters.search}
+                  onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+                  className="pl-9"
+                />
+                {filters.search && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => onFiltersChange({ ...filters, search: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Priority */}
               <div className="space-y-2">
                 <Label>Prioriteit</Label>
@@ -220,6 +276,34 @@ export const TaskFilters = ({
                 </div>
               </div>
 
+
+              {/* Taaktype */}
+              {availableTaskTypes.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Taaktype</Label>
+                  <div className="flex flex-col gap-2">
+                    {availableTaskTypes.map((taskType) => {
+                      const IconComponent = taskTypeIconMap[taskType.icoon] || DefaultTaskTypeIcon;
+                      return (
+                        <div key={taskType.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`type-${taskType.id}`}
+                            checked={filters.taskTypes.includes(taskType.id)}
+                            onCheckedChange={() => toggleTaskType(taskType.id)}
+                          />
+                          <IconComponent className={`h-4 w-4 ${getTaskTypeIconColor(taskType.kleur)}`} />
+                          <label
+                            htmlFor={`type-${taskType.id}`}
+                            className="text-sm cursor-pointer"
+                          >
+                            {taskType.naam}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Verantwoordelijke */}
               <div className="space-y-2">
