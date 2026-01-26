@@ -62,10 +62,7 @@ const priorityColors = {
 };
 
 export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskListViewProps) => {
-  const [primarySort, setPrimarySort] = useState<{ key: SortKey; direction: SortDirection }>({
-    key: "begindatum",
-    direction: "asc"
-  });
+  const [primarySort, setPrimarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
   const [secondarySort, setSecondarySort] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -132,12 +129,18 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
   };
 
   const handleSort = (key: SortKey) => {
+    // Geen sortering actief → maak dit de primaire
+    if (!primarySort) {
+      setPrimarySort({ key, direction: "asc" });
+      return;
+    }
+    
     // Klik op primaire kolom → wissel richting
     if (primarySort.key === key) {
-      setPrimarySort(prev => ({ 
+      setPrimarySort(prev => prev ? { 
         ...prev, 
         direction: prev.direction === "asc" ? "desc" : "asc" 
-      }));
+      } : null);
       return;
     }
     
@@ -154,36 +157,38 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
     setSecondarySort({ key, direction: "asc" });
   };
 
-  const sortedTasks = [...tasks].sort((a, b) => {
-    // Primaire vergelijking
-    const aVal1 = a[primarySort.key];
-    const bVal1 = b[primarySort.key];
-    
-    if (aVal1 === null || aVal1 === undefined) {
-      if (bVal1 !== null && bVal1 !== undefined) return 1;
-    }
-    if (bVal1 === null || bVal1 === undefined) {
-      if (aVal1 !== null && aVal1 !== undefined) return -1;
-    }
-    
-    if (aVal1 !== bVal1 && aVal1 != null && bVal1 != null) {
-      const comp = aVal1 > bVal1 ? 1 : -1;
-      return primarySort.direction === "asc" ? comp : -comp;
-    }
-    
-    // Secundaire vergelijking (alleen als primaire gelijk of beide null)
-    if (!secondarySort) return 0;
-    
-    const aVal2 = a[secondarySort.key];
-    const bVal2 = b[secondarySort.key];
-    
-    if (aVal2 === null || aVal2 === undefined) return 1;
-    if (bVal2 === null || bVal2 === undefined) return -1;
-    if (aVal2 === bVal2) return 0;
-    
-    const comp2 = aVal2 > bVal2 ? 1 : -1;
-    return secondarySort.direction === "asc" ? comp2 : -comp2;
-  });
+  const sortedTasks = primarySort 
+    ? [...tasks].sort((a, b) => {
+        // Primaire vergelijking
+        const aVal1 = a[primarySort.key];
+        const bVal1 = b[primarySort.key];
+        
+        if (aVal1 === null || aVal1 === undefined) {
+          if (bVal1 !== null && bVal1 !== undefined) return 1;
+        }
+        if (bVal1 === null || bVal1 === undefined) {
+          if (aVal1 !== null && aVal1 !== undefined) return -1;
+        }
+        
+        if (aVal1 !== bVal1 && aVal1 != null && bVal1 != null) {
+          const comp = aVal1 > bVal1 ? 1 : -1;
+          return primarySort.direction === "asc" ? comp : -comp;
+        }
+        
+        // Secundaire vergelijking (alleen als primaire gelijk of beide null)
+        if (!secondarySort) return 0;
+        
+        const aVal2 = a[secondarySort.key];
+        const bVal2 = b[secondarySort.key];
+        
+        if (aVal2 === null || aVal2 === undefined) return 1;
+        if (bVal2 === null || bVal2 === undefined) return -1;
+        if (aVal2 === bVal2) return 0;
+        
+        const comp2 = aVal2 > bVal2 ? 1 : -1;
+        return secondarySort.direction === "asc" ? comp2 : -comp2;
+      })
+    : tasks;
 
   const toggleTaskSelection = (taskId: string) => {
     const newSelection = new Set(selectedTasks);
@@ -237,10 +242,10 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
   };
 
   const SortButton = ({ column, label }: { column: SortKey; label: string }) => {
-    const isPrimary = primarySort.key === column;
+    const isPrimary = primarySort?.key === column;
     const isSecondary = secondarySort?.key === column;
     const direction = isPrimary 
-      ? primarySort.direction 
+      ? primarySort?.direction 
       : isSecondary 
       ? secondarySort?.direction 
       : null;
@@ -269,13 +274,16 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
         />
       )}
 
-      {secondarySort && (
+      {primarySort && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Sortering: <strong className="text-foreground">①</strong> {primarySort.key === "deel_van_huis" ? "Deel" : primarySort.key === "begindatum" ? "Begindatum" : primarySort.key === "deadline" ? "Deadline" : primarySort.key === "status" ? "Status" : primarySort.key === "prioriteit" ? "Prioriteit" : primarySort.key === "verantwoordelijke" ? "Verantw." : primarySort.key === "type_id" ? "Type" : "Titel"} → <strong className="text-foreground">②</strong> {secondarySort.key === "deel_van_huis" ? "Deel" : secondarySort.key === "begindatum" ? "Begindatum" : secondarySort.key === "deadline" ? "Deadline" : secondarySort.key === "status" ? "Status" : secondarySort.key === "prioriteit" ? "Prioriteit" : secondarySort.key === "verantwoordelijke" ? "Verantw." : secondarySort.key === "type_id" ? "Type" : "Titel"}</span>
+          <span>Sortering: <strong className="text-foreground">①</strong> {primarySort.key === "deel_van_huis" ? "Deel" : primarySort.key === "begindatum" ? "Begindatum" : primarySort.key === "deadline" ? "Deadline" : primarySort.key === "status" ? "Status" : primarySort.key === "prioriteit" ? "Prioriteit" : primarySort.key === "verantwoordelijke" ? "Verantw." : primarySort.key === "type_id" ? "Type" : "Titel"}{secondarySort && <> → <strong className="text-foreground">②</strong> {secondarySort.key === "deel_van_huis" ? "Deel" : secondarySort.key === "begindatum" ? "Begindatum" : secondarySort.key === "deadline" ? "Deadline" : secondarySort.key === "status" ? "Status" : secondarySort.key === "prioriteit" ? "Prioriteit" : secondarySort.key === "verantwoordelijke" ? "Verantw." : secondarySort.key === "type_id" ? "Type" : "Titel"}</>}</span>
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setSecondarySort(null)}
+            onClick={() => {
+              setPrimarySort(null);
+              setSecondarySort(null);
+            }}
             className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
           >
             <X className="h-3 w-3 mr-1" />
