@@ -151,6 +151,19 @@ export const TaskFilters = ({
             )}
 
             {/* Taaktype chips */}
+            {/* Status chips - toon alleen uitgesloten statussen */}
+            {ALL_STATUSES.filter(s => !filters.statuses.includes(s)).map(excludedStatus => (
+              <Badge 
+                key={`status-${excludedStatus}`} 
+                variant="secondary" 
+                className="gap-1 cursor-pointer hover:bg-secondary/80" 
+                onClick={() => toggleStatus(excludedStatus)}
+              >
+                Zonder: {excludedStatus}
+                <X className="w-3 h-3" />
+              </Badge>
+            ))}
+
             {filters.taskTypes.map(typeId => {
               const taskType = availableTaskTypes.find(t => t.id === typeId);
               if (!taskType) return null;
@@ -270,6 +283,28 @@ export const TaskFilters = ({
                         className="text-sm cursor-pointer"
                       >
                         {priority}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <div className="flex flex-col gap-2">
+                  {ALL_STATUSES.map((status) => (
+                    <div key={status} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`status-${status}`}
+                        checked={filters.statuses.includes(status)}
+                        onCheckedChange={() => toggleStatus(status)}
+                      />
+                      <label
+                        htmlFor={`status-${status}`}
+                        className="text-sm cursor-pointer"
+                      >
+                        {status}
                       </label>
                     </div>
                   ))}
