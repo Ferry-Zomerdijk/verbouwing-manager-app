@@ -12,7 +12,7 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
   HTMLDivElement,
   KeyboardAwareDrawerContentProps
 >(({ className, children, style, ...props }, ref) => {
-  const { viewportHeight, isKeyboardOpen } = useVisualViewport();
+  const { viewportHeight, viewportOffsetTop, isKeyboardOpen } = useVisualViewport();
 
   // Scroll focused input into view when keyboard opens
   React.useEffect(() => {
@@ -30,20 +30,31 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
     }
   }, [isKeyboardOpen]);
 
-  // Calculate max height based on viewport - use 95dvh for near-fullscreen experience
-  const maxHeight = isKeyboardOpen 
-    ? `${viewportHeight - 20}px` 
-    : '95dvh';
+  // Calculate height and position based on visual viewport
+  const dynamicStyles: React.CSSProperties = isKeyboardOpen
+    ? {
+        // Use the visual viewport height minus some padding
+        height: `${viewportHeight - 10}px`,
+        maxHeight: `${viewportHeight - 10}px`,
+        // Position the drawer at the top of the visual viewport
+        top: `${viewportOffsetTop}px`,
+        bottom: 'auto',
+        transform: 'none',
+      }
+    : {
+        maxHeight: '95dvh',
+      };
 
   return (
     <DrawerContent
       ref={ref}
       className={cn(
         "drawer-content-ios flex flex-col",
+        isKeyboardOpen && "!fixed !inset-x-0",
         className
       )}
       style={{ 
-        maxHeight,
+        ...dynamicStyles,
         ...style 
       }}
       {...props}

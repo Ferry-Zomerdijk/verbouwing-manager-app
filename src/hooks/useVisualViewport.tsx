@@ -4,6 +4,7 @@ export function useVisualViewport() {
   const [viewportHeight, setViewportHeight] = useState<number>(
     typeof window !== 'undefined' ? window.innerHeight : 0
   );
+  const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function useVisualViewport() {
     const handleResize = () => {
       const currentHeight = viewport.height;
       setViewportHeight(currentHeight);
+      setViewportOffsetTop(viewport.offsetTop);
       // Keyboard is open if viewport height is significantly smaller than initial
       setIsKeyboardOpen(currentHeight < initialHeight * 0.75);
     };
@@ -33,5 +35,5 @@ export function useVisualViewport() {
     };
   }, []);
 
-  return { viewportHeight, isKeyboardOpen };
+  return { viewportHeight, viewportOffsetTop, isKeyboardOpen };
 }

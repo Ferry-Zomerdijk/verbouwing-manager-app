@@ -296,7 +296,7 @@ All colors MUST be HSL.
     
     /* Smooth keyboard transitions for drawer */
     .drawer-content-ios {
-      transition: max-height 0.25s ease-out;
+      transition: all 0.25s ease-out;
     }
     
     /* Ensure inputs scroll into view when focused */
@@ -304,6 +304,18 @@ All colors MUST be HSL.
     textarea:focus {
       scroll-margin-bottom: 120px;
     }
+    
+    /* Fix drawer positioning when keyboard is open */
+    .drawer-content-ios input:focus,
+    .drawer-content-ios textarea:focus {
+      position: relative;
+      z-index: 10;
+    }
+  }
+  
+  /* Safe area padding for top */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   /* Safe area support for keyboard and bottom navigation */
