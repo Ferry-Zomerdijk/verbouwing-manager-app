@@ -1,70 +1,127 @@
 
+# Plan: Snelle Link naar Taak Details
 
-# Plan: Voltooide Taken Uitsluiten van Leveringen Widget
+## Overzicht
 
-## Probleem
+De leveringen widget wordt aangepast zodat bij klikken direct de taakdetails worden geopend in plaats van alleen naar het project te navigeren.
 
-De huidige query haalt alle taken op met een verwachte leverdatum, ongeacht hun status. Taken die al zijn afgerond (status = "Gereed") worden nog steeds getoond in de widget "Aankomende leveringen".
+---
+
+## Huidige Situatie
+
+| Onderdeel | Status |
+|-----------|--------|
+| Widget click handler | Navigeert naar `/project/{project_id}` |
+| Taakdetails | Worden geopend via EditTaskDialog binnen ProjectTasksWithDnd |
+| URL-ondersteuning voor taken | Niet aanwezig |
 
 ---
 
 ## Oplossing
 
-Voeg een filter toe aan de Supabase query om taken met status "Gereed" uit te sluiten.
+Navigeer naar het project met een query parameter `?task={task_id}`, en laat `ProjectTasksWithDnd` automatisch de EditTaskDialog openen voor die taak.
 
 ---
 
-## Technische Wijziging
+## Technische Wijzigingen
 
-### Bestand: `src/components/UpcomingDeliveriesWidget.tsx`
+### 1. UpcomingDeliveriesWidget.tsx
 
-**Huidige query (regels 29-42):**
+**Navigatie aanpassen (regel 110):**
 
+Van:
 ```typescript
-const { data: tasks, error } = await supabase
-  .from("tasks")
-  .select(`
-    id,
-    titel,
-    verwachte_leverdatum,
-    project_id,
-    project:projects(id, naam),
-    task_type:task_types(icoon)
-  `)
-  .not("verwachte_leverdatum", "is", null)
-  .gte("verwachte_leverdatum", today)
-  .order("verwachte_leverdatum", { ascending: true })
-  .limit(20);
+onClick={() => navigate(`/project/${delivery.project_id}`)}
 ```
 
-**Nieuwe query met status filter:**
-
+Naar:
 ```typescript
-const { data: tasks, error } = await supabase
-  .from("tasks")
-  .select(`
-    id,
-    titel,
-    verwachte_leverdatum,
-    project_id,
-    project:projects(id, naam),
-    task_type:task_types(icoon)
-  `)
-  .not("verwachte_leverdatum", "is", null)
-  .gte("verwachte_leverdatum", today)
-  .neq("status", "Gereed")  // ← NIEUWE REGEL: Sluit voltooide taken uit
-  .order("verwachte_leverdatum", { ascending: true })
-  .limit(20);
+onClick={() => navigate(`/project/${delivery.project_id}?task=${delivery.id}`)}
 ```
 
 ---
 
-## Wat deze wijziging doet
+### 2. ProjectTasksWithDnd.tsx
 
-| Voorheen | Na wijziging |
-|----------|--------------|
-| Alle taken met leverdatum vanaf vandaag | Alleen niet-voltooide taken met leverdatum vanaf vandaag |
-| Voltooide leveringen blijven zichtbaar | Voltooide leveringen verdwijnen automatisch |
+**Imports toevoegen:**
+
+```typescript
+import { useSearchParams } from "react-router-dom";
+import EditTaskDialog from "./EditTaskDialog";
+```
+
+**State en effect toevoegen:**
+
+```typescript
+const [searchParams, setSearchParams] = useSearchParams();
+const [editTask, setEditTask] = useState<any>(null);
+
+// Auto-open task from URL parameter
+useEffect(() => {
+  const taskId = searchParams.get('task');
+  if (taskId && displayTasks) {
+    const task = displayTasks.find(t => t.id === taskId);
+    if (task) {
+      setEditTask(task);
+      // Clear the parameter from URL
+      searchParams.delete('task');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }
+}, [searchParams, displayTasks]);
+```
+
+**EditTaskDialog toevoegen aan component return:**
+
+```tsx
+{editTask && (
+  <EditTaskDialog
+    task={editTask}
+    open={!!editTask}
+    onOpenChange={(open) => !open && setEditTask(null)}
+    onUpdate={() => {
+      refetch();
+      setEditTask(null);
+    }}
+  />
+)}
+```
+
+---
+
+## Flow Diagram
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                 Dashboard                                    │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────┐                │
+│  │ 📦 Aankomende leveringen                │                │
+│  ├─────────────────────────────────────────┤                │
+│  │ Dakpannen bestellen          Vandaag →  │ ◄── Klik       │
+│  │ Project Garage               27 jan     │                │
+│  └─────────────────────────────────────────┘                │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Navigate: /project/abc123?task=xyz789                      │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│               Project Detail (Taken tab)                     │
+├─────────────────────────────────────────────────────────────┤
+│                                      ┌────────────────────┐ │
+│  ┌──────────────────────────────┐    │ EditTaskDialog     │ │
+│  │ Taken lijst                  │    │ (auto-geopend)     │ │
+│  │ • Dakpannen bestellen ←─────────┤ │                    │ │
+│  │ • Isolatie plaatsen          │    │ Titel: Dakpannen   │ │
+│  │ • Kozijnen monteren          │    │ Status: Te doen    │ │
+│  └──────────────────────────────┘    │ Levering: 27 jan   │ │
+│                                      └────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -72,5 +129,14 @@ const { data: tasks, error } = await supabase
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/UpcomingDeliveriesWidget.tsx` | Toevoegen `.neq("status", "Gereed")` aan de query |
+| `src/components/UpcomingDeliveriesWidget.tsx` | Query parameter `?task=` toevoegen aan navigatie |
+| `src/components/project/ProjectTasksWithDnd.tsx` | useSearchParams toevoegen, EditTaskDialog state, auto-open effect |
 
+---
+
+## Voordelen
+
+1. **Directe toegang**: Gebruiker komt direct bij de taakdetails
+2. **Context behouden**: Gebruiker blijft in het project en kan andere taken bekijken
+3. **Deelbare links**: URLs met `?task=` parameter kunnen worden gedeeld
+4. **Bestaande patronen**: Gebruikt de bestaande EditTaskDialog component
