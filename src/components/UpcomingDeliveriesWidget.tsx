@@ -36,9 +36,10 @@ const UpcomingDeliveriesWidget = () => {
           project:projects(id, naam),
           task_type:task_types(icoon)
         `)
-        .not("verwachte_leverdatum", "is", null)
-        .gte("verwachte_leverdatum", today)
-        .order("verwachte_leverdatum", { ascending: true })
+      .not("verwachte_leverdatum", "is", null)
+      .gte("verwachte_leverdatum", today)
+      .neq("status", "Gereed")
+      .order("verwachte_leverdatum", { ascending: true })
         .limit(20);
 
       if (error) throw error;
