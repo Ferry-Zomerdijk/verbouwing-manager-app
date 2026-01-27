@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Trash2, MessageSquare, Pencil, X } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Trash2, MessageSquare, Pencil, X, Package } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
@@ -32,6 +32,7 @@ interface Task {
   project_id: string;
   latest_update?: string | null;
   type_id: string | null;
+  verwachte_leverdatum: string | null;
   task_type: {
     id: string;
     naam: string;
@@ -511,6 +512,13 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
                       {task.beschrijving && (
                         <span className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                           {task.beschrijving}
+                        </span>
+                      )}
+                      {/* Verwachte leverdatum voor Kopen taken */}
+                      {task.task_type?.icoon === "shopping-cart" && task.verwachte_leverdatum && (
+                        <span className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                          <Package className="w-3 h-3" />
+                          Levering: {format(new Date(task.verwachte_leverdatum), "d MMM yyyy", { locale: nl })}
                         </span>
                       )}
                     </div>

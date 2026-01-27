@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronDown, MapPin, User, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Calendar, ChevronDown, MapPin, User, Pencil, Trash2, MessageSquare, Package } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useSwipeable } from "react-swipeable";
@@ -185,6 +185,14 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
                 <span className="truncate">{task.verantwoordelijke}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Verwachte leverdatum voor Kopen taken */}
+        {task.task_type?.icoon === "shopping-cart" && task.verwachte_leverdatum && (
+          <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mt-2">
+            <Package className="w-4 h-4 shrink-0" />
+            <span>Levering: {format(new Date(task.verwachte_leverdatum), "d MMM yyyy", { locale: nl })}</span>
           </div>
         )}
 
