@@ -40,8 +40,9 @@ export const KeyboardAwareDrawerContent = React.forwardRef<
         top: `${viewportOffsetTop}px`,
         bottom: 'auto',
         transform: 'none',
-      }
+    }
     : {
+        height: '95dvh',
         maxHeight: '95dvh',
       };
 
