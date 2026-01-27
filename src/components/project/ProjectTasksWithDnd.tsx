@@ -116,7 +116,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       // Fetch tasks with task_type join
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("*, begindatum, deel_van_huis, type_id, task_type:task_types(id, naam, kleur, icoon)")
+        .select("*, begindatum, deel_van_huis, type_id, verwachte_leverdatum, task_type:task_types(id, naam, kleur, icoon)")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       

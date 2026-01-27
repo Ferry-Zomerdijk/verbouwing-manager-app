@@ -1172,6 +1172,7 @@ export type Database = {
           type_id: string | null
           updated_at: string | null
           verantwoordelijke: string | null
+          verwachte_leverdatum: string | null
         }
         Insert: {
           begindatum?: string | null
@@ -1188,6 +1189,7 @@ export type Database = {
           type_id?: string | null
           updated_at?: string | null
           verantwoordelijke?: string | null
+          verwachte_leverdatum?: string | null
         }
         Update: {
           begindatum?: string | null
@@ -1204,6 +1206,7 @@ export type Database = {
           type_id?: string | null
           updated_at?: string | null
           verantwoordelijke?: string | null
+          verwachte_leverdatum?: string | null
         }
         Relationships: [
           {

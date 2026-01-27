@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
 import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
-import { ImagePlus, X, Loader2, ChevronLeft, ChevronRight, Check, Calendar } from "lucide-react";
+import { ImagePlus, X, Loader2, ChevronLeft, ChevronRight, Check, Calendar, Package } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
     verantwoordelijke: "",
     deel_van_huis: "",
     type_id: "",
+    verwachte_leverdatum: "",
   });
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
@@ -166,6 +167,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
       verantwoordelijke: string | null;
       deel_van_huis: string | null;
       type_id: string | null;
+      verwachte_leverdatum: string | null;
     }) => {
       if (!navigator.onLine) {
         const tempId = crypto.randomUUID();
@@ -227,6 +229,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
         verantwoordelijke: "",
         deel_van_huis: "",
         type_id: "",
+        verwachte_leverdatum: "",
       });
       setPendingImages([]);
     }, 300);
@@ -250,6 +253,10 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
       return;
     }
 
+    // Get selected task type to check if it's "Kopen"
+    const selectedTaskType = taskTypes.find(t => t.id === formData.type_id);
+    const isKopenType = selectedTaskType?.naam === "Kopen";
+
     createTaskMutation.mutate({
       project_id: projectId,
       titel: formData.titel,
@@ -261,6 +268,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
       verantwoordelijke: formData.verantwoordelijke || null,
       deel_van_huis: formData.deel_van_huis || null,
       type_id: formData.type_id || null,
+      verwachte_leverdatum: isKopenType && formData.verwachte_leverdatum ? formData.verwachte_leverdatum : null,
     });
   };
 
@@ -540,6 +548,27 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
                         </p>
                       )}
                     </div>
+
+                    {/* Verwachte leverdatum - alleen voor Kopen type */}
+                    {taskTypes.find(t => t.id === formData.type_id)?.naam === "Kopen" && (
+                      <div className="space-y-2">
+                        <span className="text-sm text-muted-foreground">Verwachte leverdatum</span>
+                        <div className="relative">
+                          <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                          <Input
+                            type="date"
+                            value={formData.verwachte_leverdatum}
+                            onChange={(e) => setFormData({ ...formData, verwachte_leverdatum: e.target.value })}
+                            className="h-14 text-base pl-11 pr-3"
+                          />
+                        </div>
+                        {formData.verwachte_leverdatum && (
+                          <p className="text-xs text-muted-foreground pl-1">
+                            {formatDateDisplay(formData.verwachte_leverdatum)}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })()}

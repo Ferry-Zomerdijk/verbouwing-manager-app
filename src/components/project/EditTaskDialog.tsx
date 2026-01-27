@@ -140,6 +140,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     verantwoordelijke: "",
     deel_van_huis: "",
     type_id: "",
+    verwachte_leverdatum: "",
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [initialImageUrls, setInitialImageUrls] = useState<string[]>([]);
@@ -175,6 +176,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       verantwoordelijke: task.verantwoordelijke || "",
       deel_van_huis: task.deel_van_huis || "",
       type_id: task.type_id || "",
+      verwachte_leverdatum: task.verwachte_leverdatum || "",
     };
 
     setFormData(newFormData);
@@ -202,7 +204,8 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       formData.prioriteit !== initialFormData.prioriteit ||
       formData.verantwoordelijke !== initialFormData.verantwoordelijke ||
       formData.deel_van_huis !== initialFormData.deel_van_huis ||
-      formData.type_id !== initialFormData.type_id;
+      formData.type_id !== initialFormData.type_id ||
+      formData.verwachte_leverdatum !== initialFormData.verwachte_leverdatum;
 
     const imagesChanged = JSON.stringify(imageUrls) !== JSON.stringify(initialImageUrls);
 
@@ -287,6 +290,10 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     }
 
 
+    // Get selected task type to check if it's "Kopen"
+    const selectedTaskType = taskTypes.find(t => t.id === formData.type_id);
+    const isKopenType = selectedTaskType?.naam === "Kopen";
+
     updateTaskMutation.mutate({
       titel: formData.titel,
       beschrijving: formData.beschrijving || null,
@@ -298,6 +305,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       deel_van_huis: formData.deel_van_huis || null,
       type_id: formData.type_id || null,
       image_urls: imageUrls.length > 0 ? imageUrls : null,
+      verwachte_leverdatum: isKopenType && formData.verwachte_leverdatum ? formData.verwachte_leverdatum : null,
     });
   };
 
@@ -375,7 +383,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
           <Label htmlFor="type">Type taak</Label>
           <Select
             value={formData.type_id}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, type_id: value }))}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, type_id: value, verwachte_leverdatum: "" }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecteer type..." />
@@ -392,6 +400,18 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
             </SelectContent>
           </Select>
         </div>
+
+        {/* Verwachte leverdatum - alleen voor Kopen type */}
+        {taskTypes.find(t => t.id === formData.type_id)?.naam === "Kopen" && (
+          <div>
+            <Label>Verwachte leverdatum</Label>
+            <DatePicker
+              value={formData.verwachte_leverdatum}
+              onChange={(value) => setFormData((prev) => ({ ...prev, verwachte_leverdatum: value }))}
+              placeholder="Optioneel"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -46,6 +46,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     verantwoordelijke: "",
     deel_van_huis: "",
     type_id: "",
+    verwachte_leverdatum: "",
   });
 
   const isMobile = useIsMobile();
@@ -217,6 +218,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       verantwoordelijke: string | null;
       deel_van_huis: string | null;
       type_id: string | null;
+      verwachte_leverdatum: string | null;
     }) => {
       // Offline: genereer lokaal ID en queue
       if (!navigator.onLine) {
@@ -289,6 +291,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         verantwoordelijke: "",
         deel_van_huis: "",
         type_id: "",
+        verwachte_leverdatum: "",
       });
       
       setPendingImages([]);
@@ -303,6 +306,10 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     }
 
 
+    // Get selected task type to check if it's "Kopen"
+    const selectedTaskType = taskTypes.find(t => t.id === formData.type_id);
+    const isKopenType = selectedTaskType?.naam === "Kopen";
+
     createTaskMutation.mutate({
       project_id: projectId,
       titel: formData.titel,
@@ -314,6 +321,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       verantwoordelijke: formData.verantwoordelijke || null,
       deel_van_huis: formData.deel_van_huis || null,
       type_id: formData.type_id || null,
+      verwachte_leverdatum: isKopenType && formData.verwachte_leverdatum ? formData.verwachte_leverdatum : null,
     });
   };
 
@@ -419,7 +427,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           <Label htmlFor="type">Type taak</Label>
           <Select
             value={formData.type_id}
-            onValueChange={(value) => setFormData({ ...formData, type_id: value })}
+            onValueChange={(value) => setFormData({ ...formData, type_id: value, verwachte_leverdatum: "" })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecteer type..." />
@@ -436,6 +444,18 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             </SelectContent>
           </Select>
         </div>
+
+        {/* Verwachte leverdatum - alleen voor Kopen type */}
+        {taskTypes.find(t => t.id === formData.type_id)?.naam === "Kopen" && (
+          <div>
+            <Label>Verwachte leverdatum</Label>
+            <DatePicker
+              value={formData.verwachte_leverdatum}
+              onChange={(value) => setFormData({ ...formData, verwachte_leverdatum: value })}
+              placeholder="Optioneel"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
