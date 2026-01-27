@@ -1,148 +1,252 @@
 
-# Plan: Tooltips, Kanban Iconen en Status Filter
+# Plan: iPhone Toetsenbord-probleem bij Taak Toevoegen Oplossen
 
-## Overzicht
+## Analyse van het Probleem
 
-Dit plan implementeert drie verbeteringen aan de takenweergave:
+Op basis van de screenshots is het volgende zichtbaar:
 
-1. **Tooltips bij taaktype iconen in lijstweergave** - Reeds geïmplementeerd! ✅
-2. **Taaktype icoon in Kanban kaarten** - Reeds geïmplementeerd! ✅  
-3. **Status filter toevoegen aan Filters panel** - Moet nog worden geïmplementeerd
+| Screenshot | Observatie |
+|------------|------------|
+| **Lovable preview** | Header "Nieuwe taak" + stap-indicator + alle formuliervelden volledig zichtbaar |
+| **iPhone (zonder toetsenbord)** | Bovenste deel (header met titel) is afgesneden - alleen de datum shortcuts en verantwoordelijken zichtbaar |
+| **iPhone (met toetsenbord)** | Header is nog wel zichtbaar, maar content wordt naar boven geduwd |
+
+### Oorzaak van het Probleem
+
+Het probleem heeft **drie samenhangende oorzaken**:
+
+1. **`visualViewport.height` positioning**: iOS Safari past de drawer niet correct aan aan de **top** van het viewport wanneer het toetsenbord opent. De huidige implementatie past alleen `maxHeight` aan, maar niet de **positie**.
+
+2. **iOS Visual Viewport offset**: Wanneer het toetsenbord opent op iOS, verandert `visualViewport.offsetTop` - dit moet worden meegenomen in de positioning van de drawer.
+
+3. **Conflict met native `position: fixed`**: De drawer is `fixed` aan de onderkant, maar iOS Safari behandelt het visual viewport anders, waardoor de drawer naar boven wordt "geduwd" buiten het zichtbare gebied.
+
+### Technisch Bewijs
+```typescript
+// Huidige implementatie - past alleen hoogte aan, niet positie:
+const maxHeight = isKeyboardOpen 
+  ? `${viewportHeight - 20}px` 
+  : '95dvh';
+```
+
+De `visualViewport.offsetTop` wordt niet gebruikt, waardoor de drawer de offset mist die nodig is om correct uitgelijnd te blijven.
 
 ---
 
-## Analyse van Huidige Situatie
+## Oplossing
 
-### 1. Tooltips in Lijstweergave
-**Status: Al geïmplementeerd** ✅
-
-In `TaskListView.tsx` (regels 478-501) worden tooltips al correct getoond:
-```typescript
-<TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <span className="inline-flex items-center justify-center">
-        <IconComponent className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} />
-      </span>
-    </TooltipTrigger>
-    <TooltipContent>
-      {task.task_type.naam}
-    </TooltipContent>
-  </Tooltip>
-</TooltipProvider>
-```
-
-### 2. Iconen in Kanban Kaarten
-**Status: Al geïmplementeerd** ✅
-
-In `TaskCard.tsx` (regels 129-137) worden iconen al getoond:
-```typescript
-{task.task_type && (() => {
-  const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
-  return (
-    <IconComponent 
-      className={`h-4 w-4 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
-      aria-label={task.task_type.naam}
-    />
-  );
-})()}
-```
-
-### 3. Status Filter
-**Status: Ontbreekt in de UI** ❌
-
-De filterlogica bestaat al (`filters.statuses`, `toggleStatus` functie), maar de UI-checkboxes om statussen te selecteren zijn niet zichtbaar in het filter panel.
+### Strategie
+We passen de `KeyboardAwareDrawerContent` component aan om ook de **positie** van de drawer dynamisch aan te passen op basis van de `visualViewport.offsetTop` waarde, en voegen een safe area padding toe aan de bovenkant.
 
 ---
 
 ## Technische Wijzigingen
 
-### Bestand: `src/components/project/TaskFilters.tsx`
+### Bestand 1: `src/hooks/useVisualViewport.tsx`
 
-#### Toevoegen Status Filter Sectie
-Na de Prioriteit sectie (regel 277) een nieuwe sectie toevoegen voor Status filtering:
-
-```typescript
-{/* Status */}
-<div className="space-y-2">
-  <Label>Status</Label>
-  <div className="flex flex-col gap-2">
-    {ALL_STATUSES.map((status) => (
-      <div key={status} className="flex items-center gap-2">
-        <Checkbox
-          id={`status-${status}`}
-          checked={filters.statuses.includes(status)}
-          onCheckedChange={() => toggleStatus(status)}
-        />
-        <label
-          htmlFor={`status-${status}`}
-          className="text-sm cursor-pointer"
-        >
-          {status}
-        </label>
-      </div>
-    ))}
-  </div>
-</div>
-```
-
-#### Toevoegen Status Chips bij Actieve Filters
-Na de prioriteit chips (rond regel 182) ook chips tonen voor uitgesloten statussen:
+**Toevoegen van `offsetTop` tracking:**
 
 ```typescript
-{/* Status chips - toon alleen uitgesloten statussen */}
-{ALL_STATUSES.filter(s => !filters.statuses.includes(s)).map(excludedStatus => (
-  <Badge 
-    key={`status-${excludedStatus}`} 
-    variant="secondary" 
-    className="gap-1 cursor-pointer hover:bg-secondary/80" 
-    onClick={() => toggleStatus(excludedStatus)}
-  >
-    Zonder: {excludedStatus}
-    <X className="w-3 h-3" />
-  </Badge>
-))}
+import { useState, useEffect } from 'react';
+
+export function useVisualViewport() {
+  const [viewportHeight, setViewportHeight] = useState<number>(
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
+  const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) {
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    const initialHeight = window.innerHeight;
+
+    const handleResize = () => {
+      const currentHeight = viewport.height;
+      setViewportHeight(currentHeight);
+      setViewportOffsetTop(viewport.offsetTop);
+      // Keyboard is open if viewport height is significantly smaller than initial
+      setIsKeyboardOpen(currentHeight < initialHeight * 0.75);
+    };
+
+    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('scroll', handleResize);
+    
+    // Initial check
+    handleResize();
+
+    return () => {
+      viewport.removeEventListener('resize', handleResize);
+      viewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
+
+  return { viewportHeight, viewportOffsetTop, isKeyboardOpen };
+}
 ```
+
+---
+
+### Bestand 2: `src/components/ui/keyboard-aware-drawer.tsx`
+
+**Aanpassen van positionering wanneer toetsenbord open is:**
+
+```typescript
+import * as React from "react";
+import { DrawerContent } from "./drawer";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
+import { cn } from "@/lib/utils";
+
+interface KeyboardAwareDrawerContentProps 
+  extends React.ComponentPropsWithoutRef<typeof DrawerContent> {
+  children: React.ReactNode;
+}
+
+export const KeyboardAwareDrawerContent = React.forwardRef<
+  HTMLDivElement,
+  KeyboardAwareDrawerContentProps
+>(({ className, children, style, ...props }, ref) => {
+  const { viewportHeight, viewportOffsetTop, isKeyboardOpen } = useVisualViewport();
+
+  // Scroll focused input into view when keyboard opens
+  React.useEffect(() => {
+    if (!isKeyboardOpen) return;
+    
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLInputElement || 
+        activeElement instanceof HTMLTextAreaElement) {
+      setTimeout(() => {
+        activeElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 100);
+    }
+  }, [isKeyboardOpen]);
+
+  // Calculate height and position based on visual viewport
+  const dynamicStyles: React.CSSProperties = isKeyboardOpen
+    ? {
+        // Gebruik de visual viewport hoogte minus wat padding
+        height: `${viewportHeight - 10}px`,
+        maxHeight: `${viewportHeight - 10}px`,
+        // Positioneer de drawer op de top van het visual viewport
+        top: `${viewportOffsetTop}px`,
+        bottom: 'auto',
+        transform: 'none',
+      }
+    : {
+        maxHeight: '95dvh',
+      };
+
+  return (
+    <DrawerContent
+      ref={ref}
+      className={cn(
+        "drawer-content-ios flex flex-col",
+        isKeyboardOpen && "!fixed !inset-x-0",
+        className
+      )}
+      style={{ 
+        ...dynamicStyles,
+        ...style 
+      }}
+      {...props}
+    >
+      {children}
+    </DrawerContent>
+  );
+});
+
+KeyboardAwareDrawerContent.displayName = "KeyboardAwareDrawerContent";
+```
+
+---
+
+### Bestand 3: `src/index.css`
+
+**Toevoegen van extra iOS keyboard fixes:**
+
+```css
+/* iOS Virtual Keyboard fixes - enhanced */
+@supports (-webkit-touch-callout: none) {
+  /* Existing rules... */
+  
+  /* Fix drawer positioning when keyboard is open */
+  .drawer-content-ios.keyboard-open {
+    position: fixed !important;
+    transition: all 0.25s ease-out;
+  }
+  
+  /* Prevent content from scrolling behind drawer */
+  .drawer-content-ios input:focus,
+  .drawer-content-ios textarea:focus {
+    position: relative;
+    z-index: 10;
+  }
+}
+```
+
+---
+
+### Bestand 4: `src/components/project/MobileTaskWizard.tsx`
+
+**Toevoegen van padding-top voor safe area op de scrollable content:**
+
+In het scrollable content area rond regel 362:
+
+```typescript
+{/* Scrollable content */}
+<div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pt-safe">
+```
+
+En we voegen een CSS utility class toe voor `pt-safe` of gebruiken inline style met `env(safe-area-inset-top)`.
 
 ---
 
 ## Visueel Resultaat
 
-Het filter panel zal er als volgt uitzien:
-
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│ 🔍 Filters                                        [Reset]  ▼   │
-├─────────────────────────────────────────────────────────────────┤
-│ Chips: [Zonder: Gereed ✕] [Zonder: Hoog ✕] [🛒 Kopen ✕]         │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ 🔍 Zoek op titel of beschrijving...                  ✕ │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                 │
-│  Prioriteit        │  Status           │  Taaktype              │
-│  ☑ Laag            │  ☑ Te doen        │  ☑ 🛒 Kopen            │
-│  ☑ Middel          │  ☑ Bezig          │  ☑ ✓ Te doen           │
-│  ☑ Hoog            │  ☐ Gereed         │  ☑ 💬 Overleg          │
-│                    │                   │  ...                   │
-│                                                                 │
-│  Verantwoordelijke │  Deel van huis                             │
-│  [Zoek op naam...] │  [Zoek locatie...]                         │
-│  ...               │                                            │
-└─────────────────────────────────────────────────────────────────┘
+VOOR (iPhone):                    NA (iPhone):
+┌──────────────────────┐          ┌──────────────────────┐
+│ (Afgesneden header)  │          │ ← Nieuwe taak        │
+│                      │          │   Stap 2 van 3       │
+│ Vandaag   +1 week    │          │   ● ━━ ○             │
+│                      │          │                      │
+│ Wie is verantw...?   │          │ Wanneer?             │
+│ [Arjan] [Bouwteam]   │          │ Startdatum           │
+│                      │          │ [📅 dd-mm-jjjj    ]  │
+├──────────────────────┤          │ Vandaag   +1 week    │
+│ [Annuleren][Volgende]│          │                      │
+├──────────────────────┤          │ Wie is verantw...?   │
+│   ┌─────────────┐    │          ├──────────────────────┤
+│   │  TOETSENBORD│    │          │ [Annuleren][Volgende]│
+│   └─────────────┘    │          ├──────────────────────┤
+└──────────────────────┘          │   ┌─────────────┐    │
+                                  │   │  TOETSENBORD│    │
+                                  │   └─────────────┘    │
+                                  └──────────────────────┘
 ```
 
 ---
 
-## Samenvatting Wijzigingen
+## Bestanden te Wijzigen
 
-| Onderdeel | Status | Actie |
-|-----------|--------|-------|
-| Tooltips bij taaktype iconen | ✅ Werkt | Geen wijziging nodig |
-| Iconen in Kanban kaarten | ✅ Werkt | Geen wijziging nodig |
-| Status filter UI | ❌ Ontbreekt | Checkboxes + chips toevoegen |
+| Bestand | Wijziging |
+|---------|-----------|
+| `src/hooks/useVisualViewport.tsx` | Toevoegen `viewportOffsetTop` tracking |
+| `src/components/ui/keyboard-aware-drawer.tsx` | Dynamische positie + hoogte op basis van visual viewport |
+| `src/index.css` | Extra iOS-specifieke CSS fixes voor drawer positioning |
+| `src/components/project/MobileTaskWizard.tsx` | Safe area padding toevoegen aan scrollable content |
 
-### Bestand te Wijzigen
-- `src/components/project/TaskFilters.tsx`
-  - Status checkboxes toevoegen in grid (na Prioriteit)
-  - Status chips toevoegen bij actieve filters
+---
+
+## Belangrijke Overwegingen
+
+- De fix is **iOS-specifiek** door gebruik van `@supports (-webkit-touch-callout: none)`
+- Android scrolling blijft ongewijzigd (werkte al correct)
+- De `visualViewport` API is breed ondersteund in moderne browsers (iOS Safari 13+)
+- Fallback naar standaard gedrag wanneer `visualViewport` niet beschikbaar is
