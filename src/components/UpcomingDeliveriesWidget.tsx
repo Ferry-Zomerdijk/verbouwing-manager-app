@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Calendar, ArrowRight } from "lucide-react";
-import { format, startOfWeek, endOfWeek, isToday, isTomorrow, parseISO } from "date-fns";
+import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,14 +20,12 @@ interface DeliveryTask {
 
 const UpcomingDeliveriesWidget = () => {
   const navigate = useNavigate();
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
 
   const { data: deliveries, isLoading } = useQuery({
-    queryKey: ["upcoming-deliveries", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["upcoming-deliveries"],
     queryFn: async () => {
-      // Get all tasks with type "Kopen" and a delivery date this week
+      const today = format(new Date(), "yyyy-MM-dd");
+      
       const { data: tasks, error } = await supabase
         .from("tasks")
         .select(`
@@ -39,16 +37,16 @@ const UpcomingDeliveriesWidget = () => {
           task_type:task_types(icoon)
         `)
         .not("verwachte_leverdatum", "is", null)
-        .gte("verwachte_leverdatum", format(weekStart, "yyyy-MM-dd"))
-        .lte("verwachte_leverdatum", format(weekEnd, "yyyy-MM-dd"))
-        .order("verwachte_leverdatum", { ascending: true });
+        .gte("verwachte_leverdatum", today)
+        .order("verwachte_leverdatum", { ascending: true })
+        .limit(20);
 
       if (error) throw error;
       
-      // Filter only "Kopen" tasks (shopping-cart icon)
-      return (tasks || []).filter(
-        (task: any) => task.task_type?.icoon === "shopping-cart"
-      ) as DeliveryTask[];
+      // Filter only "Kopen" tasks and take max 5
+      return (tasks || [])
+        .filter((task: any) => task.task_type?.icoon === "shopping-cart")
+        .slice(0, 5) as DeliveryTask[];
     },
   });
 
@@ -94,7 +92,7 @@ const UpcomingDeliveriesWidget = () => {
           <div className="p-1.5 rounded-lg bg-blue-500/10">
             <Package className="w-4 h-4 text-blue-500" />
           </div>
-          Leveringen deze week
+          Aankomende leveringen
           {hasDeliveries && (
             <span className="ml-auto text-sm font-normal text-muted-foreground">
               {deliveries.length} {deliveries.length === 1 ? "item" : "items"}
@@ -105,7 +103,7 @@ const UpcomingDeliveriesWidget = () => {
       <CardContent>
         {hasDeliveries ? (
           <div className="space-y-2">
-            {deliveries.slice(0, 5).map((delivery) => (
+            {deliveries.map((delivery) => (
               <button
                 key={delivery.id}
                 onClick={() => navigate(`/project/${delivery.project_id}`)}
@@ -130,17 +128,12 @@ const UpcomingDeliveriesWidget = () => {
                 </div>
               </button>
             ))}
-            {deliveries.length > 5 && (
-              <p className="text-xs text-muted-foreground text-center pt-1">
-                +{deliveries.length - 5} meer
-              </p>
-            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-4 text-center">
             <Calendar className="w-8 h-8 text-muted-foreground/50 mb-2" />
             <p className="text-sm text-muted-foreground">
-              Geen leveringen deze week
+              Geen geplande leveringen
             </p>
           </div>
         )}
