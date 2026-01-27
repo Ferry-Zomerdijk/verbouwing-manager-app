@@ -359,7 +359,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
         </DrawerHeader>
 
         {/* Scrollable content */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-2 pt-safe">
           {/* Step 1: Basis */}
           {currentStep === 1 && (
             <div className="space-y-5">
