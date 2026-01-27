@@ -107,7 +107,7 @@ const UpcomingDeliveriesWidget = () => {
             {deliveries.map((delivery) => (
               <button
                 key={delivery.id}
-                onClick={() => navigate(`/project/${delivery.project_id}`)}
+                onClick={() => navigate(`/project/${delivery.project_id}?task=${delivery.id}`)}
                 className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors text-left group"
               >
                 <div className="flex-1 min-w-0">

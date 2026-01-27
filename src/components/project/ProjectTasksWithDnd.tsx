@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { TaskFilters, TaskFiltersType } from "./TaskFilters";
 import { TaskListView } from "./TaskListView";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileTaskList from "./MobileTaskList";
+import EditTaskDialog from "./EditTaskDialog";
 
 interface ProjectTasksWithDndProps {
   projectId: string;
@@ -39,7 +41,9 @@ const STORAGE_KEYS = {
 };
 
 const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = false, publicTasks }: ProjectTasksWithDndProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editTaskFromUrl, setEditTaskFromUrl] = useState<any>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -206,6 +210,20 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
     }
   }, [filters, readOnly]);
+
+  // Auto-open task from URL parameter
+  useEffect(() => {
+    const taskId = searchParams.get('task');
+    if (taskId && displayTasks) {
+      const task = displayTasks.find(t => t.id === taskId);
+      if (task) {
+        setEditTaskFromUrl(task);
+        // Clear the parameter from URL
+        searchParams.delete('task');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, displayTasks, setSearchParams]);
 
   // Get unique values for filter dropdowns
   const availableVerantwoordelijken = useMemo(() => {
@@ -560,6 +578,19 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
         projectId={projectId}
         onSuccess={() => refetch()}
       />
+
+      {editTaskFromUrl && (
+        <EditTaskDialog
+          task={editTaskFromUrl}
+          open={!!editTaskFromUrl}
+          onOpenChange={(open) => !open && setEditTaskFromUrl(null)}
+          onSuccess={() => {
+            refetch();
+            setEditTaskFromUrl(null);
+          }}
+          availableDelenVanHuis={availableDelenVanHuis}
+        />
+      )}
     </div>
   );
 };
