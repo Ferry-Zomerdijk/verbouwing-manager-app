@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check, Bell, Info, RefreshCw, Download, CheckCircle2 } from "lucide-react";
+import { User, Lock, Mail, CreditCard, Crown, RotateCcw, KeyRound, Trash2, Eye, EyeOff, Check, Bell, Info, RefreshCw, Download, CheckCircle2, ChevronDown, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 import { NotificationSettings } from "@/components/NotificationSettings";
-import { APP_VERSION, getFormattedBuildDate, getPlatformInfo } from "@/lib/version";
+import { getFullVersion, getFormattedBuildDate, getPlatformInfo, getLatestChangelog } from "@/lib/version";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAppUpdate } from "@/hooks/useAppUpdate";
 
 interface AccountSettingsDialogProps {
@@ -506,7 +507,7 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="text-muted-foreground">Versie</div>
-            <div className="font-medium">{APP_VERSION}</div>
+            <div className="font-medium font-mono">{getFullVersion()}</div>
             
             <div className="text-muted-foreground">Build</div>
             <div className="font-medium">{getFormattedBuildDate()}</div>
@@ -514,6 +515,34 @@ const AccountSettingsDialog = ({ open, onOpenChange, onRestartOnboarding }: Acco
             <div className="text-muted-foreground">Platform</div>
             <div className="font-medium">{platformInfo.displayName}</div>
           </div>
+
+          {/* Wat is nieuw sectie */}
+          {getLatestChangelog() && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors group">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Wat is nieuw in v{getLatestChangelog()!.version}</span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                  <ul className="text-sm space-y-1">
+                    {getLatestChangelog()!.changes.map((change, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>{change}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    {getLatestChangelog()!.date}
+                  </p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {updateAvailable ? (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
