@@ -36,6 +36,7 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 import AiUsageWidget from "@/components/AiUsageWidget";
 import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
+import UpcomingDeliveriesWidget from "@/components/UpcomingDeliveriesWidget";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Dashboard = () => {
@@ -296,10 +297,11 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* AI Usage Widget & Upgrade Banner */}
+        {/* Widgets Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <AiUsageWidget />
           <TodayAttendanceWidget />
+          <UpcomingDeliveriesWidget />
           
           {/* Upgrade Banner for Free and Basis Users */}
           {(currentTier === "free" || currentTier === "basis") && showUpgradeBanner && (
