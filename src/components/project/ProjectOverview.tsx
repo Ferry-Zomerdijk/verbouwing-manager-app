@@ -1,15 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Euro, TrendingUp, CheckCircle2, PartyPopper, RefreshCw, Target, Clock } from "lucide-react";
+import { Euro, TrendingUp, PartyPopper, RefreshCw } from "lucide-react";
 import RecentTaskActivity from "./RecentTaskActivity";
-import { format } from "date-fns";
-import { nl } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getRandomWisdom } from "@/lib/builderJokes";
+import ProjectTodayAttendanceWidget from "./ProjectTodayAttendanceWidget";
+import ProjectUpcomingDeliveriesWidget from "./ProjectUpcomingDeliveriesWidget";
 
 interface ProjectOverviewProps {
   project: any;
@@ -81,7 +80,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false, readOnly =
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats Grid with Modern Cards */}
-      <div className={`grid grid-cols-2 ${isAdminOrOwner ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-4`}>
+      <div className={`grid grid-cols-1 ${isAdminOrOwner ? 'sm:grid-cols-2' : ''} gap-3 sm:gap-4`}>
         
         {/* Progress Card */}
         <Card className={`shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-muted/20 border-border/50 ${isComplete ? 'from-green-500/5 to-green-500/10 border-green-500/30' : ''}`}>
@@ -138,68 +137,12 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false, readOnly =
             </CardContent>
           </Card>
         )}
+      </div>
 
-        {/* Start Date Card */}
-        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-indigo-500/5 border-border/50">
-          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-indigo-500/5 group-hover:bg-indigo-500/10 group-hover:scale-110 transition-all duration-500" />
-          <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-indigo-500/3 group-hover:bg-indigo-500/8 transition-all duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Startdatum</CardTitle>
-            <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500/15 shadow-sm group-hover:shadow transition-shadow">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 relative z-10">
-            <div className="text-2xl sm:text-3xl font-bold">
-              {project.startdatum
-                ? format(new Date(project.startdatum), "dd MMM", { locale: nl })
-                : "N/A"}
-            </div>
-            {project.startdatum && (
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                {format(new Date(project.startdatum), "yyyy", { locale: nl })}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Status Card */}
-        <Card className="shadow-sm hover:shadow-md overflow-hidden relative group transition-all duration-300 bg-gradient-to-br from-background via-background to-emerald-500/5 border-border/50">
-          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-emerald-500/5 group-hover:bg-emerald-500/10 group-hover:scale-110 transition-all duration-500" />
-          <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-emerald-500/3 group-hover:bg-emerald-500/8 transition-all duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 relative z-10">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Status</CardTitle>
-            <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/15 shadow-sm group-hover:shadow transition-shadow">
-              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
-            </div>
-          </CardHeader>
-          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0 relative z-10">
-            {isAdminOrOwner ? (
-              <Select
-                value={project.status}
-                onValueChange={handleStatusUpdate}
-                disabled={statusUpdating}
-              >
-                <SelectTrigger className="text-2xl sm:text-3xl font-bold border-none p-0 h-auto hover:text-primary transition-colors [&>svg]:hidden">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Gepland">Gepland</SelectItem>
-                  <SelectItem value="Lopend">Lopend</SelectItem>
-                  <SelectItem value="Afgerond">Afgerond</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="text-2xl sm:text-3xl font-bold">{project.status}</div>
-            )}
-            {project.einddatum && (
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Einde: {format(new Date(project.einddatum), "dd MMM yyyy", { locale: nl })}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      {/* Attendance & Deliveries Widgets */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <ProjectTodayAttendanceWidget projectId={project.id} />
+        <ProjectUpcomingDeliveriesWidget projectId={project.id} />
       </div>
 
       {/* Bouwer Wijsheid - Modern Card */}
