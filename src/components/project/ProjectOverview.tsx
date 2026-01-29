@@ -140,7 +140,7 @@ const ProjectOverview = ({ project, onUpdate, isAdminOrOwner = false, readOnly =
       </div>
 
       {/* Attendance & Deliveries Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 relative z-10">
         <ProjectTodayAttendanceWidget projectId={project.id} />
         <ProjectUpcomingDeliveriesWidget projectId={project.id} />
       </div>
