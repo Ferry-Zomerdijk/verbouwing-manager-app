@@ -1,142 +1,152 @@
 
-# Plan: Snelle Link naar Taak Details
+
+# Plan: Widgets Toevoegen aan Project Overzicht
 
 ## Overzicht
 
-De leveringen widget wordt aangepast zodat bij klikken direct de taakdetails worden geopend in plaats van alleen naar het project te navigeren.
+De "Overzicht" pagina binnen een project wordt aangepast om dezelfde widgets te tonen als het dashboard:
+- **Vandaag aanwezig** - Toont wie er vandaag aanwezig is (project-specifiek)
+- **Aankomende leveringen** - Toont geplande leveringen (project-specifiek)
+
+De bestaande **Startdatum** en **Status** widgets worden vervangen.
 
 ---
 
 ## Huidige Situatie
 
-| Onderdeel | Status |
-|-----------|--------|
-| Widget click handler | Navigeert naar `/project/{project_id}` |
-| Taakdetails | Worden geopend via EditTaskDialog binnen ProjectTasksWithDnd |
-| URL-ondersteuning voor taken | Niet aanwezig |
-
----
-
-## Oplossing
-
-Navigeer naar het project met een query parameter `?task={task_id}`, en laat `ProjectTasksWithDnd` automatisch de EditTaskDialog openen voor die taak.
+| Widget | Status |
+|--------|--------|
+| Voortgang | Behouden |
+| Budget | Behouden (alleen voor admin/owner) |
+| Startdatum | Wordt vervangen |
+| Status | Wordt vervangen |
+| Wijsheid van de dag | Behouden |
+| Recente taakactiviteit | Behouden |
 
 ---
 
 ## Technische Wijzigingen
 
-### 1. UpcomingDeliveriesWidget.tsx
+### 1. Nieuwe Widget: ProjectTodayAttendanceWidget
 
-**Navigatie aanpassen (regel 110):**
+**Nieuw bestand:** `src/components/project/ProjectTodayAttendanceWidget.tsx`
 
-Van:
+Dit is een project-specifieke versie van `TodayAttendanceWidget.tsx`:
+- Filtert op `project_id` in plaats van alle projecten te tonen
+- Accepteert `projectId` als prop
+- Toont alleen aanwezigen voor dit specifieke project
+- Verwijdert de projectnaam uit de weergave (niet nodig binnen projectcontext)
+
 ```typescript
-onClick={() => navigate(`/project/${delivery.project_id}`)}
-```
-
-Naar:
-```typescript
-onClick={() => navigate(`/project/${delivery.project_id}?task=${delivery.id}`)}
+interface ProjectTodayAttendanceWidgetProps {
+  projectId: string;
+}
 ```
 
 ---
 
-### 2. ProjectTasksWithDnd.tsx
+### 2. Nieuwe Widget: ProjectUpcomingDeliveriesWidget
 
-**Imports toevoegen:**
+**Nieuw bestand:** `src/components/project/ProjectUpcomingDeliveriesWidget.tsx`
+
+Dit is een project-specifieke versie van `UpcomingDeliveriesWidget.tsx`:
+- Filtert op `project_id` in plaats van alle projecten te tonen
+- Accepteert `projectId` als prop
+- Verwijdert de projectnaam uit de weergave
+- Behoudt alle bestaande functionaliteit (achterstallig markering, navigatie naar taak)
 
 ```typescript
-import { useSearchParams } from "react-router-dom";
-import EditTaskDialog from "./EditTaskDialog";
-```
-
-**State en effect toevoegen:**
-
-```typescript
-const [searchParams, setSearchParams] = useSearchParams();
-const [editTask, setEditTask] = useState<any>(null);
-
-// Auto-open task from URL parameter
-useEffect(() => {
-  const taskId = searchParams.get('task');
-  if (taskId && displayTasks) {
-    const task = displayTasks.find(t => t.id === taskId);
-    if (task) {
-      setEditTask(task);
-      // Clear the parameter from URL
-      searchParams.delete('task');
-      setSearchParams(searchParams, { replace: true });
-    }
-  }
-}, [searchParams, displayTasks]);
-```
-
-**EditTaskDialog toevoegen aan component return:**
-
-```tsx
-{editTask && (
-  <EditTaskDialog
-    task={editTask}
-    open={!!editTask}
-    onOpenChange={(open) => !open && setEditTask(null)}
-    onUpdate={() => {
-      refetch();
-      setEditTask(null);
-    }}
-  />
-)}
+interface ProjectUpcomingDeliveriesWidgetProps {
+  projectId: string;
+}
 ```
 
 ---
 
-## Flow Diagram
+### 3. Aanpassen ProjectOverview.tsx
+
+**Wijzigingen:**
+
+1. **Imports toevoegen:**
+   ```typescript
+   import ProjectTodayAttendanceWidget from "./ProjectTodayAttendanceWidget";
+   import ProjectUpcomingDeliveriesWidget from "./ProjectUpcomingDeliveriesWidget";
+   ```
+
+2. **Grid aanpassen (regels 84-203):**
+   - Verwijder de "Startdatum" Card (regels 142-164)
+   - Verwijder de "Status" Card (regels 166-202)
+   - Grid wijzigen naar 2 kolommen voor stat cards
+
+3. **Nieuwe widgets sectie toevoegen:**
+   Na de stats grid en voor de "Wijsheid" card:
+   ```tsx
+   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+     <ProjectTodayAttendanceWidget projectId={project.id} />
+     <ProjectUpcomingDeliveriesWidget projectId={project.id} />
+   </div>
+   ```
+
+---
+
+## Nieuwe Layout
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                 Dashboard                                    │
+│  STATS GRID (2 kolommen)                                    │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────┐                │
-│  │ 📦 Aankomende leveringen                │                │
-│  ├─────────────────────────────────────────┤                │
-│  │ Dakpannen bestellen          Vandaag →  │ ◄── Klik       │
-│  │ Project Garage               27 jan     │                │
-│  └─────────────────────────────────────────┘                │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Navigate: /project/abc123?task=xyz789                      │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│               Project Detail (Taken tab)                     │
+│  ┌─────────────────────┐  ┌─────────────────────┐           │
+│  │ 📈 Voortgang        │  │ 💰 Budget           │           │
+│  │ 45%                 │  │ €12.500             │           │
+│  │ 9 van 20 taken      │  │ van €25.000         │           │
+│  └─────────────────────┘  └─────────────────────┘           │
 ├─────────────────────────────────────────────────────────────┤
-│                                      ┌────────────────────┐ │
-│  ┌──────────────────────────────┐    │ EditTaskDialog     │ │
-│  │ Taken lijst                  │    │ (auto-geopend)     │ │
-│  │ • Dakpannen bestellen ←─────────┤ │                    │ │
-│  │ • Isolatie plaatsen          │    │ Titel: Dakpannen   │ │
-│  │ • Kozijnen monteren          │    │ Status: Te doen    │ │
-│  └──────────────────────────────┘    │ Levering: 27 jan   │ │
-│                                      └────────────────────┘ │
+│  WIDGETS GRID (2 kolommen)                                  │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐  ┌─────────────────────┐           │
+│  │ 👥 Vandaag aanwezig │  │ 📦 Aankomende       │           │
+│  │ 3 personen          │  │    leveringen       │           │
+│  │ • Jan 07:30-16:00   │  │ • Dakpannen  Vandaag│           │
+│  │ • Piet 08:00-17:00  │  │ • Kozijnen   Morgen │           │
+│  │ • Klaas 09:00-15:00 │  │ • Verf      Vrijdag │           │
+│  └─────────────────────┘  └─────────────────────┘           │
+├─────────────────────────────────────────────────────────────┤
+│  💡 Wijsheid van de dag                                     │
+│  "Een goede voorbereiding is het halve werk"                │
+├─────────────────────────────────────────────────────────────┤
+│  📋 Recente taakactiviteit                                  │
+│  • Jan heeft taak X afgerond                                │
+│  • Piet heeft taak Y geüpdatet                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Bestanden te Wijzigen
+## Bestanden te Maken/Wijzigen
 
-| Bestand | Wijziging |
-|---------|-----------|
-| `src/components/UpcomingDeliveriesWidget.tsx` | Query parameter `?task=` toevoegen aan navigatie |
-| `src/components/project/ProjectTasksWithDnd.tsx` | useSearchParams toevoegen, EditTaskDialog state, auto-open effect |
+| Bestand | Actie |
+|---------|-------|
+| `src/components/project/ProjectTodayAttendanceWidget.tsx` | Nieuw |
+| `src/components/project/ProjectUpcomingDeliveriesWidget.tsx` | Nieuw |
+| `src/components/project/ProjectOverview.tsx` | Wijzigen |
 
 ---
 
-## Voordelen
+## Details per Widget
 
-1. **Directe toegang**: Gebruiker komt direct bij de taakdetails
-2. **Context behouden**: Gebruiker blijft in het project en kan andere taken bekijken
-3. **Deelbare links**: URLs met `?task=` parameter kunnen worden gedeeld
-4. **Bestaande patronen**: Gebruikt de bestaande EditTaskDialog component
+### ProjectTodayAttendanceWidget
+
+Aangepaste versie van TodayAttendanceWidget:
+- Query filtert op `project_id`
+- Geen project-groupering nodig (al binnen 1 project)
+- Directe lijst van aanwezige contractors
+- Klik navigeert naar aanwezigheidstab
+
+### ProjectUpcomingDeliveriesWidget
+
+Aangepaste versie van UpcomingDeliveriesWidget:
+- Query filtert op `project_id`
+- Geen projectnaam weergave (overbodig)
+- Behoudt achterstallig markering en datum labels
+- Klik navigeert naar taakdetails (`?task=id`)
+
