@@ -1,152 +1,77 @@
 
 
-# Plan: Widgets Toevoegen aan Project Overzicht
+# Plan: Gradient Layer Verwijderen van Vandaag Aanwezig Widget
 
-## Overzicht
+## Probleem
 
-De "Overzicht" pagina binnen een project wordt aangepast om dezelfde widgets te tonen als het dashboard:
-- **Vandaag aanwezig** - Toont wie er vandaag aanwezig is (project-specifiek)
-- **Aankomende leveringen** - Toont geplande leveringen (project-specifiek)
-
-De bestaande **Startdatum** en **Status** widgets worden vervangen.
+De "Vandaag aanwezig" widget op het dashboard heeft een zichtbare witte vervagende overlay/gradient aan de onderkant, waardoor de tekst en badges (zoals "Arjan Beemsterboer 07:30-16:30") moeilijk leesbaar zijn.
 
 ---
 
-## Huidige Situatie
+## Analyse
 
-| Widget | Status |
-|--------|--------|
-| Voortgang | Behouden |
-| Budget | Behouden (alleen voor admin/owner) |
-| Startdatum | Wordt vervangen |
-| Status | Wordt vervangen |
-| Wijsheid van de dag | Behouden |
-| Recente taakactiviteit | Behouden |
+Na onderzoek van de code blijkt dat de `TodayAttendanceWidget` zelf geen expliciete gradient heeft. Het probleem lijkt te komen van:
+
+1. De `overflow-hidden` class op de Card component
+2. Mogelijke interactie met de `bg-gradient-subtle` achtergrond van de pagina
+3. Browser rendering van de border-radius in combinatie met overflow
 
 ---
 
-## Technische Wijzigingen
+## Oplossing
 
-### 1. Nieuwe Widget: ProjectTodayAttendanceWidget
+Verwijder `overflow-hidden` van de Card of voeg expliciet een solide achtergrondkleur toe aan de CardContent om het gradient-doorschijn effect te blokkeren.
 
-**Nieuw bestand:** `src/components/project/ProjectTodayAttendanceWidget.tsx`
+---
 
-Dit is een project-specifieke versie van `TodayAttendanceWidget.tsx`:
-- Filtert op `project_id` in plaats van alle projecten te tonen
-- Accepteert `projectId` als prop
-- Toont alleen aanwezigen voor dit specifieke project
-- Verwijdert de projectnaam uit de weergave (niet nodig binnen projectcontext)
+## Technische Wijziging
 
-```typescript
-interface ProjectTodayAttendanceWidgetProps {
-  projectId: string;
-}
+### Bestand: `src/components/TodayAttendanceWidget.tsx`
+
+**Optie 1 - Verwijder overflow-hidden (regel 98):**
+
+Van:
+```tsx
+<Card className="overflow-hidden">
+```
+
+Naar:
+```tsx
+<Card>
+```
+
+**Optie 2 - Voeg achtergrondkleur toe aan CardContent (regel 115):**
+
+Van:
+```tsx
+<CardContent className="pt-2">
+```
+
+Naar:
+```tsx
+<CardContent className="pt-2 bg-card">
 ```
 
 ---
 
-### 2. Nieuwe Widget: ProjectUpcomingDeliveriesWidget
+## Waarom dit werkt
 
-**Nieuw bestand:** `src/components/project/ProjectUpcomingDeliveriesWidget.tsx`
-
-Dit is een project-specifieke versie van `UpcomingDeliveriesWidget.tsx`:
-- Filtert op `project_id` in plaats van alle projecten te tonen
-- Accepteert `projectId` als prop
-- Verwijdert de projectnaam uit de weergave
-- Behoudt alle bestaande functionaliteit (achterstallig markering, navigatie naar taak)
-
-```typescript
-interface ProjectUpcomingDeliveriesWidgetProps {
-  projectId: string;
-}
-```
+| Probleem | Oplossing |
+|----------|-----------|
+| `overflow-hidden` kan visuele artefacten veroorzaken bij afgeronde hoeken | Verwijderen lost rendering issue op |
+| Gradient van achtergrond schijnt door | Expliciete `bg-card` blokkeert doorschijnen |
 
 ---
 
-### 3. Aanpassen ProjectOverview.tsx
+## Bestanden te Wijzigen
 
-**Wijzigingen:**
-
-1. **Imports toevoegen:**
-   ```typescript
-   import ProjectTodayAttendanceWidget from "./ProjectTodayAttendanceWidget";
-   import ProjectUpcomingDeliveriesWidget from "./ProjectUpcomingDeliveriesWidget";
-   ```
-
-2. **Grid aanpassen (regels 84-203):**
-   - Verwijder de "Startdatum" Card (regels 142-164)
-   - Verwijder de "Status" Card (regels 166-202)
-   - Grid wijzigen naar 2 kolommen voor stat cards
-
-3. **Nieuwe widgets sectie toevoegen:**
-   Na de stats grid en voor de "Wijsheid" card:
-   ```tsx
-   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-     <ProjectTodayAttendanceWidget projectId={project.id} />
-     <ProjectUpcomingDeliveriesWidget projectId={project.id} />
-   </div>
-   ```
+| Bestand | Wijziging |
+|---------|-----------|
+| `src/components/TodayAttendanceWidget.tsx` | Verwijder `overflow-hidden` van Card class |
 
 ---
 
-## Nieuwe Layout
+## Aanvullend
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  STATS GRID (2 kolommen)                                    │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────┐  ┌─────────────────────┐           │
-│  │ 📈 Voortgang        │  │ 💰 Budget           │           │
-│  │ 45%                 │  │ €12.500             │           │
-│  │ 9 van 20 taken      │  │ van €25.000         │           │
-│  └─────────────────────┘  └─────────────────────┘           │
-├─────────────────────────────────────────────────────────────┤
-│  WIDGETS GRID (2 kolommen)                                  │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────┐  ┌─────────────────────┐           │
-│  │ 👥 Vandaag aanwezig │  │ 📦 Aankomende       │           │
-│  │ 3 personen          │  │    leveringen       │           │
-│  │ • Jan 07:30-16:00   │  │ • Dakpannen  Vandaag│           │
-│  │ • Piet 08:00-17:00  │  │ • Kozijnen   Morgen │           │
-│  │ • Klaas 09:00-15:00 │  │ • Verf      Vrijdag │           │
-│  └─────────────────────┘  └─────────────────────┘           │
-├─────────────────────────────────────────────────────────────┤
-│  💡 Wijsheid van de dag                                     │
-│  "Een goede voorbereiding is het halve werk"                │
-├─────────────────────────────────────────────────────────────┤
-│  📋 Recente taakactiviteit                                  │
-│  • Jan heeft taak X afgerond                                │
-│  • Piet heeft taak Y geüpdatet                              │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Bestanden te Maken/Wijzigen
-
-| Bestand | Actie |
-|---------|-------|
-| `src/components/project/ProjectTodayAttendanceWidget.tsx` | Nieuw |
-| `src/components/project/ProjectUpcomingDeliveriesWidget.tsx` | Nieuw |
-| `src/components/project/ProjectOverview.tsx` | Wijzigen |
-
----
-
-## Details per Widget
-
-### ProjectTodayAttendanceWidget
-
-Aangepaste versie van TodayAttendanceWidget:
-- Query filtert op `project_id`
-- Geen project-groupering nodig (al binnen 1 project)
-- Directe lijst van aanwezige contractors
-- Klik navigeert naar aanwezigheidstab
-
-### ProjectUpcomingDeliveriesWidget
-
-Aangepaste versie van UpcomingDeliveriesWidget:
-- Query filtert op `project_id`
-- Geen projectnaam weergave (overbodig)
-- Behoudt achterstallig markering en datum labels
-- Klik navigeert naar taakdetails (`?task=id`)
+Als hetzelfde probleem optreedt bij de `ProjectTodayAttendanceWidget`, moet dezelfde fix daar ook worden toegepast.
 
