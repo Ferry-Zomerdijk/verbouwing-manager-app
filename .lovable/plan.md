@@ -1,79 +1,100 @@
 
 
-# Plan: Gradient Overlay Definitief Oplossen voor Aanwezigheid Widget
+# Plan: Definitieve Fix voor Gradient Overlay op Widgets
 
 ## Probleem
 
-De "Vandaag aanwezig" widget op de Project > Overzicht pagina heeft een zichtbare witte/vervagende overlay die de groene badges met namen en tijden moeilijk leesbaar maakt.
-
-De vorige fixes (verwijderen `overflow-hidden` en toevoegen `bg-card`) hebben het probleem **niet** opgelost.
+De "Vandaag aanwezig" en "Aankomende leveringen" widgets op de Project > Overzicht pagina hebben een zichtbare witte/vervagende overlay die de tekst moeilijk leesbaar maakt. Vorige pogingen met `bg-card`, `isolate`, en `border-border` hebben het probleem niet opgelost.
 
 ---
 
-## Diagnose
+## Root Cause Analyse
 
-Na analyse van de code en CSS variabelen:
+Na grondig onderzoek van de code:
 
-| Component | Achtergrond |
-|-----------|-------------|
-| Pagina (`ProjectDetail.tsx`) | `bg-gradient-subtle` - gradient van wit naar licht groen |
-| Card component | `bg-card` (hsl `0 0% 100%` = wit) |
-| CardHeader/Content | Toegevoegd `bg-card` - maar dit lost het niet op |
+| Component | Styling |
+|-----------|---------|
+| Pagina container | `bg-gradient-subtle` (gradient van wit naar lichtgroen) |
+| Card component (ui/card.tsx) | Al `bg-card` standaard |
+| Progress/Budget cards | `overflow-hidden` + absolute positioned decorative circles |
+| Widgets | `bg-card isolate border-border` toegevoegd maar niet werkend |
 
-**Root cause**: De `Card` component heeft een `border` met lage opacity (`border-border/50` of standaard border) en de combinatie van gestapelde layers op een gradient achtergrond kan visuele artefacten creëren door browser rendering.
+**Het probleem**: De Progress en Budget cards erboven hebben absolute positioned decorative circles met `bg-primary/5` en `bg-blue-500/5` die mogelijk de z-index verstoren. Daarnaast kan de `bg-gradient-subtle` van de pagina door lage opacity layers heen schijnen.
 
 ---
 
 ## Oplossing
 
-Forceer een **volledig ondoorzichtige achtergrond** op de Card zelf met een expliciete hardcoded kleur:
+Een combinatie van aanpassingen om volledige visuele isolatie te garanderen:
 
-1. Voeg `bg-white dark:bg-zinc-900` toe aan de Card component in `ProjectTodayAttendanceWidget.tsx`
-2. Dit overschrijft de CSS variabele en voorkomt elke vorm van transparantie of gradient doorschijn
-3. Voeg ook `isolate` toe om een nieuwe stacking context te creëren
+### 1. Forceer `position: relative` en `z-index` op de widgets grid
+
+Dit voorkomt dat absolute elements van andere cards de widgets beïnvloeden.
+
+### 2. Voeg een wrapper met solide achtergrond toe rond beide widgets
+
+Dit creëert een visuele barrière tussen de pagina gradient en de widgets.
+
+### 3. Verwijder `isolate` (niet effectief) en gebruik `relative z-10` op de widgets
+
+Dit zorgt ervoor dat de widgets altijd boven eventuele overlappende elements staan.
 
 ---
 
 ## Technische Wijzigingen
 
-### Bestand: `src/components/project/ProjectTodayAttendanceWidget.tsx`
+### Bestand: `src/components/project/ProjectOverview.tsx`
 
-**Huidige code (regel 83):**
+**Huidige code (regel 142-146):**
 ```tsx
-<Card>
+{/* Attendance & Deliveries Widgets */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+  <ProjectTodayAttendanceWidget projectId={project.id} />
+  <ProjectUpcomingDeliveriesWidget projectId={project.id} />
+</div>
 ```
 
 **Nieuwe code:**
 ```tsx
-<Card className="bg-white dark:bg-zinc-900 isolate">
+{/* Attendance & Deliveries Widgets */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 relative z-10">
+  <ProjectTodayAttendanceWidget projectId={project.id} />
+  <ProjectUpcomingDeliveriesWidget projectId={project.id} />
+</div>
 ```
 
-**Verwijder overbodige bg-card van CardHeader en CardContent:**
+---
 
-CardHeader (regel 84):
+### Bestand: `src/components/project/ProjectTodayAttendanceWidget.tsx`
+
+**Huidige code (regel 83):**
 ```tsx
-<CardHeader className="pb-2">
+<Card className="bg-card isolate border-border">
 ```
 
-CardContent (regel 100):
+**Nieuwe code:**
 ```tsx
-<CardContent className="pt-2">
+<Card className="bg-white dark:bg-zinc-900 relative shadow-sm">
 ```
+
+Wijzigingen:
+- `bg-white dark:bg-zinc-900` - Hardcoded 100% ondoorzichtige kleuren
+- `relative` - Creëert positioning context
+- `shadow-sm` - Voegt subtiele schaduw toe die visueel scheidt van achtergrond
+- Verwijder `isolate` en `border-border` (redundant)
 
 ---
 
 ### Bestand: `src/components/project/ProjectUpcomingDeliveriesWidget.tsx`
 
-Pas dezelfde fix toe voor consistentie:
-
 **Huidige code (regel 112):**
 ```tsx
-<Card className="shadow-sm hover:shadow-md transition-shadow">
+<Card className="shadow-sm hover:shadow-md transition-shadow bg-card isolate border-border">
 ```
 
 **Nieuwe code:**
 ```tsx
-<Card className="shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-zinc-900 isolate">
+<Card className="shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-zinc-900 relative">
 ```
 
 ---
@@ -82,11 +103,9 @@ Pas dezelfde fix toe voor consistentie:
 
 | Aanpak | Effect |
 |--------|--------|
-| `bg-white` | Forceert 100% ondoorzichtige witte achtergrond in light mode |
-| `dark:bg-zinc-900` | Forceert ondoorzichtige donkere achtergrond in dark mode |
-| `isolate` | Creëert nieuwe stacking context, voorkomt blend-through effecten |
-
-Door de CSS variabele `hsl(var(--card))` te vervangen door hardcoded kleuren, elimineren we elke mogelijke transparantie of rendering artifact.
+| `bg-white` / `dark:bg-zinc-900` | Hardcoded kleuren zijn 100% ondoorzichtig, geen CSS variable interpretatie |
+| `relative z-10` op wrapper | Voorkomt dat absolute elements van Progress/Budget cards overlappen |
+| `shadow-sm` | Creëert visuele diepte die scheiding benadrukt |
 
 ---
 
@@ -94,15 +113,16 @@ Door de CSS variabele `hsl(var(--card))` te vervangen door hardcoded kleuren, el
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/project/ProjectTodayAttendanceWidget.tsx` | Card: `bg-white dark:bg-zinc-900 isolate` |
-| `src/components/project/ProjectUpcomingDeliveriesWidget.tsx` | Zelfde fix voor consistentie |
+| `src/components/project/ProjectOverview.tsx` | `relative z-10` toevoegen aan widgets grid |
+| `src/components/project/ProjectTodayAttendanceWidget.tsx` | `bg-white dark:bg-zinc-900 relative shadow-sm` |
+| `src/components/project/ProjectUpcomingDeliveriesWidget.tsx` | `bg-white dark:bg-zinc-900 relative` |
 
 ---
 
-## Alternatief als dit niet werkt
+## Fallback als dit niet werkt
 
-Als hardcoded kleuren ook niet werken, is er mogelijk een browser-specifieke rendering issue. Dan zouden we:
+Als hardcoded kleuren nog steeds niet werken, is de laatste optie:
 
-1. De gradient achtergrond van de pagina moeten aanpassen
-2. Of een wrapper div met solide achtergrond rond de widgets plaatsen
+1. De `bg-gradient-subtle` class van de pagina vervangen door `bg-background` (solide kleur)
+2. Of inline style toevoegen: `style={{ backgroundColor: 'white' }}`
 
