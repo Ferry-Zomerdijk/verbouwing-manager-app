@@ -95,7 +95,7 @@ const TodayAttendanceWidget = () => {
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
