@@ -109,7 +109,7 @@ const ProjectUpcomingDeliveriesWidget = ({ projectId }: ProjectUpcomingDeliverie
   const hasDeliveries = sortedDeliveries.length > 0;
 
   return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow">
+    <Card className="shadow-sm hover:shadow-md transition-shadow bg-card isolate border-border">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
           <div className="p-1.5 rounded-lg bg-blue-500/10">

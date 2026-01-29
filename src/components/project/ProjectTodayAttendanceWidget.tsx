@@ -80,8 +80,8 @@ const ProjectTodayAttendanceWidget = ({ projectId }: ProjectTodayAttendanceWidge
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 bg-card rounded-t-lg">
+    <Card className="bg-card isolate border-border">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -97,7 +97,7 @@ const ProjectTodayAttendanceWidget = ({ projectId }: ProjectTodayAttendanceWidge
           {format(new Date(), "EEEE d MMMM", { locale: nl })}
         </p>
       </CardHeader>
-      <CardContent className="pt-2 bg-card">
+      <CardContent className="pt-2">
         {totalPresent === 0 ? (
           <div className="text-center py-4 text-muted-foreground text-sm">
             <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
