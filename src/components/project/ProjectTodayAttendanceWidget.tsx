@@ -80,7 +80,7 @@ const ProjectTodayAttendanceWidget = ({ projectId }: ProjectTodayAttendanceWidge
   }
 
   return (
-    <Card className="bg-card isolate border-border">
+    <Card className="bg-white dark:bg-zinc-900 relative shadow-sm">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
