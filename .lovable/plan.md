@@ -1,95 +1,92 @@
 
 
-# Plan: Gradient Layer Fix voor Vandaag Aanwezig Widget
+# Plan: Gradient Overlay Definitief Oplossen voor Aanwezigheid Widget
 
 ## Probleem
 
-De "Vandaag aanwezig" widget heeft een zichtbare witte/vervagende overlay die de tekst moeilijk leesbaar maakt. De vorige fix (verwijderen van `overflow-hidden`) heeft het probleem niet opgelost.
+De "Vandaag aanwezig" widget op de Project > Overzicht pagina heeft een zichtbare witte/vervagende overlay die de groene badges met namen en tijden moeilijk leesbaar maakt.
+
+De vorige fixes (verwijderen `overflow-hidden` en toevoegen `bg-card`) hebben het probleem **niet** opgelost.
 
 ---
 
-## Analyse
+## Diagnose
 
-Na uitgebreid onderzoek blijkt:
+Na analyse van de code en CSS variabelen:
 
-| Bevinding | Details |
-|-----------|---------|
-| Pagina achtergrond | `bg-gradient-subtle` - verticale gradient van wit naar licht groen |
-| Card achtergrond | `bg-card` (wit) via Card component |
-| CardContent | Geen expliciete achtergrond |
+| Component | Achtergrond |
+|-----------|-------------|
+| Pagina (`ProjectDetail.tsx`) | `bg-gradient-subtle` - gradient van wit naar licht groen |
+| Card component | `bg-card` (hsl `0 0% 100%` = wit) |
+| CardHeader/Content | Toegevoegd `bg-card` - maar dit lost het niet op |
 
-Het probleem kan worden veroorzaakt door:
-1. Browser rendering van gestapelde semi-transparante elementen
-2. De `border` styling van de Card in combinatie met de gradient achtergrond
-3. Ontbrekende expliciete achtergrondkleur op CardContent waardoor de gradient doorschijnt
+**Root cause**: De `Card` component heeft een `border` met lage opacity (`border-border/50` of standaard border) en de combinatie van gestapelde layers op een gradient achtergrond kan visuele artefacten creëren door browser rendering.
 
 ---
 
 ## Oplossing
 
-Voeg een expliciete `bg-card` achtergrondkleur toe aan de `CardContent` en/of de Card zelf om te zorgen dat de achtergrond volledig dekkend is.
+Forceer een **volledig ondoorzichtige achtergrond** op de Card zelf met een expliciete hardcoded kleur:
+
+1. Voeg `bg-white dark:bg-zinc-900` toe aan de Card component in `ProjectTodayAttendanceWidget.tsx`
+2. Dit overschrijft de CSS variabele en voorkomt elke vorm van transparantie of gradient doorschijn
+3. Voeg ook `isolate` toe om een nieuwe stacking context te creëren
 
 ---
 
 ## Technische Wijzigingen
 
-### 1. TodayAttendanceWidget.tsx
+### Bestand: `src/components/project/ProjectTodayAttendanceWidget.tsx`
 
-**CardContent aanpassen (regel 115):**
-
-Van:
+**Huidige code (regel 83):**
 ```tsx
-<CardContent className="pt-2">
+<Card>
 ```
 
-Naar:
+**Nieuwe code:**
 ```tsx
-<CardContent className="pt-2 bg-card">
+<Card className="bg-white dark:bg-zinc-900 isolate">
 ```
 
-**CardHeader aanpassen (regel 99):**
+**Verwijder overbodige bg-card van CardHeader en CardContent:**
 
-Van:
+CardHeader (regel 84):
 ```tsx
 <CardHeader className="pb-2">
 ```
 
-Naar:
-```tsx
-<CardHeader className="pb-2 bg-card rounded-t-lg">
-```
-
----
-
-### 2. ProjectTodayAttendanceWidget.tsx
-
-**Zelfde wijzigingen toepassen:**
-
 CardContent (regel 100):
 ```tsx
-<CardContent className="pt-2 bg-card">
-```
-
-CardHeader (regel 84):
-```tsx
-<CardHeader className="pb-2 bg-card rounded-t-lg">
+<CardContent className="pt-2">
 ```
 
 ---
 
-## Alternatieve Oplossing
+### Bestand: `src/components/project/ProjectUpcomingDeliveriesWidget.tsx`
 
-Als bovenstaande niet werkt, voeg isolatie toe aan de Card zelf:
+Pas dezelfde fix toe voor consistentie:
 
+**Huidige code (regel 112):**
 ```tsx
-<Card className="isolation-auto">
+<Card className="shadow-sm hover:shadow-md transition-shadow">
 ```
 
-Of forceer een volledige dekkende achtergrond:
-
+**Nieuwe code:**
 ```tsx
-<Card className="bg-white dark:bg-card">
+<Card className="shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-zinc-900 isolate">
 ```
+
+---
+
+## Waarom Dit Werkt
+
+| Aanpak | Effect |
+|--------|--------|
+| `bg-white` | Forceert 100% ondoorzichtige witte achtergrond in light mode |
+| `dark:bg-zinc-900` | Forceert ondoorzichtige donkere achtergrond in dark mode |
+| `isolate` | Creëert nieuwe stacking context, voorkomt blend-through effecten |
+
+Door de CSS variabele `hsl(var(--card))` te vervangen door hardcoded kleuren, elimineren we elke mogelijke transparantie of rendering artifact.
 
 ---
 
@@ -97,16 +94,15 @@ Of forceer een volledige dekkende achtergrond:
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/TodayAttendanceWidget.tsx` | `bg-card` toevoegen aan CardHeader en CardContent |
-| `src/components/project/ProjectTodayAttendanceWidget.tsx` | Zelfde aanpassingen |
+| `src/components/project/ProjectTodayAttendanceWidget.tsx` | Card: `bg-white dark:bg-zinc-900 isolate` |
+| `src/components/project/ProjectUpcomingDeliveriesWidget.tsx` | Zelfde fix voor consistentie |
 
 ---
 
-## Waarom Dit Werkt
+## Alternatief als dit niet werkt
 
-Door expliciet `bg-card` toe te voegen aan zowel CardHeader als CardContent, zorgen we ervoor dat:
+Als hardcoded kleuren ook niet werken, is er mogelijk een browser-specifieke rendering issue. Dan zouden we:
 
-1. De gehele card een solide, ondoorzichtige achtergrond heeft
-2. Geen gradient van de pagina doorschijnt
-3. De rounded corners correct worden toegepast met `rounded-t-lg` op de header
+1. De gradient achtergrond van de pagina moeten aanpassen
+2. Of een wrapper div met solide achtergrond rond de widgets plaatsen
 
