@@ -96,7 +96,7 @@ const TodayAttendanceWidget = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 bg-card rounded-t-lg">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -112,7 +112,7 @@ const TodayAttendanceWidget = () => {
           {format(new Date(), "EEEE d MMMM", { locale: nl })}
         </p>
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent className="pt-2 bg-card">
         {totalPresent === 0 ? (
           <div className="text-center py-4 text-muted-foreground text-sm">
             <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
