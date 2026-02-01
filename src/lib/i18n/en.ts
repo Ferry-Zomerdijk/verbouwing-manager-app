@@ -207,9 +207,13 @@ export const en: UITexts = {
       editTitle: "Edit contact",
       categoryCreateTitle: "New category",
       categoryEditTitle: "Edit category",
+      categoriesManagerTitle: "Manage categories",
+      categoriesManagerDescription: "Configure categories for your contacts. Categories help you group contacts by specialty.",
     },
     messages: {
       noContacts: "No contacts in this category yet",
+      categoriesSaved: "Categories saved",
+      minOneCategory: "Add at least one category",
     },
   },
 

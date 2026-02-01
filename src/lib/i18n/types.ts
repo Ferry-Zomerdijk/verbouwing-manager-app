@@ -223,9 +223,13 @@ export type UITexts = {
       editTitle: string;
       categoryCreateTitle: string;
       categoryEditTitle: string;
+      categoriesManagerTitle: string;
+      categoriesManagerDescription: string;
     };
     messages: {
       noContacts: string;
+      categoriesSaved: string;
+      minOneCategory: string;
     };
   };
 
