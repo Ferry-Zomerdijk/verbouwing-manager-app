@@ -21,6 +21,17 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Lock, GripVertical, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { taskTypeIconMap, DefaultTaskTypeIcon, getTaskTypeIconColor } from "@/lib/taskTypeUtils";
+
+// Available icons for task types
+const ICON_OPTIONS = [
+  { value: "shopping-cart", label: "Kopen" },
+  { value: "check-square", label: "Te doen" },
+  { value: "users", label: "Overleg" },
+  { value: "settings", label: "Regelen" },
+  { value: "help-circle", label: "Opvragen" },
+  { value: "tag", label: "Anders" },
+];
 
 interface TaskTypesManagerProps {
   open: boolean;
@@ -57,9 +68,11 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
   const queryClient = useQueryClient();
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeColor, setNewTypeColor] = useState("gray");
+  const [newTypeIcon, setNewTypeIcon] = useState("tag");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editIcon, setEditIcon] = useState("");
 
   const { data: taskTypes = [], isLoading } = useQuery({
     queryKey: ["task-types"],
@@ -75,13 +88,14 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
   });
 
   const createMutation = useMutation({
-    mutationFn: async ({ naam, kleur }: { naam: string; kleur: string }) => {
+    mutationFn: async ({ naam, kleur, icoon }: { naam: string; kleur: string; icoon: string }) => {
       const maxVolgorde = Math.max(...taskTypes.map(t => t.volgorde), 0);
       const { error } = await supabase
         .from("task_types")
         .insert({
           naam,
           kleur,
+          icoon,
           volgorde: maxVolgorde + 1,
           is_systeem: false,
         });
@@ -91,6 +105,7 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
       queryClient.invalidateQueries({ queryKey: ["task-types"] });
       setNewTypeName("");
       setNewTypeColor("gray");
+      setNewTypeIcon("tag");
       toast.success("Taaktype toegevoegd");
     },
     onError: (error: any) => {
@@ -99,10 +114,10 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, naam, kleur }: { id: string; naam: string; kleur: string }) => {
+    mutationFn: async ({ id, naam, kleur, icoon }: { id: string; naam: string; kleur: string; icoon: string }) => {
       const { error } = await supabase
         .from("task_types")
-        .update({ naam, kleur })
+        .update({ naam, kleur, icoon })
         .eq("id", id);
       if (error) throw error;
     },
@@ -138,24 +153,26 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
       toast.error("Vul een naam in");
       return;
     }
-    createMutation.mutate({ naam: newTypeName.trim(), kleur: newTypeColor });
+    createMutation.mutate({ naam: newTypeName.trim(), kleur: newTypeColor, icoon: newTypeIcon });
   };
 
   const handleStartEdit = (type: TaskType) => {
     setEditingId(type.id);
     setEditName(type.naam);
     setEditColor(type.kleur);
+    setEditIcon(type.icoon || "tag");
   };
 
   const handleSaveEdit = () => {
     if (!editingId || !editName.trim()) return;
-    updateMutation.mutate({ id: editingId, naam: editName.trim(), kleur: editColor });
+    updateMutation.mutate({ id: editingId, naam: editName.trim(), kleur: editColor, icoon: editIcon });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditName("");
     setEditColor("");
+    setEditIcon("");
   };
 
   const handleDelete = (type: TaskType) => {
@@ -181,19 +198,41 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
           {/* Add new type */}
           <div className="space-y-3">
             <Label>Nieuw taaktype toevoegen</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Input
                 placeholder="Naam..."
                 value={newTypeName}
                 onChange={(e) => setNewTypeName(e.target.value)}
-                className="flex-1"
+                className="flex-1 min-w-[120px]"
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
+              <Select value={newTypeIcon} onValueChange={setNewTypeIcon}>
+                <SelectTrigger className="w-[100px]">
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const IconComp = taskTypeIconMap[newTypeIcon] || DefaultTaskTypeIcon;
+                      return <IconComp className="w-4 h-4" />;
+                    })()}
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map((icon) => {
+                    const IconComp = taskTypeIconMap[icon.value] || DefaultTaskTypeIcon;
+                    return (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <div className="flex items-center gap-2">
+                          <IconComp className="w-4 h-4" />
+                          {icon.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
               <Select value={newTypeColor} onValueChange={setNewTypeColor}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[100px]">
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${getTaskTypeColorClass(newTypeColor)}`} />
-                    <SelectValue />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
@@ -241,8 +280,31 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
                           className="flex-1 h-8"
                           autoFocus
                         />
+                        <Select value={editIcon} onValueChange={setEditIcon}>
+                          <SelectTrigger className="w-[80px] h-8">
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const IconComp = taskTypeIconMap[editIcon] || DefaultTaskTypeIcon;
+                                return <IconComp className="w-4 h-4" />;
+                              })()}
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ICON_OPTIONS.map((icon) => {
+                              const IconComp = taskTypeIconMap[icon.value] || DefaultTaskTypeIcon;
+                              return (
+                                <SelectItem key={icon.value} value={icon.value}>
+                                  <div className="flex items-center gap-2">
+                                    <IconComp className="w-4 h-4" />
+                                    {icon.label}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
                         <Select value={editColor} onValueChange={setEditColor}>
-                          <SelectTrigger className="w-[100px] h-8">
+                          <SelectTrigger className="w-[80px] h-8">
                             <div className="flex items-center gap-2">
                               <div className={`w-3 h-3 rounded-full ${getTaskTypeColorClass(editColor)}`} />
                             </div>
@@ -268,9 +330,15 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
                     ) : (
                       // Display mode
                       <>
-                        <Badge className={`${getTaskTypeColorClass(type.kleur)} text-white`}>
-                          {type.naam}
-                        </Badge>
+                        {(() => {
+                          const IconComp = taskTypeIconMap[type.icoon] || DefaultTaskTypeIcon;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <IconComp className={`w-4 h-4 ${getTaskTypeIconColor(type.kleur)}`} />
+                              <span className="font-medium">{type.naam}</span>
+                            </div>
+                          );
+                        })()}
                         {type.is_systeem && (
                           <Lock className="w-3 h-3 text-muted-foreground ml-1" />
                         )}
