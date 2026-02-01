@@ -1,197 +1,162 @@
 
 
-# Plan: Categorieënbeheer toevoegen aan Contacten pagina
+# Plan: Kostencategorieën Manager toevoegen aan Kosten pagina
 
 ## Samenvatting
 
-Een nieuwe "Rubrieken beheren" functionaliteit toevoegen aan de Contacten pagina, vergelijkbaar met hoe "Betalers" beheerd kunnen worden op de Kosten pagina. Dit geeft gebruikers de mogelijkheid om alle categorieën (rubrieken) op één plek te beheren: toevoegen, hernoemen, verwijderen en de volgorde aanpassen.
+Een "Rubrieken" (categorieën) beheer functionaliteit toevoegen aan de Kosten pagina, vergelijkbaar met de "Betalers" manager. Dit vereist een architectuurwijziging: van database enum naar een configureerbare tabel per project.
 
 ---
 
-## Huidige situatie
+## Huidige situatie vs. gewenste situatie
 
-| Aspect | Betalers (Kosten) | Rubrieken (Contacten) |
-|--------|-------------------|----------------------|
-| Beheer dialog | `CostPayersManager` - alles-in-één | Losse dialogs: `CreateCategoryDialog` + `EditCategoryDialog` |
-| Toevoegen | Via manager | Via aparte knop "Nieuwe rubriek" |
-| Bewerken | Via manager | Via dropdown per rubriek |
-| Verwijderen | Via manager | Via dropdown per rubriek |
-| Volgorde aanpassen | Via up/down knoppen | Niet mogelijk |
-| Reset naar standaard | Ja | Nee |
+| Aspect | Huidige situatie | Gewenste situatie |
+|--------|------------------|-------------------|
+| Opslag | Database enum `cost_category` | Nieuwe tabel `cost_categories` per project |
+| Waarden | Vaste 7 categorieën | Per project configureerbaar |
+| Toevoegen | Niet mogelijk (database migratie) | Via UI |
+| Volgorde | Niet instelbaar | Via drag/up-down knoppen |
 
 ---
 
-## Oplossing
+## Benodigde wijzigingen
 
-Maak een nieuwe `ContactCategoriesManager` component die:
-1. Alle rubrieken in een lijst toont
-2. Inline bewerken van namen mogelijk maakt
-3. Volgorde aanpassen met up/down knoppen
-4. Verwijderen per rubriek (met waarschuwing dat contacten naar "Overig" gaan)
-5. Toevoegen van nieuwe rubrieken
-6. Suggesties voor standaard rubrieken
-7. Opslaan als batch (net als bij Betalers)
+### Database (Supabase migratie)
 
----
+Nieuwe tabel `cost_categories` aanmaken:
 
-## Technische wijzigingen
+```sql
+CREATE TABLE public.cost_categories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  naam text NOT NULL,
+  kleur text DEFAULT 'gray',
+  volgorde integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  PRIMARY KEY (id)
+);
 
-### 1. Nieuw bestand: `src/components/project/ContactCategoriesManager.tsx`
+-- RLS policies (zelfde als cost_payers)
+ALTER TABLE public.cost_categories ENABLE ROW LEVEL SECURITY;
 
-Nieuwe component gebaseerd op `CostPayersManager` met aanpassingen:
+CREATE POLICY "Users can view categories of accessible projects"
+  ON public.cost_categories FOR SELECT
+  USING (has_project_access(auth.uid(), project_id));
 
-- Gebruikt `contact_categories` tabel i.p.v. `cost_payers`
-- Velden: `id`, `naam`, `volgorde` (sort_order)
-- Standaard suggesties uit `CreateCategoryDialog` (Alarm & Beveiliging, Tuinonderhoud, etc.)
-- Beschrijvingstekst: "Configureer rubrieken voor je contacten. Rubrieken helpen je contacten te groeperen per specialisme."
-- Dialog titel: "Rubrieken beheren"
+CREATE POLICY "Users can create categories for accessible projects"
+  ON public.cost_categories FOR INSERT
+  WITH CHECK (has_project_access(auth.uid(), project_id));
 
-**Hoofdstructuur:**
-```tsx
-interface ContactCategory {
-  id: string;
-  naam: string;
-  volgorde: number;
-}
+CREATE POLICY "Users can update categories for accessible projects"
+  ON public.cost_categories FOR UPDATE
+  USING (has_project_access(auth.uid(), project_id));
 
-interface ContactCategoriesManagerProps {
-  projectId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-```
-
-**Functionaliteiten:**
-- `handleAddCategory()` - nieuwe lege rij toevoegen
-- `handleUpdateCategory()` - naam inline bewerken
-- `handleDeleteCategory()` - rij verwijderen
-- `handleMoveUp()` / `handleMoveDown()` - volgorde wijzigen
-- `handleResetToDefault()` - standaard rubrieken laden
-- `handleSave()` - alle wijzigingen opslaan als batch
-
----
-
-### 2. Wijziging: `src/components/project/ProjectContacts.tsx`
-
-**State toevoegen:**
-```tsx
-const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
-```
-
-**Knop toevoegen naast "Nieuwe rubriek":**
-```tsx
-<Button 
-  variant="outline" 
-  size="sm"
-  onClick={() => setCategoriesManagerOpen(true)}
->
-  <Settings className="w-4 h-4 sm:mr-2" />
-  <span className="hidden sm:inline">Rubrieken</span>
-</Button>
-```
-
-**Manager component toevoegen:**
-```tsx
-<ContactCategoriesManager
-  projectId={projectId}
-  open={categoriesManagerOpen}
-  onOpenChange={setCategoriesManagerOpen}
-/>
+CREATE POLICY "Only admins and owners can delete categories"
+  ON public.cost_categories FOR DELETE
+  USING (
+    has_role(auth.uid(), 'admin') OR
+    EXISTS (SELECT 1 FROM projects WHERE id = cost_categories.project_id AND user_id = auth.uid())
+  );
 ```
 
 ---
 
-### 3. Wijziging: `src/lib/i18n/nl.ts`
+### Nieuw bestand: `src/components/project/CostCategoriesManager.tsx`
 
-Teksten toevoegen voor de nieuwe manager:
+Nieuwe component gebaseerd op `CostPayersManager`:
+
+- Dialog met lijst van categorieën
+- Inline bewerken van namen
+- Optioneel: kleur selectie per categorie (voor charts)
+- Up/down knoppen voor volgorde
+- Toevoegen en verwijderen
+- Reset naar standaard (de huidige 7 categorieën)
+
+**Standaard categorieën:**
+1. Materiaal (blauw)
+2. Arbeid (paars)
+3. Vergunningen (oranje)
+4. Kluswerkzaamheden (groen)
+5. Decoratie (roze)
+6. Meubels (amber)
+7. Overig (grijs)
+
+---
+
+### Wijziging: `src/components/project/ProjectCosts.tsx`
+
+1. **State toevoegen:** `categoriesManagerOpen`
+2. **Knop toevoegen:** naast "Betalers" knop een "Rubrieken" knop met Settings icoon
+3. **Hook:** `useCostCategories(projectId)` voor ophalen categorieën
+4. **Manager component:** `<CostCategoriesManager />`
+
+---
+
+### Wijziging: `src/components/project/CreateCostDialog.tsx`
+
+- Vervang hardcoded `<SelectItem>` elementen door dynamische lijst van `useCostCategories()`
+- Fallback naar standaard categorieën als nog geen project-specifieke zijn
+
+---
+
+### Wijziging: `src/components/project/EditCostDialog.tsx`
+
+- Zelfde aanpassing als CreateCostDialog
+
+---
+
+### Wijziging: `src/components/project/MobileCostList.tsx`
+
+1. Prop toevoegen: `categoryOptions` (dynamisch)
+2. Prop toevoegen: `onOpenCategoriesManager`
+3. Knop toevoegen in header
+
+---
+
+### Wijziging: Chart kleuren (ProjectCosts.tsx, MobileCostList.tsx)
+
+- `CATEGORY_CHART_COLORS` dynamisch maken op basis van `cost_categories.kleur`
+- Fallback naar standaard kleuren
+
+---
+
+## i18n updates
+
+### `src/lib/i18n/nl.ts` en `en.ts`
 
 ```typescript
-contacts: {
-  // ... bestaande teksten
+costs: {
   dialogs: {
     // ... bestaande
     categoriesManagerTitle: "Rubrieken beheren",
-    categoriesManagerDescription: "Configureer rubrieken voor je contacten. Rubrieken helpen je contacten te groeperen per specialisme.",
+    categoriesManagerDescription: "Configureer rubrieken voor je kosten. Deze verschijnen in de categorie dropdown.",
   },
   messages: {
     // ... bestaande
     categoriesSaved: "Rubrieken opgeslagen",
     minOneCategory: "Voeg minimaal één rubriek toe",
-    categoryDeleted: "Rubriek verwijderd. Contacten verplaatst naar 'Overig'.",
   },
 }
 ```
 
 ---
 
-### 4. Wijziging: `src/lib/i18n/en.ts`
+## Migratiepad bestaande data
 
-Engelse vertalingen toevoegen:
+De `costs.categorie` kolom blijft een enum. Om dit volledig te ondersteunen zijn er twee opties:
 
-```typescript
-contacts: {
-  dialogs: {
-    categoriesManagerTitle: "Manage categories",
-    categoriesManagerDescription: "Configure categories for your contacts. Categories help you group contacts by specialty.",
-  },
-  messages: {
-    categoriesSaved: "Categories saved",
-    minOneCategory: "Add at least one category",
-    categoryDeleted: "Category deleted. Contacts moved to 'Other'.",
-  },
-}
-```
+### Optie A: Enum behouden (aanbevolen voor nu)
+- Categorieën manager werkt alleen als "display" configuratie
+- Categorie filter en charts gebruiken project-specifieke lijst
+- Database enum blijft de bron van waarheid
+- **Voordeel:** Geen breaking changes, bestaande data blijft werken
 
----
+### Optie B: Enum vervangen door text (toekomst)
+- Nieuwe migratie om `categorie` enum naar text te converteren
+- Volledige vrijheid in categorieën
+- **Nadeel:** Grotere database wijziging, validatie in applicatie
 
-### 5. Wijziging: `src/lib/i18n/types.ts`
-
-Type definities uitbreiden:
-
-```typescript
-contacts: {
-  // ... bestaande
-  dialogs: {
-    // ... bestaande
-    categoriesManagerTitle: string;
-    categoriesManagerDescription: string;
-  };
-  messages: {
-    // ... bestaande
-    categoriesSaved: string;
-    minOneCategory: string;
-    categoryDeleted: string;
-  };
-};
-```
-
----
-
-## Standaard suggesties (uit CreateCategoryDialog)
-
-| Rubriek |
-|---------|
-| Alarm & Beveiliging |
-| Hekwerk & Toegang |
-| Tuinonderhoud |
-| Schilderwerk |
-| Loodgieter |
-| Elektricien |
-| Jacuzzi & Wellness |
-| Schoonmaak |
-| Verwarming & Airco |
-| Dakwerk |
-
----
-
-## UI Flow
-
-1. Gebruiker klikt op "Rubrieken" knop (Settings icoon)
-2. Dialog opent met alle bestaande rubrieken
-3. Per rubriek: up/down knoppen + naam input + delete knop
-4. Onderaan: "Nieuwe rubriek toevoegen" knop
-5. "Standaard" knop laadt de 10 standaard suggesties
-6. "Opslaan" slaat alle wijzigingen op en sluit de dialog
+**Aanbeveling:** Start met Optie A voor snelle implementatie.
 
 ---
 
@@ -199,9 +164,30 @@ contacts: {
 
 | Bestand | Actie |
 |---------|-------|
-| `src/components/project/ContactCategoriesManager.tsx` | Nieuw |
-| `src/components/project/ProjectContacts.tsx` | Wijzigen |
+| Supabase migratie | Nieuw: `cost_categories` tabel |
+| `src/components/project/CostCategoriesManager.tsx` | Nieuw |
+| `src/components/project/ProjectCosts.tsx` | Wijzigen |
+| `src/components/project/CreateCostDialog.tsx` | Wijzigen |
+| `src/components/project/EditCostDialog.tsx` | Wijzigen |
+| `src/components/project/MobileCostList.tsx` | Wijzigen |
 | `src/lib/i18n/nl.ts` | Wijzigen |
 | `src/lib/i18n/en.ts` | Wijzigen |
 | `src/lib/i18n/types.ts` | Wijzigen |
+
+---
+
+## UI Flow
+
+1. Gebruiker klikt op "Rubrieken" knop (Settings icoon)
+2. Dialog opent met alle categorieën (standaard of project-specifiek)
+3. Per categorie: up/down knoppen + naam input + kleur selector + delete knop
+4. Onderaan: "Nieuwe rubriek toevoegen" knop
+5. "Standaard" knop laadt de 7 standaard categorieën
+6. "Opslaan" slaat alle wijzigingen op
+
+---
+
+## Opmerking
+
+Omdat de kostencategorieën een database enum zijn, beperkt dit de flexibiliteit. De manager zal in eerste instantie de bestaande 7 categorieën tonen en alleen de volgorde/kleuren aanpasbaar maken. Volledige vrijheid vereist een database migratie om de enum naar text te converteren.
 
