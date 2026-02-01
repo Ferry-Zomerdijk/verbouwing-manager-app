@@ -17,7 +17,7 @@ import EditTaskDialog from "./EditTaskDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
+import { taskTypeIconMap, getTaskTypeBadgeClass, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 interface MobileTaskCardProps {
   task: any;
@@ -120,17 +120,20 @@ const MobileTaskCard = ({ task, onUpdate, onStatusChange, canDelete = true, avai
       >
         {/* Header row: Priority badge, Type badge & Status selector */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
               {task.prioriteit || "Geen"}
             </Badge>
             {task.task_type && (() => {
               const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
               return (
-                <IconComponent 
-                  className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
-                  aria-label={task.task_type.naam}
-                />
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs gap-1 px-2 py-1 ${getTaskTypeBadgeClass(task.task_type.kleur)}`}
+                >
+                  <IconComponent className="h-3.5 w-3.5" />
+                  {task.task_type.naam}
+                </Badge>
               );
             })()}
           </div>
