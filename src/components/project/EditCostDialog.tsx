@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Upload, FileText, ExternalLink, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCostPayers } from "./CostPayersManager";
+import { useCostCategories } from "./CostCategoriesManager";
 import { UI } from "@/lib/uiTexts";
 
 interface EditCostDialogProps {
@@ -38,9 +39,10 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
 
   const isMobile = useIsMobile();
   
-  // Get project_id from cost to fetch payer options
+  // Get project_id from cost to fetch payer and category options
   const projectId = cost?.project_id;
   const { data: payerOptions = [] } = useCostPayers(projectId || "");
+  const { data: categoryOptions = [] } = useCostCategories(projectId || "");
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
 
   useEffect(() => {
@@ -151,13 +153,9 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Materiaal">Materiaal</SelectItem>
-              <SelectItem value="Arbeid">Arbeid</SelectItem>
-              <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-              <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-              <SelectItem value="Decoratie">Decoratie</SelectItem>
-              <SelectItem value="Meubels">Meubels</SelectItem>
-              <SelectItem value="Overig">Overig</SelectItem>
+              {categoryOptions.map((cat) => (
+                <SelectItem key={cat.naam} value={cat.naam}>{cat.naam}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
