@@ -17,6 +17,7 @@ import { useAiUsage } from "@/hooks/useAiUsage";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { useCostPayers } from "./CostPayersManager";
+import { useCostCategories } from "./CostCategoriesManager";
 import { UI } from "@/lib/uiTexts";
 
 interface CreateCostDialogProps {
@@ -49,8 +50,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const { canUseAi, remaining, limit, isUnlimited, isLoading: isLoadingAi, refetch: refetchAiUsage } = useAiUsage();
   const { currentTier } = useSubscription();
   
-  // Get custom payer options for this project
+  // Get custom payer and category options for this project
   const { data: payerOptions = [] } = useCostPayers(projectId);
+  const { data: categoryOptions = [] } = useCostCategories(projectId);
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
 
   const validateFile = (file: File): boolean => {
@@ -425,13 +427,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Materiaal">Materiaal</SelectItem>
-                <SelectItem value="Arbeid">Arbeid</SelectItem>
-                <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-                <SelectItem value="Decoratie">Decoratie</SelectItem>
-                <SelectItem value="Meubels">Meubels</SelectItem>
-                <SelectItem value="Overig">Overig</SelectItem>
+                {categoryOptions.map((cat) => (
+                  <SelectItem key={cat.naam} value={cat.naam}>{cat.naam}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
