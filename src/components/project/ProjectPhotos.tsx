@@ -1,9 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, X, Upload as UploadIcon, MapPin } from "lucide-react";
+import { Plus, Trash2, X, Upload as UploadIcon, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSwipeable } from "react-swipeable";
+import { PhotoLightbox } from "./PhotoLightbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -714,96 +716,21 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
         </DialogContent>
       </Dialog>
 
-      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-4xl">
-          {selectedPhoto && (
-            <div className="space-y-4">
-              <img
-                src={getPhotoUrl(selectedPhoto.afbeelding_url)}
-                alt={selectedPhoto.notitie || "Project foto"}
-                className="w-full rounded-lg"
-              />
-              <div className="flex gap-2 flex-wrap">
-                {!readOnly ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Badge 
-                        className={`${faseColors[selectedPhoto.fase]} text-white cursor-pointer hover:opacity-90 transition-opacity`}
-                      >
-                        {updatingPhotoId === selectedPhoto.id ? "..." : selectedPhoto.fase}
-                      </Badge>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {(["Voor", "Tijdens", "Na"] as PhotoPhase[]).map((fase) => (
-                        <DropdownMenuItem
-                          key={fase}
-                          onClick={() => {
-                            if (fase !== selectedPhoto.fase) {
-                              handleUpdateFase(selectedPhoto.id, fase);
-                              setSelectedPhoto({ ...selectedPhoto, fase });
-                            }
-                          }}
-                          className={fase === selectedPhoto.fase ? "bg-accent" : ""}
-                        >
-                          <span className={`w-3 h-3 rounded-full mr-2 ${faseColors[fase]}`} />
-                          {fase}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
-                    {selectedPhoto.fase}
-                  </Badge>
-                )}
-                {!readOnly ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Badge 
-                        className={`cursor-pointer hover:opacity-90 transition-opacity border-0 ${
-                          selectedPhoto.deel_van_huis && selectedPhoto.deel_van_huis !== "Nog invullen"
-                            ? getLocationColor(selectedPhoto.deel_van_huis)
-                            : "bg-gray-500 text-white"
-                        }`}
-                      >
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {updatingPhotoId === selectedPhoto.id ? "..." : (selectedPhoto.deel_van_huis || "Locatie")}
-                      </Badge>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-                      {availableDelenVanHuis.map((deel) => (
-                        <DropdownMenuItem
-                          key={deel}
-                          onClick={() => {
-                            if (deel !== selectedPhoto.deel_van_huis) {
-                              handleUpdateDeelVanHuis(selectedPhoto.id, deel);
-                              setSelectedPhoto({ ...selectedPhoto, deel_van_huis: deel });
-                            }
-                          }}
-                          className={deel === selectedPhoto.deel_van_huis ? "bg-accent" : ""}
-                        >
-                          <span className={`w-3 h-3 rounded-full mr-2 ${getLocationColor(deel).split(' ')[0]}`} />
-                          {deel}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  selectedPhoto.deel_van_huis && selectedPhoto.deel_van_huis !== "Nog invullen" && (
-                    <Badge className={`border-0 ${getLocationColor(selectedPhoto.deel_van_huis)}`}>
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {selectedPhoto.deel_van_huis}
-                    </Badge>
-                  )
-                )}
-              </div>
-              {selectedPhoto.notitie && (
-                <p className="text-muted-foreground">{selectedPhoto.notitie}</p>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PhotoLightbox
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        selectedPhoto={selectedPhoto}
+        photos={filteredPhotos || []}
+        getPhotoUrl={getPhotoUrl}
+        onPhotoChange={setSelectedPhoto}
+        readOnly={readOnly}
+        updatingPhotoId={updatingPhotoId}
+        faseColors={faseColors}
+        handleUpdateFase={handleUpdateFase}
+        getLocationColor={getLocationColor}
+        availableDelenVanHuis={availableDelenVanHuis}
+        handleUpdateDeelVanHuis={handleUpdateDeelVanHuis}
+      />
 
       {selectedPhoto && (
         <DeleteConfirmationDialog
