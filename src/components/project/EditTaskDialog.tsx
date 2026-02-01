@@ -494,7 +494,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
         <Button 
           type="button" 
           variant="outline" 
-          onClick={() => handleCloseRequest(true)}
+          onClick={() => handleCloseRequest(false)}
           className={isMobile ? "flex-1" : ""}
         >
           Annuleren
