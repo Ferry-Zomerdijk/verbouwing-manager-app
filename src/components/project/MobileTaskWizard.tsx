@@ -11,6 +11,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
 import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
 import { ImagePlus, X, Loader2, ChevronLeft, ChevronRight, Check, Calendar, Package } from "lucide-react";
+import { taskTypeIconMap, DefaultTaskTypeIcon, getTaskTypeIconColor } from "@/lib/taskTypeUtils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { cn } from "@/lib/utils";
@@ -117,7 +118,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id, naam, kleur")
+        .select("id, naam, kleur, icoon")
         .order("volgorde", { ascending: true });
       if (error) throw error;
       return data;
@@ -295,14 +296,6 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
     });
   };
 
-  const getTaskTypeColorClass = (kleur: string) => {
-    const colorMap: Record<string, string> = {
-      blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
-      green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
-      red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
-    };
-    return colorMap[kleur] || "bg-gray-500";
-  };
 
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return "";

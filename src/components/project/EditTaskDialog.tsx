@@ -32,6 +32,7 @@ import { addToQueue } from "@/lib/offlineQueue";
 import TaskUpdatesSection from "./TaskUpdatesSection";
 import { TaskImagesSection } from "./TaskImagesSection";
 import { AlertTriangle } from "lucide-react";
+import { taskTypeIconMap, DefaultTaskTypeIcon, getTaskTypeIconColor } from "@/lib/taskTypeUtils";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
 import { UI } from "@/lib/uiTexts";
@@ -103,7 +104,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id, naam, kleur")
+        .select("id, naam, kleur, icoon")
         .order("volgorde", { ascending: true });
       if (error) throw error;
       return data;
@@ -111,14 +112,6 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
     enabled: open,
   });
 
-  const getTaskTypeColorClass = (kleur: string) => {
-    const colorMap: Record<string, string> = {
-      blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
-      green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
-      red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
-    };
-    return colorMap[kleur] || "bg-gray-500";
-  };
 
   // Focus op titel veld wanneer dialog opent (met delay om dropdown te laten sluiten)
   useEffect(() => {
@@ -389,14 +382,17 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
               <SelectValue placeholder="Selecteer type..." />
             </SelectTrigger>
             <SelectContent>
-              {taskTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
-                    {type.naam}
-                  </div>
-                </SelectItem>
-              ))}
+              {taskTypes.map((type) => {
+                const IconComponent = taskTypeIconMap[type.icoon] || DefaultTaskTypeIcon;
+                return (
+                  <SelectItem key={type.id} value={type.id}>
+                    <div className="flex items-center gap-2">
+                      <IconComponent className={`h-4 w-4 ${getTaskTypeIconColor(type.kleur)}`} />
+                      {type.naam}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

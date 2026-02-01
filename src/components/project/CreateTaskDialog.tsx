@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
 import { resizeImage, generateUniqueFilename } from "@/lib/imageUtils";
 import { ImagePlus, X, Loader2 } from "lucide-react";
+import { taskTypeIconMap, DefaultTaskTypeIcon, getTaskTypeIconColor } from "@/lib/taskTypeUtils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 import { useQuery } from "@tanstack/react-query";
@@ -115,7 +116,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_types")
-        .select("id, naam, kleur")
+        .select("id, naam, kleur, icoon")
         .order("volgorde", { ascending: true });
       if (error) throw error;
       return data;
@@ -197,14 +198,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   type TaskPriority = "Hoog" | "Laag" | "Middel";
   type TaskStatus = "Te doen" | "Bezig" | "Gereed";
 
-  const getTaskTypeColorClass = (kleur: string) => {
-    const colorMap: Record<string, string> = {
-      blue: "bg-blue-500", orange: "bg-orange-500", purple: "bg-purple-500",
-      green: "bg-green-500", yellow: "bg-yellow-500", gray: "bg-gray-500",
-      red: "bg-red-500", pink: "bg-pink-500", cyan: "bg-cyan-500",
-    };
-    return colorMap[kleur] || "bg-gray-500";
-  };
+  // Type aliases for type safety
 
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: {
@@ -433,14 +427,17 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
               <SelectValue placeholder="Selecteer type..." />
             </SelectTrigger>
             <SelectContent>
-              {taskTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${getTaskTypeColorClass(type.kleur)}`} />
-                    {type.naam}
-                  </div>
-                </SelectItem>
-              ))}
+              {taskTypes.map((type) => {
+                const IconComponent = taskTypeIconMap[type.icoon] || DefaultTaskTypeIcon;
+                return (
+                  <SelectItem key={type.id} value={type.id}>
+                    <div className="flex items-center gap-2">
+                      <IconComponent className={`h-4 w-4 ${getTaskTypeIconColor(type.kleur)}`} />
+                      {type.naam}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
