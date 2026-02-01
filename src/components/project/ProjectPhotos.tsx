@@ -11,6 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -43,6 +49,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
   const [deleting, setDeleting] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
+  const [updatingPhotoId, setUpdatingPhotoId] = useState<string | null>(null);
   
   // Multi-upload state
   const [photosToUpload, setPhotosToUpload] = useState<PhotoUpload[]>([]);
@@ -247,6 +254,25 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     }
   };
 
+  const handleUpdateFase = async (photoId: string, newFase: PhotoPhase) => {
+    setUpdatingPhotoId(photoId);
+    try {
+      const { error } = await supabase
+        .from("photos")
+        .update({ fase: newFase })
+        .eq("id", photoId);
+      
+      if (error) throw error;
+      
+      toast.success("Fase bijgewerkt");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setUpdatingPhotoId(null);
+    }
+  };
+
   const faseColors: Record<string, string> = {
     Voor: "bg-blue-500",
     Tijdens: "bg-yellow-500",
@@ -368,9 +394,38 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                   alt={photo.notitie || "Project foto"}
                   className="w-full h-full object-cover"
                 />
-                <Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
-                  {photo.fase}
-                </Badge>
+                {!readOnly ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Badge 
+                        className={`${faseColors[photo.fase]} text-white absolute top-2 left-2 cursor-pointer hover:opacity-90 transition-opacity`}
+                      >
+                        {updatingPhotoId === photo.id ? "..." : photo.fase}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {(["Voor", "Tijdens", "Na"] as PhotoPhase[]).map((fase) => (
+                        <DropdownMenuItem
+                          key={fase}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (fase !== photo.fase) {
+                              handleUpdateFase(photo.id, fase);
+                            }
+                          }}
+                          className={fase === photo.fase ? "bg-accent" : ""}
+                        >
+                          <span className={`w-3 h-3 rounded-full mr-2 ${faseColors[fase]}`} />
+                          {fase}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
+                    {photo.fase}
+                  </Badge>
+                )}
                 {photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" && (
                   <Badge variant="secondary" className="absolute bottom-2 left-2 text-xs bg-background/80 backdrop-blur-sm">
                     <MapPin className="w-3 h-3 mr-1" />
@@ -600,9 +655,38 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                 className="w-full rounded-lg"
               />
               <div className="flex gap-2 flex-wrap">
-                <Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
-                  {selectedPhoto.fase}
-                </Badge>
+                {!readOnly ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Badge 
+                        className={`${faseColors[selectedPhoto.fase]} text-white cursor-pointer hover:opacity-90 transition-opacity`}
+                      >
+                        {updatingPhotoId === selectedPhoto.id ? "..." : selectedPhoto.fase}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {(["Voor", "Tijdens", "Na"] as PhotoPhase[]).map((fase) => (
+                        <DropdownMenuItem
+                          key={fase}
+                          onClick={() => {
+                            if (fase !== selectedPhoto.fase) {
+                              handleUpdateFase(selectedPhoto.id, fase);
+                              setSelectedPhoto({ ...selectedPhoto, fase });
+                            }
+                          }}
+                          className={fase === selectedPhoto.fase ? "bg-accent" : ""}
+                        >
+                          <span className={`w-3 h-3 rounded-full mr-2 ${faseColors[fase]}`} />
+                          {fase}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
+                    {selectedPhoto.fase}
+                  </Badge>
+                )}
                 {selectedPhoto.deel_van_huis && (
                   <Badge variant="secondary">
                     <MapPin className="w-3 h-3 mr-1" />
