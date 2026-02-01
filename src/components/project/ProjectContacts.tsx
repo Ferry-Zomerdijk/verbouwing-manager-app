@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, Phone, Mail, MapPin, MoreVertical, Edit, Trash2, 
-  FolderPlus, ChevronDown, ChevronRight, Check, Building2, Search, X, Globe
+  FolderPlus, ChevronDown, ChevronRight, Check, Building2, Search, X, Globe, Settings
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import CreateCategoryDialog from "./CreateCategoryDialog";
 import EditCategoryDialog from "./EditCategoryDialog";
 import CreateContactDialog from "./CreateContactDialog";
 import EditContactDialog from "./EditContactDialog";
+import { ContactCategoriesManager } from "./ContactCategoriesManager";
 import { toast } from "sonner";
 
 interface ProjectContactsProps {
@@ -47,6 +48,7 @@ const ProjectContacts = ({
   const [editContactOpen, setEditContactOpen] = useState(false);
   const [deleteContactOpen, setDeleteContactOpen] = useState(false);
   const [deleteCategoryOpen, setDeleteCategoryOpen] = useState(false);
+  const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -377,6 +379,14 @@ const ProjectContacts = ({
             <div className="flex items-center gap-2 shrink-0">
               <Button 
                 variant="outline" 
+                onClick={() => setCategoriesManagerOpen(true)} 
+                size="sm"
+              >
+                <Settings className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Rubrieken</span>
+              </Button>
+              <Button 
+                variant="outline" 
                 onClick={() => setCreateCategoryOpen(true)} 
                 size="sm"
               >
@@ -530,6 +540,12 @@ const ProjectContacts = ({
         itemName={selectedCategory?.naam}
         onConfirm={handleDeleteCategory}
         loading={deleting}
+      />
+
+      <ContactCategoriesManager
+        projectId={projectId}
+        open={categoriesManagerOpen}
+        onOpenChange={setCategoriesManagerOpen}
       />
     </div>
   );

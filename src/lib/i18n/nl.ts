@@ -212,9 +212,13 @@ export const nl: UITexts = {
       editTitle: "Contact bewerken",
       categoryCreateTitle: "Nieuwe rubriek",
       categoryEditTitle: "Rubriek bewerken",
+      categoriesManagerTitle: "Rubrieken beheren",
+      categoriesManagerDescription: "Configureer rubrieken voor je contacten. Rubrieken helpen je contacten te groeperen per specialisme.",
     },
     messages: {
       noContacts: "Nog geen contacten in deze rubriek",
+      categoriesSaved: "Rubrieken opgeslagen",
+      minOneCategory: "Voeg minimaal één rubriek toe",
     },
   },
 
