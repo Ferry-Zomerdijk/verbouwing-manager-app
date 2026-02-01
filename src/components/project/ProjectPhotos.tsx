@@ -273,10 +273,45 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     }
   };
 
+  const handleUpdateDeelVanHuis = async (photoId: string, newDeelVanHuis: string) => {
+    setUpdatingPhotoId(photoId);
+    try {
+      const { error } = await supabase
+        .from("photos")
+        .update({ deel_van_huis: newDeelVanHuis })
+        .eq("id", photoId);
+      
+      if (error) throw error;
+      
+      toast.success("Locatie bijgewerkt");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Er is een fout opgetreden");
+    } finally {
+      setUpdatingPhotoId(null);
+    }
+  };
+
   const faseColors: Record<string, string> = {
     Voor: "bg-blue-500",
     Tijdens: "bg-yellow-500",
     Na: "bg-green-500",
+  };
+
+  const locationColors: Record<string, string> = {
+    "Woning": "bg-slate-600 text-white",
+    "Keuken": "bg-amber-600 text-white",
+    "Badkamer": "bg-cyan-600 text-white",
+    "Slaapkamer": "bg-indigo-600 text-white",
+    "Woonkamer": "bg-emerald-600 text-white",
+    "Garage": "bg-zinc-600 text-white",
+    "Tuin": "bg-green-600 text-white",
+    "Zolder": "bg-purple-600 text-white",
+    "Hal": "bg-rose-600 text-white",
+  };
+
+  const getLocationColor = (location: string) => {
+    return locationColors[location] || "bg-gray-700 text-white";
   };
 
   return (
@@ -426,11 +461,45 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                     {photo.fase}
                   </Badge>
                 )}
-                {photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" && (
-                  <Badge variant="secondary" className="absolute bottom-2 left-2 text-xs bg-background/80 backdrop-blur-sm">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    {photo.deel_van_huis}
-                  </Badge>
+                {!readOnly ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Badge 
+                        className={`absolute bottom-2 left-2 text-xs cursor-pointer hover:opacity-90 transition-opacity border-0 ${
+                          photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" 
+                            ? getLocationColor(photo.deel_van_huis) 
+                            : "bg-gray-500 text-white"
+                        }`}
+                      >
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {updatingPhotoId === photo.id ? "..." : (photo.deel_van_huis || "Locatie")}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                      {availableDelenVanHuis.map((deel) => (
+                        <DropdownMenuItem
+                          key={deel}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (deel !== photo.deel_van_huis) {
+                              handleUpdateDeelVanHuis(photo.id, deel);
+                            }
+                          }}
+                          className={deel === photo.deel_van_huis ? "bg-accent" : ""}
+                        >
+                          <span className={`w-3 h-3 rounded-full mr-2 ${getLocationColor(deel).split(' ')[0]}`} />
+                          {deel}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" && (
+                    <Badge className={`absolute bottom-2 left-2 text-xs border-0 ${getLocationColor(photo.deel_van_huis)}`}>
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {photo.deel_van_huis}
+                    </Badge>
+                  )
                 )}
                 {!readOnly && (
                   <Button
@@ -687,11 +756,45 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
                     {selectedPhoto.fase}
                   </Badge>
                 )}
-                {selectedPhoto.deel_van_huis && (
-                  <Badge variant="secondary">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    {selectedPhoto.deel_van_huis}
-                  </Badge>
+                {!readOnly ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Badge 
+                        className={`cursor-pointer hover:opacity-90 transition-opacity border-0 ${
+                          selectedPhoto.deel_van_huis && selectedPhoto.deel_van_huis !== "Nog invullen"
+                            ? getLocationColor(selectedPhoto.deel_van_huis)
+                            : "bg-gray-500 text-white"
+                        }`}
+                      >
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {updatingPhotoId === selectedPhoto.id ? "..." : (selectedPhoto.deel_van_huis || "Locatie")}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                      {availableDelenVanHuis.map((deel) => (
+                        <DropdownMenuItem
+                          key={deel}
+                          onClick={() => {
+                            if (deel !== selectedPhoto.deel_van_huis) {
+                              handleUpdateDeelVanHuis(selectedPhoto.id, deel);
+                              setSelectedPhoto({ ...selectedPhoto, deel_van_huis: deel });
+                            }
+                          }}
+                          className={deel === selectedPhoto.deel_van_huis ? "bg-accent" : ""}
+                        >
+                          <span className={`w-3 h-3 rounded-full mr-2 ${getLocationColor(deel).split(' ')[0]}`} />
+                          {deel}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  selectedPhoto.deel_van_huis && selectedPhoto.deel_van_huis !== "Nog invullen" && (
+                    <Badge className={`border-0 ${getLocationColor(selectedPhoto.deel_van_huis)}`}>
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {selectedPhoto.deel_van_huis}
+                    </Badge>
+                  )
                 )}
               </div>
               {selectedPhoto.notitie && (
