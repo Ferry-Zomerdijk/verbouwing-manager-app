@@ -16,7 +16,7 @@ import EditTaskDialog from "./EditTaskDialog";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
+import { taskTypeIconMap, getTaskTypeBadgeClass, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
 
 interface TaskCardProps {
   task: any;
@@ -129,10 +129,13 @@ const TaskCard = ({ task, onUpdate, canDelete = true, availableDelenVanHuis = []
           {task.task_type && (() => {
             const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
             return (
-              <IconComponent 
-                className={`h-4 w-4 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
-                aria-label={task.task_type.naam}
-              />
+              <Badge 
+                variant="outline" 
+                className={`text-xs gap-1 ${getTaskTypeBadgeClass(task.task_type.kleur)}`}
+              >
+                <IconComponent className="h-3 w-3" />
+                {task.task_type.naam}
+              </Badge>
             );
           })()}
         </div>
