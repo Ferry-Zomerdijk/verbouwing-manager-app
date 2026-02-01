@@ -1,193 +1,204 @@
 
 
-# Plan: Kostencategorieën Manager toevoegen aan Kosten pagina
+# Plan: Taaktype naam tonen op taakkaart
 
 ## Samenvatting
 
-Een "Rubrieken" (categorieën) beheer functionaliteit toevoegen aan de Kosten pagina, vergelijkbaar met de "Betalers" manager. Dit vereist een architectuurwijziging: van database enum naar een configureerbare tabel per project.
+De naam van het taaktype (rubriek) toevoegen aan zowel de desktop TaskCard als de MobileTaskCard. Momenteel wordt alleen het icoon getoond, maar niet de naam zoals "Kopen", "Regelen", of "Overleg".
 
 ---
 
 ## Huidige situatie vs. gewenste situatie
 
-| Aspect | Huidige situatie | Gewenste situatie |
-|--------|------------------|-------------------|
-| Opslag | Database enum `cost_category` | Nieuwe tabel `cost_categories` per project |
-| Waarden | Vaste 7 categorieën | Per project configureerbaar |
-| Toevoegen | Niet mogelijk (database migratie) | Via UI |
-| Volgorde | Niet instelbaar | Via drag/up-down knoppen |
+| Aspect | Huidig | Gewenst |
+|--------|--------|---------|
+| TaskCard (desktop) | Alleen icoon van taaktype | Icoon + naam als badge |
+| MobileTaskCard | Alleen icoon van taaktype | Icoon + naam als badge |
+| Visuele stijl | Prioriteit badge is de enige badge | Taaktype badge naast prioriteit |
 
 ---
 
-## Benodigde wijzigingen
+## Beschikbare taaktypes
 
-### Database (Supabase migratie)
+| Naam | Kleur | Icoon |
+|------|-------|-------|
+| Kopen | Blauw | shopping-cart |
+| Te doen | Oranje | check-square |
+| Overleg | Paars | users |
+| Regelen | Groen | settings |
+| Opvragen | Geel | help-circle |
+| Anders | Grijs | tag |
 
-Nieuwe tabel `cost_categories` aanmaken:
+---
 
-```sql
-CREATE TABLE public.cost_categories (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  naam text NOT NULL,
-  kleur text DEFAULT 'gray',
-  volgorde integer DEFAULT 0,
-  created_at timestamp with time zone DEFAULT now(),
-  PRIMARY KEY (id)
-);
+## Technische wijzigingen
 
--- RLS policies (zelfde als cost_payers)
-ALTER TABLE public.cost_categories ENABLE ROW LEVEL SECURITY;
+### 1. Wijziging: `src/components/project/TaskCard.tsx`
 
-CREATE POLICY "Users can view categories of accessible projects"
-  ON public.cost_categories FOR SELECT
-  USING (has_project_access(auth.uid(), project_id));
+**Huidige code (regel 125-138):**
+```tsx
+<div className="flex flex-wrap items-center gap-2">
+  <Badge className={`${priorityColors[task.prioriteit]} text-white text-xs`}>
+    {task.prioriteit}
+  </Badge>
+  {task.task_type && (() => {
+    const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
+    return (
+      <IconComponent 
+        className={`h-4 w-4 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
+        aria-label={task.task_type.naam}
+      />
+    );
+  })()}
+</div>
+```
 
-CREATE POLICY "Users can create categories for accessible projects"
-  ON public.cost_categories FOR INSERT
-  WITH CHECK (has_project_access(auth.uid(), project_id));
+**Nieuwe code:**
+```tsx
+<div className="flex flex-wrap items-center gap-2">
+  <Badge className={`${priorityColors[task.prioriteit]} text-white text-xs`}>
+    {task.prioriteit}
+  </Badge>
+  {task.task_type && (() => {
+    const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
+    return (
+      <Badge 
+        variant="outline" 
+        className={`text-xs gap-1 ${getTaskTypeIconColor(task.task_type.kleur)}`}
+      >
+        <IconComponent className="h-3 w-3" />
+        {task.task_type.naam}
+      </Badge>
+    );
+  })()}
+</div>
+```
 
-CREATE POLICY "Users can update categories for accessible projects"
-  ON public.cost_categories FOR UPDATE
-  USING (has_project_access(auth.uid(), project_id));
+**Wijzigingen:**
+- Taaktype icoon + naam samen in een outline badge
+- Badge neemt de kleur over van het taaktype (text color)
+- Icoon verkleind naar 3x3 om in badge te passen
 
-CREATE POLICY "Only admins and owners can delete categories"
-  ON public.cost_categories FOR DELETE
-  USING (
-    has_role(auth.uid(), 'admin') OR
-    EXISTS (SELECT 1 FROM projects WHERE id = cost_categories.project_id AND user_id = auth.uid())
-  );
+---
+
+### 2. Wijziging: `src/components/project/MobileTaskCard.tsx`
+
+**Huidige code (regel 121-136):**
+```tsx
+{/* Header row: Priority badge, Type badge & Status selector */}
+<div className="flex items-center justify-between mb-3">
+  <div className="flex items-center gap-2">
+    <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
+      {task.prioriteit || "Geen"}
+    </Badge>
+    {task.task_type && (() => {
+      const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
+      return (
+        <IconComponent 
+          className={`h-5 w-5 ${getTaskTypeIconColor(task.task_type.kleur)}`} 
+          aria-label={task.task_type.naam}
+        />
+      );
+    })()}
+  </div>
+  ...
+</div>
+```
+
+**Nieuwe code:**
+```tsx
+{/* Header row: Priority badge, Type badge & Status selector */}
+<div className="flex items-center justify-between mb-3">
+  <div className="flex items-center gap-2 flex-wrap">
+    <Badge className={`${priorityConfig[priority]?.color || "bg-muted"} text-white text-xs px-3 py-1`}>
+      {task.prioriteit || "Geen"}
+    </Badge>
+    {task.task_type && (() => {
+      const IconComponent = taskTypeIconMap[task.task_type.icoon] || DefaultTaskTypeIcon;
+      return (
+        <Badge 
+          variant="outline" 
+          className={`text-xs gap-1 px-2 py-1 ${getTaskTypeIconColor(task.task_type.kleur)}`}
+        >
+          <IconComponent className="h-3.5 w-3.5" />
+          {task.task_type.naam}
+        </Badge>
+      );
+    })()}
+  </div>
+  ...
+</div>
+```
+
+**Wijzigingen:**
+- Taaktype icoon + naam samen in een outline badge
+- `flex-wrap` toegevoegd aan container voor smalle schermen
+- Badge met wat grotere icoon (3.5x3.5) voor mobile leesbaarheid
+
+---
+
+### 3. Helper functie uitbreiden: `src/lib/taskTypeUtils.ts`
+
+**Optioneel**: Voeg een helper toe voor badge achtergrondkleuren (als we gevulde badges willen i.p.v. outline):
+
+```tsx
+export const getTaskTypeBadgeClass = (kleur: string | null): string => {
+  const colorMap: Record<string, string> = {
+    blue: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    orange: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    purple: "border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    green: "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400",
+    yellow: "border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+    gray: "border-gray-500/30 bg-gray-500/10 text-gray-600 dark:text-gray-400",
+    red: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400",
+    pink: "border-pink-500/30 bg-pink-500/10 text-pink-600 dark:text-pink-400",
+    cyan: "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+  };
+  return colorMap[kleur || "gray"] || colorMap.gray;
+};
 ```
 
 ---
 
-### Nieuw bestand: `src/components/project/CostCategoriesManager.tsx`
+## Visueel resultaat
 
-Nieuwe component gebaseerd op `CostPayersManager`:
+**Desktop TaskCard:**
+```text
+┌──────────────────────────────────────┐
+│ Taaktitel hier                  [···]│
+│ Beschrijving van de taak...          │
+│                                      │
+│ [Hoog] [🛒 Kopen]                    │
+│ 📅 15 feb 2026                       │
+│ 👤 Jan                               │
+└──────────────────────────────────────┘
+```
 
-- Dialog met lijst van categorieën
-- Inline bewerken van namen
-- Optioneel: kleur selectie per categorie (voor charts)
-- Up/down knoppen voor volgorde
-- Toevoegen en verwijderen
-- Reset naar standaard (de huidige 7 categorieën)
-
-**Standaard categorieën:**
-1. Materiaal (blauw)
-2. Arbeid (paars)
-3. Vergunningen (oranje)
-4. Kluswerkzaamheden (groen)
-5. Decoratie (roze)
-6. Meubels (amber)
-7. Overig (grijs)
-
----
-
-### Wijziging: `src/components/project/ProjectCosts.tsx`
-
-1. **State toevoegen:** `categoriesManagerOpen`
-2. **Knop toevoegen:** naast "Betalers" knop een "Rubrieken" knop met Settings icoon
-3. **Hook:** `useCostCategories(projectId)` voor ophalen categorieën
-4. **Manager component:** `<CostCategoriesManager />`
-
----
-
-### Wijziging: `src/components/project/CreateCostDialog.tsx`
-
-- Vervang hardcoded `<SelectItem>` elementen door dynamische lijst van `useCostCategories()`
-- Fallback naar standaard categorieën als nog geen project-specifieke zijn
-
----
-
-### Wijziging: `src/components/project/EditCostDialog.tsx`
-
-- Zelfde aanpassing als CreateCostDialog
-
----
-
-### Wijziging: `src/components/project/MobileCostList.tsx`
-
-1. Prop toevoegen: `categoryOptions` (dynamisch)
-2. Prop toevoegen: `onOpenCategoriesManager`
-3. Knop toevoegen in header
-
----
-
-### Wijziging: Chart kleuren (ProjectCosts.tsx, MobileCostList.tsx)
-
-- `CATEGORY_CHART_COLORS` dynamisch maken op basis van `cost_categories.kleur`
-- Fallback naar standaard kleuren
-
----
-
-## i18n updates
-
-### `src/lib/i18n/nl.ts` en `en.ts`
-
-```typescript
-costs: {
-  dialogs: {
-    // ... bestaande
-    categoriesManagerTitle: "Rubrieken beheren",
-    categoriesManagerDescription: "Configureer rubrieken voor je kosten. Deze verschijnen in de categorie dropdown.",
-  },
-  messages: {
-    // ... bestaande
-    categoriesSaved: "Rubrieken opgeslagen",
-    minOneCategory: "Voeg minimaal één rubriek toe",
-  },
-}
+**Mobile TaskCard:**
+```text
+┌──────────────────────────────────────┐
+│ [Hoog] [🛒 Kopen]          [Bezig ▾] │
+│                                      │
+│ Taaktitel hier                   [▾] │
+│ 📅 15 feb 2026    👤 Jan             │
+└──────────────────────────────────────┘
 ```
 
 ---
 
-## Migratiepad bestaande data
+## Bestanden te wijzigen
 
-De `costs.categorie` kolom blijft een enum. Om dit volledig te ondersteunen zijn er twee opties:
-
-### Optie A: Enum behouden (aanbevolen voor nu)
-- Categorieën manager werkt alleen als "display" configuratie
-- Categorie filter en charts gebruiken project-specifieke lijst
-- Database enum blijft de bron van waarheid
-- **Voordeel:** Geen breaking changes, bestaande data blijft werken
-
-### Optie B: Enum vervangen door text (toekomst)
-- Nieuwe migratie om `categorie` enum naar text te converteren
-- Volledige vrijheid in categorieën
-- **Nadeel:** Grotere database wijziging, validatie in applicatie
-
-**Aanbeveling:** Start met Optie A voor snelle implementatie.
+| Bestand | Wijziging |
+|---------|-----------|
+| `src/components/project/TaskCard.tsx` | Taaktype badge met icoon + naam |
+| `src/components/project/MobileTaskCard.tsx` | Taaktype badge met icoon + naam |
+| `src/lib/taskTypeUtils.ts` | Nieuwe helper `getTaskTypeBadgeClass` |
 
 ---
 
-## Bestanden te wijzigen/maken
+## Randgevallen
 
-| Bestand | Actie |
-|---------|-------|
-| Supabase migratie | Nieuw: `cost_categories` tabel |
-| `src/components/project/CostCategoriesManager.tsx` | Nieuw |
-| `src/components/project/ProjectCosts.tsx` | Wijzigen |
-| `src/components/project/CreateCostDialog.tsx` | Wijzigen |
-| `src/components/project/EditCostDialog.tsx` | Wijzigen |
-| `src/components/project/MobileCostList.tsx` | Wijzigen |
-| `src/lib/i18n/nl.ts` | Wijzigen |
-| `src/lib/i18n/en.ts` | Wijzigen |
-| `src/lib/i18n/types.ts` | Wijzigen |
-
----
-
-## UI Flow
-
-1. Gebruiker klikt op "Rubrieken" knop (Settings icoon)
-2. Dialog opent met alle categorieën (standaard of project-specifiek)
-3. Per categorie: up/down knoppen + naam input + kleur selector + delete knop
-4. Onderaan: "Nieuwe rubriek toevoegen" knop
-5. "Standaard" knop laadt de 7 standaard categorieën
-6. "Opslaan" slaat alle wijzigingen op
-
----
-
-## Opmerking
-
-Omdat de kostencategorieën een database enum zijn, beperkt dit de flexibiliteit. De manager zal in eerste instantie de bestaande 7 categorieën tonen en alleen de volgorde/kleuren aanpasbaar maken. Volledige vrijheid vereist een database migratie om de enum naar text te converteren.
+- Als `task.task_type` null is: geen badge tonen (bestaand gedrag)
+- Lange namen: badges worden automatisch afgekapt door flex-wrap
+- Dark mode: kleuren schalen correct mee via `dark:` prefix
 
