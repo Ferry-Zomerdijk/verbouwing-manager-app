@@ -270,6 +270,41 @@ export type Database = {
           },
         ]
       }
+      cost_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          kleur: string | null
+          naam: string
+          project_id: string
+          volgorde: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kleur?: string | null
+          naam: string
+          project_id: string
+          volgorde?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kleur?: string | null
+          naam?: string
+          project_id?: string
+          volgorde?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_categories_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_payers: {
         Row: {
           created_at: string
