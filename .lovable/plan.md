@@ -1,110 +1,202 @@
 
-# Plan: Iconen consistent tonen voor taaktypes
+# Plan: Klikbare fase-badge op foto's (Voor/Tijdens/Na)
 
-## Probleem
+## Samenvatting
 
-In de gepubliceerde versie worden `...` (drie puntjes/MoreHorizontal) iconen getoond in plaats van de juiste taaktype iconen. Dit gebeurt op meerdere plekken in de applicatie.
-
----
-
-## Oorzaak analyse
-
-Het probleem heeft **twee hoofdoorzaken**:
-
-### 1. Nieuwe taaktypes krijgen geen icoon
-
-In `TaskTypesManager.tsx` wordt bij het aanmaken van nieuwe taaktypes geen `icoon` veld meegestuurd:
-
-```tsx
-// Huidige code (regel 82-87)
-.insert({
-  naam,
-  kleur,
-  volgorde: maxVolgorde + 1,
-  is_systeem: false,
-  // ONTBREEKT: icoon veld!
-});
-```
-
-Hierdoor krijgen nieuwe taaktypes `icoon = NULL` en valt de UI terug naar `DefaultTaskTypeIcon` (MoreHorizontal = `...`).
-
-### 2. Inconsistente queries - icoon veld niet opgehaald
-
-Verschillende componenten halen het `icoon` veld niet op:
-
-| Bestand | Query | Probleem |
-|---------|-------|----------|
-| `CreateTaskDialog.tsx` | `select("id, naam, kleur")` | Mist `icoon` |
-| `EditTaskDialog.tsx` | `select("id, naam, kleur")` | Mist `icoon` |
-| `MobileTaskWizard.tsx` | `select("id, naam, kleur")` | Mist `icoon` |
-| `ProjectTasksWithDnd.tsx` | `select("id, naam, kleur, icoon")` | ✓ Correct |
+De fase-badge op foto's (Voor, Tijdens, Na) klikbaar maken zodat gebruikers door te klikken direct de fase kunnen wijzigen. Bij klikken verschijnt een dropdown met de drie opties.
 
 ---
 
-## Oplossing
+## Huidige situatie vs. gewenste situatie
 
-### Stap 1: TaskTypesManager - Standaard icoon toevoegen
+| Aspect | Huidig | Gewenst |
+|--------|--------|---------|
+| Fase-badge op foto | Statische tekst, niet klikbaar | Klikbaar, toont dropdown met opties |
+| Fase wijzigen | Niet mogelijk na upload | Direct aanpasbaar via badge-klik |
+| Gebruikerservaring | Moet foto verwijderen en opnieuw uploaden | Eenvoudig klikken om te wijzigen |
 
-Bij het aanmaken van een nieuw taaktype wordt automatisch een standaard icoon (`tag`) toegevoegd:
+---
 
-```tsx
-.insert({
-  naam,
-  kleur,
-  volgorde: maxVolgorde + 1,
-  is_systeem: false,
-  icoon: "tag",  // Standaard icoon voor nieuwe types
-});
+## Visueel resultaat
+
+**Huidige weergave:**
+```text
+┌─────────────────┐
+│ [Voor]    [🗑️] │  ← Badge is statisch
+│                 │
+│   [foto]        │
+│                 │
+│ [📍 Keuken]     │
+└─────────────────┘
 ```
 
-### Stap 2: TaskTypesManager - Icoon selector toevoegen (optioneel, aanbevolen)
-
-Voeg een dropdown toe waarmee admins een icoon kunnen kiezen uit de beschikbare iconen:
-
-**Beschikbare iconen:**
-- `shopping-cart` → ShoppingBag (Kopen/Inkoop)
-- `check-square` → ListTodo (Te doen/Taken)
-- `users` → MessageCircle (Overleg/Communicatie)
-- `settings` → Wrench (Regelen/Praktisch)
-- `help-circle` → Search (Opvragen/Informatie)
-- `tag` → MoreHorizontal (Anders/Overig)
-
-### Stap 3: Queries uitbreiden met icoon veld
-
-Voeg `icoon` toe aan alle task_types queries:
-
-**CreateTaskDialog.tsx:**
-```tsx
-.select("id, naam, kleur, icoon")
+**Nieuwe weergave (na klik op badge):**
+```text
+┌─────────────────┐
+│ [Voor ▾]  [🗑️] │  ← Badge met dropdown indicator
+│  ┌──────────┐   │
+│  │ ● Voor   │   │  ← Dropdown verschijnt
+│  │ ○ Tijdens│   │
+│  │ ○ Na     │   │
+│  └──────────┘   │
+│ [📍 Keuken]     │
+└─────────────────┘
 ```
 
-**EditTaskDialog.tsx:**
-```tsx
-.select("id, naam, kleur, icoon")
-```
+---
 
-**MobileTaskWizard.tsx:**
-```tsx
-.select("id, naam, kleur, icoon")
-```
+## Technische wijzigingen
 
-### Stap 4: Dialogs - Iconen tonen in selector
+### Bestand: `src/components/project/ProjectPhotos.tsx`
 
-Vervang de gekleurde cirkels door iconen in de taaktype dropdown:
+#### 1. Nieuwe state toevoegen (rond regel 44)
 
 ```tsx
-{taskTypes.map((type) => {
-  const IconComponent = taskTypeIconMap[type.icoon] || DefaultTaskTypeIcon;
-  return (
-    <SelectItem key={type.id} value={type.id}>
-      <div className="flex items-center gap-2">
-        <IconComponent className={`h-4 w-4 ${getTaskTypeIconColor(type.kleur)}`} />
-        {type.naam}
-      </div>
-    </SelectItem>
-  );
-})}
+const [updatingPhotoId, setUpdatingPhotoId] = useState<string | null>(null);
 ```
+
+#### 2. Nieuwe update functie toevoegen (na handleDelete functie, rond regel 248)
+
+```tsx
+const handleUpdateFase = async (photoId: string, newFase: PhotoPhase) => {
+  setUpdatingPhotoId(photoId);
+  try {
+    const { error } = await supabase
+      .from("photos")
+      .update({ fase: newFase })
+      .eq("id", photoId);
+    
+    if (error) throw error;
+    
+    toast.success("Fase bijgewerkt");
+    refetch();
+  } catch (error: any) {
+    toast.error(error.message || "Er is een fout opgetreden");
+  } finally {
+    setUpdatingPhotoId(null);
+  }
+};
+```
+
+#### 3. Klikbare badge in foto-grid (regels 371-373)
+
+Vervang de statische Badge door een DropdownMenu:
+
+**Huidige code:**
+```tsx
+<Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
+  {photo.fase}
+</Badge>
+```
+
+**Nieuwe code:**
+```tsx
+{!readOnly ? (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <Badge 
+        className={`${faseColors[photo.fase]} text-white absolute top-2 left-2 cursor-pointer hover:opacity-90 transition-opacity`}
+      >
+        {updatingPhotoId === photo.id ? "..." : photo.fase}
+      </Badge>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="start">
+      {(["Voor", "Tijdens", "Na"] as PhotoPhase[]).map((fase) => (
+        <DropdownMenuItem
+          key={fase}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (fase !== photo.fase) {
+              handleUpdateFase(photo.id, fase);
+            }
+          }}
+          className={fase === photo.fase ? "bg-accent" : ""}
+        >
+          <span className={`w-3 h-3 rounded-full mr-2 ${faseColors[fase]}`} />
+          {fase}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
+) : (
+  <Badge className={`${faseColors[photo.fase]} text-white absolute top-2 left-2`}>
+    {photo.fase}
+  </Badge>
+)}
+```
+
+#### 4. Klikbare badge in lightbox (regels 603-605)
+
+**Huidige code:**
+```tsx
+<Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
+  {selectedPhoto.fase}
+</Badge>
+```
+
+**Nieuwe code:**
+```tsx
+{!readOnly ? (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Badge 
+        className={`${faseColors[selectedPhoto.fase]} text-white cursor-pointer hover:opacity-90 transition-opacity`}
+      >
+        {updatingPhotoId === selectedPhoto.id ? "..." : selectedPhoto.fase}
+      </Badge>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="start">
+      {(["Voor", "Tijdens", "Na"] as PhotoPhase[]).map((fase) => (
+        <DropdownMenuItem
+          key={fase}
+          onClick={() => {
+            if (fase !== selectedPhoto.fase) {
+              handleUpdateFase(selectedPhoto.id, fase);
+              setSelectedPhoto({ ...selectedPhoto, fase });
+            }
+          }}
+          className={fase === selectedPhoto.fase ? "bg-accent" : ""}
+        >
+          <span className={`w-3 h-3 rounded-full mr-2 ${faseColors[fase]}`} />
+          {fase}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
+) : (
+  <Badge className={`${faseColors[selectedPhoto.fase]} text-white`}>
+    {selectedPhoto.fase}
+  </Badge>
+)}
+```
+
+#### 5. Imports toevoegen (bovenaan het bestand)
+
+```tsx
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+```
+
+---
+
+## Gebruikerservaring
+
+1. **Foto-grid**: Klik op de gekleurde badge → dropdown verschijnt → kies nieuwe fase
+2. **Lightbox**: Zelfde functionaliteit bij het bekijken van een grote foto
+3. **Visuele feedback**: Badge toont "..." tijdens het opslaan
+4. **Read-only modus**: Badge blijft statisch (niet klikbaar) voor publieke weergave
+
+---
+
+## Randgevallen
+
+- **Read-only modus**: Badge blijft niet-klikbaar voor publieke projectweergave
+- **Optimistic update in lightbox**: Lokale state wordt direct bijgewerkt voor snelle feedback
+- **Event propagation**: `stopPropagation()` voorkomt dat foto-klik de lightbox opent bij badge-klik
 
 ---
 
@@ -112,44 +204,4 @@ Vervang de gekleurde cirkels door iconen in de taaktype dropdown:
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/admin/TaskTypesManager.tsx` | Standaard icoon bij insert + icoon selector UI |
-| `src/components/project/CreateTaskDialog.tsx` | Query uitbreiden + iconen in dropdown |
-| `src/components/project/EditTaskDialog.tsx` | Query uitbreiden + iconen in dropdown |
-| `src/components/project/MobileTaskWizard.tsx` | Query uitbreiden + iconen in dropdown |
-
----
-
-## Visueel resultaat
-
-**Vóór (huidige situatie):**
-```text
-Taaktype
-○ ... Kopen
-○ ... Te doen
-○ ... Overleg
-```
-
-**Na (na implementatie):**
-```text
-Taaktype
-○ 🛒 Kopen
-○ ☑️ Te doen
-○ 💬 Overleg
-```
-
----
-
-## Database bestaande data
-
-De bestaande 6 systeemtaaktypes hebben al correcte icoon waarden:
-
-| Naam | Icoon | Status |
-|------|-------|--------|
-| Kopen | `shopping-cart` | ✓ OK |
-| Te doen | `check-square` | ✓ OK |
-| Overleg | `users` | ✓ OK |
-| Regelen | `settings` | ✓ OK |
-| Opvragen | `help-circle` | ✓ OK |
-| Anders | `tag` | ✓ OK |
-
-Geen database migratie nodig - alleen code wijzigingen.
+| `src/components/project/ProjectPhotos.tsx` | Klikbare fase-badge met dropdown + update functie |
