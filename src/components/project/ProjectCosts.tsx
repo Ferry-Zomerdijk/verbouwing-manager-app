@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileCostList from "./MobileCostList";
 import { CostPayersManager, useCostPayers } from "./CostPayersManager";
+import { CostCategoriesManager, useCostCategories, CATEGORY_COLOR_MAP } from "./CostCategoriesManager";
 import type { Database } from "@/integrations/supabase/types";
 
 interface ProjectCostsProps {
@@ -75,9 +76,22 @@ const ProjectCosts = ({
     return saved !== null ? JSON.parse(saved) : false;
   });
   const [payersManagerOpen, setPayersManagerOpen] = useState(false);
+  const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
   
   // Get custom payer options for this project
   const { data: payerOptions = [] } = useCostPayers(projectId);
+  
+  // Get custom category options for this project
+  const { data: categoryOptions = [] } = useCostCategories(projectId);
+  
+  // Build dynamic chart colors from categories
+  const dynamicCategoryColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    categoryOptions.forEach(cat => {
+      colors[cat.naam] = cat.chartColor;
+    });
+    return colors;
+  }, [categoryOptions]);
   
   const {
     data: costs,
@@ -227,14 +241,14 @@ const ProjectCosts = ({
     return acc;
   }, {} as Record<string, number>);
 
-  // Chart data
+  // Chart data - use dynamic colors from categories
   const categoryChartData = useMemo(() => {
     return Object.entries(costsByCategory).map(([name, value]) => ({
       name,
       value,
-      color: CATEGORY_CHART_COLORS[name] || "#6b7280"
+      color: dynamicCategoryColors[name] || CATEGORY_CHART_COLORS[name] || "#6b7280"
     }));
-  }, [costsByCategory]);
+  }, [costsByCategory, dynamicCategoryColors]);
 
   const statusChartData = useMemo(() => {
     const byStatus = filteredCosts.reduce((acc, cost) => {
@@ -376,12 +390,19 @@ const ProjectCosts = ({
           onUpdate={refetch}
           onExport={handleExportToExcel}
           payerOptions={payerOptions}
+          categoryOptions={categoryOptions}
           onOpenPayersManager={() => setPayersManagerOpen(true)}
+          onOpenCategoriesManager={() => setCategoriesManagerOpen(true)}
         />
         <CostPayersManager
           projectId={projectId}
           open={payersManagerOpen}
           onOpenChange={setPayersManagerOpen}
+        />
+        <CostCategoriesManager
+          projectId={projectId}
+          open={categoriesManagerOpen}
+          onOpenChange={setCategoriesManagerOpen}
         />
       </>
     );
@@ -392,6 +413,10 @@ const ProjectCosts = ({
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-2xl font-bold">Kosten</h2>
         <div className="flex items-center gap-1 sm:gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCategoriesManagerOpen(true)} className="h-8 sm:h-9">
+            <Settings className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Rubrieken</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setPayersManagerOpen(true)} className="h-8 sm:h-9">
             <Settings className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Betalers</span>
@@ -935,6 +960,12 @@ const ProjectCosts = ({
         projectId={projectId}
         open={payersManagerOpen}
         onOpenChange={setPayersManagerOpen}
+      />
+      
+      <CostCategoriesManager
+        projectId={projectId}
+        open={categoriesManagerOpen}
+        onOpenChange={setCategoriesManagerOpen}
       />
     </div>;
 };

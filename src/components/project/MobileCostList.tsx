@@ -14,6 +14,12 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Cost = Database["public"]["Tables"]["costs"]["Row"];
 
+interface CategoryOption {
+  naam: string;
+  kleur: string;
+  chartColor: string;
+}
+
 interface MobileCostListProps {
   costs: Cost[];
   projectId: string;
@@ -22,10 +28,12 @@ interface MobileCostListProps {
   onUpdate: () => void;
   onExport: () => void;
   payerOptions?: string[];
+  categoryOptions?: CategoryOption[];
   onOpenPayersManager?: () => void;
+  onOpenCategoriesManager?: () => void;
 }
 
-const CATEGORY_CHART_COLORS: Record<string, string> = {
+const DEFAULT_CATEGORY_CHART_COLORS: Record<string, string> = {
   Materiaal: "#3b82f6",
   Arbeid: "#a855f7",
   Vergunningen: "#f97316",
@@ -36,7 +44,7 @@ const CATEGORY_CHART_COLORS: Record<string, string> = {
 };
 
 const statusOptions = ["Schatting", "Offerte", "Factuur"] as const;
-const categoryOptions = ["Materiaal", "Arbeid", "Vergunningen", "Kluswerkzaamheden", "Decoratie", "Meubels", "Overig"] as const;
+const defaultCategoryOptions = ["Materiaal", "Arbeid", "Vergunningen", "Kluswerkzaamheden", "Decoratie", "Meubels", "Overig"] as const;
 const defaultBetaaldDoorOptions = ["Ron", "Monique", "Gezamenlijk", "Ntb"] as const;
 
 export const MobileCostList = ({
@@ -47,7 +55,9 @@ export const MobileCostList = ({
   onUpdate,
   onExport,
   payerOptions = [],
-  onOpenPayersManager
+  categoryOptions = [],
+  onOpenPayersManager,
+  onOpenCategoriesManager
 }: MobileCostListProps) => {
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : [...defaultBetaaldDoorOptions];
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -85,7 +95,16 @@ export const MobileCostList = ({
 
   const totalCosts = filteredCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
 
-  // Chart data
+  // Build dynamic chart colors from categories
+  const dynamicCategoryColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    categoryOptions.forEach(cat => {
+      colors[cat.naam] = cat.chartColor;
+    });
+    return colors;
+  }, [categoryOptions]);
+
+  // Chart data - use dynamic colors
   const categoryChartData = useMemo(() => {
     const byCategory = filteredCosts.reduce((acc, cost) => {
       const category = cost.categorie;
@@ -97,9 +116,9 @@ export const MobileCostList = ({
     return Object.entries(byCategory).map(([name, value]) => ({
       name,
       value,
-      color: CATEGORY_CHART_COLORS[name] || "#6b7280"
+      color: dynamicCategoryColors[name] || DEFAULT_CATEGORY_CHART_COLORS[name] || "#6b7280"
     }));
-  }, [filteredCosts]);
+  }, [filteredCosts, dynamicCategoryColors]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -130,11 +149,22 @@ export const MobileCostList = ({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
+          {onOpenCategoriesManager && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onOpenCategoriesManager}
+              title="Rubrieken beheren"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
           {onOpenPayersManager && (
             <Button 
               variant="outline" 
               size="icon"
               onClick={onOpenPayersManager}
+              title="Betalers beheren"
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -257,7 +287,7 @@ export const MobileCostList = ({
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-2">Categorie</p>
             <div className="flex flex-wrap gap-3">
-              {categoryOptions.map(category => (
+              {(categoryOptions.length > 0 ? categoryOptions.map(c => c.naam) : defaultCategoryOptions).map(category => (
                 <Badge
                   key={category}
                   variant={categoryFilter === category ? "default" : "outline"}
