@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addToQueue } from "@/lib/offlineQueue";
 import { taskTypeIconMap, getTaskTypeIconColor, DefaultTaskTypeIcon } from "@/lib/taskTypeUtils";
+import { triggerTaskCompletionConfetti } from "@/lib/confettiUtils";
 
 interface Task {
   id: string;
@@ -154,7 +155,10 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
       toast.error(message);
       console.error("updateTask error:", error);
     },
-    onSuccess: () => {
+    onSuccess: (_, { taskId, updates }) => {
+      if (updates.status === "Gereed") {
+        triggerTaskCompletionConfetti();
+      }
       toast.success(navigator.onLine ? "Taak bijgewerkt" : "Taak lokaal bijgewerkt (wordt gesync'd)");
     },
   });
