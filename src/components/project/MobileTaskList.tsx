@@ -16,7 +16,7 @@ import { emptyStateMessages, getRandomCompletionMessage } from "@/lib/builderJok
 import { addToQueue } from "@/lib/offlineQueue";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
-
+import { triggerTaskCompletionConfetti } from "@/lib/confettiUtils";
 interface TaskType {
   id: string;
   naam: string;
@@ -134,6 +134,9 @@ const MobileTaskList = ({ tasks, projectId, onUpdate, canDelete = true, onCreate
       toast.error("Fout bij bijwerken van status");
     },
     onSuccess: (_, { taskId, newStatus }) => {
+      if (newStatus === "Gereed") {
+        triggerTaskCompletionConfetti();
+      }
       toast.success(navigator.onLine ? "Status bijgewerkt" : "Status lokaal bijgewerkt (wordt gesync'd)");
     },
   });

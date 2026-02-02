@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DeleteConfirmationDialog from "../DeleteConfirmationDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { triggerTaskCompletionConfetti } from "@/lib/confettiUtils";
 
 interface TaskBulkActionsProps {
   selectedTaskIds: string[];
@@ -36,6 +37,9 @@ export const TaskBulkActions = ({ selectedTaskIds, onSuccess }: TaskBulkActionsP
       if (error) throw error;
 
       toast.success(`Status van ${selectedTaskIds.length} taken bijgewerkt`);
+      if (status === "Gereed") {
+        triggerTaskCompletionConfetti();
+      }
       onSuccess();
     } catch (error) {
       toast.error("Fout bij bijwerken van status");

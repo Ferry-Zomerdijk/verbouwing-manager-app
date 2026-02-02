@@ -27,6 +27,7 @@ import { TaskListView } from "./TaskListView";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileTaskList from "./MobileTaskList";
 import EditTaskDialog from "./EditTaskDialog";
+import { triggerTaskCompletionConfetti } from "@/lib/confettiUtils";
 
 interface ProjectTasksWithDndProps {
   projectId: string;
@@ -346,7 +347,10 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
       queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
       toast.error("Fout bij bijwerken van taak status");
     },
-    onSuccess: () => {
+    onSuccess: (_, { taskId, newStatus }) => {
+      if (newStatus === "Gereed") {
+        triggerTaskCompletionConfetti();
+      }
       toast.success("Taak status bijgewerkt");
     },
   });
