@@ -1,133 +1,76 @@
 
+# Plan: Fix confetti animatie die niet werkt
 
-# Plan: Confetti animatie bij taak op "Gereed" zetten
+## Probleem
 
-## Samenvatting
-
-Wanneer een gebruiker een taak op "Gereed" zet, wordt er een confetti-animatie afgespeeld om de voltooiing te vieren. Dit werkt op alle plekken waar de status kan worden gewijzigd.
-
----
-
-## Huidige situatie
-
-| Component | Actie |
-|-----------|-------|
-| `MobileTaskList` | Status dropdown in MobileTaskCard |
-| `ProjectTasksWithDnd` | Drag-and-drop naar Gereed kolom |
-| `TaskListView` | Status dropdown in tabelrij |
-| `TaskBulkActions` | Bulk status wijzigen |
-
-Geen visuele feedback bij voltooien van taken, behalve een toast melding.
+De confetti-animatie wordt niet getoond wanneer een taak op "Gereed" wordt gezet, ondanks dat de code correct geïmplementeerd lijkt.
 
 ---
 
-## Aanpak
+## Oorzaak
 
-Een herbruikbare confetti utility functie aanmaken die vanuit alle status-update locaties kan worden aangeroepen wanneer de nieuwe status "Gereed" is.
+Na analyse van de codebase is gebleken dat:
 
-### Nieuwe utility: `src/lib/confettiUtils.ts`
+1. **De `canvas-confetti` library is geïnstalleerd** (v1.9.4 in package.json)
+2. **De import en utility functie zijn correct** in `confettiUtils.ts`
+3. **De integratie in componenten is correct** (MobileTaskList, ProjectTasksWithDnd, etc.)
 
-```typescript
-import confetti from "canvas-confetti";
-
-export const triggerTaskCompletionConfetti = () => {
-  // Burst from center
-  confetti({
-    particleCount: 80,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors: ["#22c55e", "#10b981", "#f59e0b", "#3b82f6"],
-  });
-  
-  // Side cannons
-  confetti({
-    particleCount: 30,
-    angle: 60,
-    spread: 55,
-    origin: { x: 0 },
-    colors: ["#22c55e", "#10b981"],
-  });
-  confetti({
-    particleCount: 30,
-    angle: 120,
-    spread: 55,
-    origin: { x: 1 },
-    colors: ["#22c55e", "#10b981"],
-  });
-};
-```
+**Het probleem**: TypeScript herkent de module niet omdat er geen type declarations zijn voor `canvas-confetti`. Dit kan leiden tot runtime problemen of de bundler die de import niet correct afhandelt.
 
 ---
 
-## Wijzigingen per component
+## Oplossing
 
-### 1. `MobileTaskList.tsx` (regel 136-138)
+Een TypeScript declaration file toevoegen voor `canvas-confetti` zodat TypeScript de module correct herkent en de bundler het juist kan verwerken.
 
-In de `onSuccess` callback van `updateTaskStatus`:
+---
+
+## Technische wijzigingen
+
+### Nieuw bestand: `src/types/canvas-confetti.d.ts`
 
 ```typescript
-onSuccess: (_, { taskId, newStatus }) => {
-  if (newStatus === "Gereed") {
-    triggerTaskCompletionConfetti();
+declare module 'canvas-confetti' {
+  interface ConfettiOptions {
+    particleCount?: number;
+    angle?: number;
+    spread?: number;
+    startVelocity?: number;
+    decay?: number;
+    gravity?: number;
+    drift?: number;
+    ticks?: number;
+    origin?: {
+      x?: number;
+      y?: number;
+    };
+    colors?: string[];
+    shapes?: ('square' | 'circle')[];
+    scalar?: number;
+    zIndex?: number;
+    disableForReducedMotion?: boolean;
   }
-  toast.success(...);
-},
-```
 
-### 2. `ProjectTasksWithDnd.tsx` (regel 349-351)
-
-In de `onSuccess` callback van `updateTaskStatus`:
-
-```typescript
-onSuccess: (_, { taskId, newStatus }) => {
-  if (newStatus === "Gereed") {
-    triggerTaskCompletionConfetti();
+  interface ConfettiFunction {
+    (options?: ConfettiOptions): Promise<null>;
+    reset: () => void;
+    create: (canvas: HTMLCanvasElement, options?: { resize?: boolean; useWorker?: boolean }) => ConfettiFunction;
   }
-  toast.success("Taak status bijgewerkt");
-},
-```
 
-### 3. `TaskListView.tsx` (regel 157-159)
-
-In de `onSuccess` callback van `updateTaskMutation`:
-
-```typescript
-onSuccess: (data, { taskId, updates }) => {
-  if (updates.status === "Gereed") {
-    triggerTaskCompletionConfetti();
-  }
-  toast.success(...);
-},
-```
-
-### 4. `TaskBulkActions.tsx` (regel 40-43)
-
-In `handleBulkStatusChange` na succesvolle update:
-
-```typescript
-toast.success(`Status van ${selectedTaskIds.length} taken bijgewerkt`);
-if (status === "Gereed") {
-  triggerTaskCompletionConfetti();
+  const confetti: ConfettiFunction;
+  export default confetti;
 }
 ```
 
----
+### Update: `tsconfig.app.json`
 
-## Visueel resultaat
+Toevoegen van de types directory aan de include array:
 
-```text
-      🎊           🎊
-    🎉   🎉     🎉   🎉
-         💥
-      [ BOOM! ]
-         
-   ┌─────────────────┐
-   │ ✅ Taak titel   │
-   │    ► Gereed     │
-   └─────────────────┘
+```json
+{
+  "include": ["src", "src/types"]
+}
 ```
-
-Confetti kleuren: groen tinten (#22c55e, #10b981) voor "klaar" gevoel, met accenten van oranje en blauw.
 
 ---
 
@@ -135,15 +78,15 @@ Confetti kleuren: groen tinten (#22c55e, #10b981) voor "klaar" gevoel, met accen
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/lib/confettiUtils.ts` | **Nieuw** - Confetti utility functie |
-| `src/components/project/MobileTaskList.tsx` | Import + aanroep in onSuccess |
-| `src/components/project/ProjectTasksWithDnd.tsx` | Import + aanroep in onSuccess |
-| `src/components/project/TaskListView.tsx` | Import + aanroep in onSuccess |
-| `src/components/project/TaskBulkActions.tsx` | Import + aanroep na bulk update |
+| `src/types/canvas-confetti.d.ts` | **Nieuw** - TypeScript type declarations |
+| `tsconfig.app.json` | Toevoegen van `src/types` aan include array |
 
 ---
 
-## Extra overweging
+## Na implementatie
 
-De confetti wordt alleen getoond wanneer de status daadwerkelijk naar "Gereed" wijzigt (niet als de taak al "Gereed" was). Dit voorkomt onnodig vuurwerk bij duplicaat acties.
+Test door:
+1. Een taak te selecteren die nog niet "Gereed" is
+2. Wijzig de status naar "Gereed" 
+3. Je zou nu confetti moeten zien verschijnen
 
