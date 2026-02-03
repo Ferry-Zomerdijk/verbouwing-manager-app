@@ -342,7 +342,7 @@ export type Database = {
           bedrag: number
           beschrijving: string | null
           betaald_door: string | null
-          categorie: Database["public"]["Enums"]["cost_category"]
+          categorie: string
           created_at: string | null
           datum: string
           deel_van_huis: string | null
@@ -358,7 +358,7 @@ export type Database = {
           bedrag: number
           beschrijving?: string | null
           betaald_door?: string | null
-          categorie: Database["public"]["Enums"]["cost_category"]
+          categorie: string
           created_at?: string | null
           datum?: string
           deel_van_huis?: string | null
@@ -374,7 +374,7 @@ export type Database = {
           bedrag?: number
           beschrijving?: string | null
           betaald_door?: string | null
-          categorie?: Database["public"]["Enums"]["cost_category"]
+          categorie?: string
           created_at?: string | null
           datum?: string
           deel_van_huis?: string | null
@@ -1377,14 +1377,6 @@ export type Database = {
     Enums: {
       app_role: "admin" | "project_user"
       attendance_status: "aanwezig" | "afwezig" | "ziek" | "vakantie"
-      cost_category:
-        | "Materiaal"
-        | "Arbeid"
-        | "Vergunningen"
-        | "Overig"
-        | "Kluswerkzaamheden"
-        | "Decoratie"
-        | "Meubels"
       cost_status: "Schatting" | "Offerte" | "Factuur"
       document_type:
         | "Offerte"
@@ -1539,15 +1531,6 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "project_user"],
       attendance_status: ["aanwezig", "afwezig", "ziek", "vakantie"],
-      cost_category: [
-        "Materiaal",
-        "Arbeid",
-        "Vergunningen",
-        "Overig",
-        "Kluswerkzaamheden",
-        "Decoratie",
-        "Meubels",
-      ],
       cost_status: ["Schatting", "Offerte", "Factuur"],
       document_type: [
         "Offerte",
