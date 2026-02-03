@@ -154,7 +154,7 @@ export const MobileCostList = ({
               variant="outline" 
               size="icon"
               onClick={onOpenCategoriesManager}
-              title="Rubrieken beheren"
+              title="Categorieën beheren"
             >
               <Settings className="w-4 h-4" />
             </Button>
