@@ -415,7 +415,7 @@ const ProjectCosts = ({
         <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="outline" size="sm" onClick={() => setCategoriesManagerOpen(true)} className="h-8 sm:h-9">
             <Settings className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Rubrieken</span>
+            <span className="hidden sm:inline">Categorieën</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => setPayersManagerOpen(true)} className="h-8 sm:h-9">
             <Settings className="w-4 h-4 sm:mr-2" />
@@ -679,13 +679,9 @@ const ProjectCosts = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle categorieën</SelectItem>
-                    <SelectItem value="Materiaal">Materiaal</SelectItem>
-                    <SelectItem value="Arbeid">Arbeid</SelectItem>
-                    <SelectItem value="Vergunningen">Vergunningen</SelectItem>
-                    <SelectItem value="Kluswerkzaamheden">Kluswerkzaamheden</SelectItem>
-                    <SelectItem value="Decoratie">Decoratie</SelectItem>
-                    <SelectItem value="Meubels">Meubels</SelectItem>
-                    <SelectItem value="Overig">Overig</SelectItem>
+                    {categoryOptions.map(cat => (
+                      <SelectItem key={cat.naam} value={cat.naam}>{cat.naam}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
@@ -733,10 +729,9 @@ const ProjectCosts = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle betalers</SelectItem>
-                    <SelectItem value="Ron">Ron</SelectItem>
-                    <SelectItem value="Monique">Monique</SelectItem>
-                    <SelectItem value="Gezamenlijk">Gezamenlijk</SelectItem>
-                    <SelectItem value="Ntb">Ntb</SelectItem>
+                    {payerOptions.map(payer => (
+                      <SelectItem key={payer} value={payer}>{payer}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
@@ -811,35 +806,30 @@ const ProjectCosts = ({
                       <InlineEditableCell
                         type="select"
                         value={cost.categorie}
-                        options={[
-                          { value: "Materiaal", label: "Materiaal" },
-                          { value: "Arbeid", label: "Arbeid" },
-                          { value: "Vergunningen", label: "Vergunningen" },
-                          { value: "Kluswerkzaamheden", label: "Kluswerkzaamheden" },
-                          { value: "Decoratie", label: "Decoratie" },
-                          { value: "Meubels", label: "Meubels" },
-                          { value: "Overig", label: "Overig" }
-                        ]}
+                        options={categoryOptions.map(cat => ({ value: cat.naam, label: cat.naam }))}
                         onSave={async (value) => {
                           await updateCost(cost.id, { categorie: value as Database["public"]["Enums"]["cost_category"] });
                         }}
-                        displayRenderer={(val) => val ? (
-                          <Badge variant="outline" className={categoryColors[val] ? `${categoryColors[val]} text-white border-0` : ""}>
-                            {val}
-                          </Badge>
-                        ) : null}
+                        displayRenderer={(val) => {
+                          const catColor = categoryOptions.find(c => c.naam === val)?.kleur;
+                          const bgClass = catColor ? `bg-${catColor}-500` : categoryColors[val];
+                          return val ? (
+                            <Badge 
+                              variant="outline" 
+                              className="text-white border-0"
+                              style={{ backgroundColor: categoryOptions.find(c => c.naam === val)?.chartColor || CATEGORY_COLOR_MAP[catColor || ''] || categoryColors[val]?.replace('bg-', '#') }}
+                            >
+                              {val}
+                            </Badge>
+                          ) : null;
+                        }}
                       />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <InlineEditableCell
                         type="select"
                         value={cost.betaald_door || "Ntb"}
-                        options={[
-                          { value: "Ron", label: "Ron" },
-                          { value: "Monique", label: "Monique" },
-                          { value: "Gezamenlijk", label: "Gezamenlijk" },
-                          { value: "Ntb", label: "Ntb" }
-                        ]}
+                        options={payerOptions.map(p => ({ value: p, label: p }))}
                         onSave={async (value) => {
                           await updateCost(cost.id, { betaald_door: value || "Ntb" });
                         }}

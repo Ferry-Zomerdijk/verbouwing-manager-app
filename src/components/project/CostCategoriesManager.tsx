@@ -158,7 +158,7 @@ export function CostCategoriesManager({ projectId, open, onOpenChange }: CostCat
     // Filter out empty names
     const validCategories = localCategories.filter(c => c.naam.trim() !== "");
     if (validCategories.length === 0) {
-      toast.error("Voeg minimaal één rubriek toe");
+      toast.error("Voeg minimaal één categorie toe");
       return;
     }
     saveCategories.mutate(validCategories);
@@ -186,11 +186,11 @@ export function CostCategoriesManager({ projectId, open, onOpenChange }: CostCat
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Rubrieken beheren</DialogTitle>
+          <DialogTitle>Categorieën beheren</DialogTitle>
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">
-          Configureer rubrieken voor je kosten. Deze verschijnen in de categorie dropdown en bepalen de kleuren in grafieken.
+          Configureer categorieën voor je kosten. Deze verschijnen in de categorie dropdown en bepalen de kleuren in grafieken.
         </p>
 
         <div className="space-y-2 max-h-[50vh] overflow-y-auto py-2">
@@ -198,7 +198,7 @@ export function CostCategoriesManager({ projectId, open, onOpenChange }: CostCat
             <div className="text-center py-4 text-muted-foreground">Laden...</div>
           ) : localCategories.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
-              Geen rubrieken geconfigureerd.
+              Geen categorieën geconfigureerd.
               <br />
               Voeg er een toe of reset naar standaard.
             </div>
@@ -246,7 +246,7 @@ export function CostCategoriesManager({ projectId, open, onOpenChange }: CostCat
                 <Input
                   value={category.naam}
                   onChange={(e) => handleUpdateCategory(index, 'naam', e.target.value)}
-                  placeholder="Naam rubriek"
+                  placeholder="Naam categorie"
                   className="flex-1 h-9 bg-background"
                 />
                 <Button
@@ -269,7 +269,7 @@ export function CostCategoriesManager({ projectId, open, onOpenChange }: CostCat
             onClick={handleAddCategory}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Nieuwe rubriek toevoegen
+            Nieuwe categorie toevoegen
           </Button>
         </div>
 
