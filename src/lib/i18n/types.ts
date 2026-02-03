@@ -143,6 +143,8 @@ export type UITexts = {
       createDescription: string;
       editTitle: string;
       payersTitle: string;
+      categoriesTitle: string;
+      categoriesDescription: string;
     };
     labels: {
       amount: string;
