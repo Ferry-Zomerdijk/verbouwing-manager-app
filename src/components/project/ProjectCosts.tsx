@@ -808,7 +808,7 @@ const ProjectCosts = ({
                         value={cost.categorie}
                         options={categoryOptions.map(cat => ({ value: cat.naam, label: cat.naam }))}
                         onSave={async (value) => {
-                          await updateCost(cost.id, { categorie: value as Database["public"]["Enums"]["cost_category"] });
+                          await updateCost(cost.id, { categorie: value as string });
                         }}
                         displayRenderer={(val) => {
                           const catColor = categoryOptions.find(c => c.naam === val)?.kleur;
