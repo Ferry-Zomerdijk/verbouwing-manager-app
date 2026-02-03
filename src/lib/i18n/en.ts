@@ -130,6 +130,8 @@ export const en: UITexts = {
       createDescription: "Add a new cost item by entering data manually or uploading an invoice.",
       editTitle: "Edit cost",
       payersTitle: "Manage payers",
+      categoriesTitle: "Manage categories",
+      categoriesDescription: "Configure categories for your costs. Categories help you group expenses by type.",
     },
     labels: {
       amount: "Amount",

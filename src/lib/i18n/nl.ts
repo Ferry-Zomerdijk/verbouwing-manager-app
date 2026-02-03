@@ -135,6 +135,8 @@ export const nl: UITexts = {
       createDescription: "Voeg een nieuwe kostenpost toe door handmatig gegevens in te voeren of een factuur te uploaden.",
       editTitle: "Kosten bewerken",
       payersTitle: "Betalers beheren",
+      categoriesTitle: "Categorieën beheren",
+      categoriesDescription: "Configureer categorieën voor je kosten. Categorieën helpen je uitgaven te groeperen per type.",
     },
     labels: {
       amount: "Bedrag",
