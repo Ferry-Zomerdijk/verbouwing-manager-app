@@ -1,76 +1,52 @@
 
-# Plan: Categorieën synchroniseren met instellingen
+# Plan: Database migratie van enum naar text voor categorieën
 
-## Samenvatting
+## Probleem
 
-De dropdown voor categorieën in de kostenlijst (zowel filters als inline editing) gebruikt nu hardcoded waarden in plaats van de dynamische categorieën uit de instellingen. Daarnaast moet "Rubrieken" overal hernoemd worden naar "Categorieën".
+De `categorie` kolom in de `costs` tabel gebruikt een PostgreSQL enum (`cost_category`) met vaste waarden:
+- Materiaal, Arbeid, Vergunningen, Overig, Kluswerkzaamheden, Decoratie, Meubels
 
----
+Je hebt "Apparatuur" als custom categorie toegevoegd via de Categorieën-instellingen, maar de database accepteert alleen de vaste enum-waarden. Hierdoor krijg je de foutmelding:
 
-## Huidige situatie
-
-| Locatie | Probleem |
-|---------|----------|
-| Filter dropdown (ProjectCosts.tsx) | Hardcoded: Materiaal, Arbeid, etc. |
-| Inline edit dropdown (ProjectCosts.tsx) | Hardcoded: Materiaal, Arbeid, etc. |
-| Knop desktop "Rubrieken" | Moet "Categorieën" worden |
-| CostCategoriesManager dialoog titel | "Rubrieken beheren" → "Categorieën beheren" |
-| MobileCostList tooltip | "Rubrieken beheren" → "Categorieën beheren" |
-| Diverse teksten | "rubriek" → "categorie" |
+> invalid input value for enum cost_category: "Apparatuur"
 
 ---
 
 ## Oplossing
 
-### 1. ProjectCosts.tsx - Filter dropdown dynamisch maken (regels 676-689)
+Een database-migratie uitvoeren om de `categorie` kolom te wijzigen van `cost_category` enum naar `TEXT`. Dit maakt dynamische categorieën mogelijk.
 
-```typescript
-// Was: hardcoded lijst
-<SelectItem value="Materiaal">Materiaal</SelectItem>
-<SelectItem value="Arbeid">Arbeid</SelectItem>
-// etc.
+---
 
-// Wordt: dynamisch vanuit categoryOptions
-{categoryOptions.map(cat => (
-  <SelectItem key={cat.naam} value={cat.naam}>{cat.naam}</SelectItem>
-))}
+## Technische wijzigingen
+
+### Database migratie (supabase/migrations/...)
+
+```sql
+-- Stap 1: Wijzig kolom van enum naar text
+ALTER TABLE costs 
+  ALTER COLUMN categorie TYPE TEXT 
+  USING categorie::TEXT;
+
+-- Stap 2: Verwijder de ongebruikte enum type (optioneel, voor opschonen)
+DROP TYPE IF EXISTS cost_category;
 ```
 
-### 2. ProjectCosts.tsx - Inline edit dropdown dynamisch maken (regels 811-822)
+---
 
-```typescript
-// Was:
-options={[
-  { value: "Materiaal", label: "Materiaal" },
-  { value: "Arbeid", label: "Arbeid" },
-  // etc.
-]}
+## Voordelen na migratie
 
-// Wordt:
-options={categoryOptions.map(cat => ({ 
-  value: cat.naam, 
-  label: cat.naam 
-}))}
-```
+| Voor | Na |
+|------|-----|
+| Alleen 7 vaste categorieën | Onbeperkte custom categorieën |
+| Foutmelding bij nieuwe categorie | Elke categorie werkt |
+| Wijzigingen vereisen DB migratie | Wijzigingen via UI direct actief |
 
-### 3. Naam wijzigen "Rubrieken" → "Categorieën"
+---
 
-**ProjectCosts.tsx (desktop knop, regel 418-419):**
-```typescript
-<span className="hidden sm:inline">Categorieën</span>
-```
+## Bestaande data
 
-**CostCategoriesManager.tsx:**
-- Dialoog titel: "Categorieën beheren"
-- Beschrijving: "Configureer categorieën voor je kosten..."
-- Placeholder: "Naam categorie"
-- Button: "Nieuwe categorie toevoegen"
-- Error: "Voeg minimaal één categorie toe"
-
-**MobileCostList.tsx (tooltip regel 158):**
-```typescript
-title="Categorieën beheren"
-```
+Alle bestaande kosten behouden hun huidige categorie-waarden. Er gaat geen data verloren.
 
 ---
 
@@ -78,15 +54,4 @@ title="Categorieën beheren"
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/project/ProjectCosts.tsx` | Dynamische categorieën in filter + inline edit + knoplabel |
-| `src/components/project/CostCategoriesManager.tsx` | Alle "rubriek" teksten → "categorie" |
-| `src/components/project/MobileCostList.tsx` | Tooltip tekst aanpassen |
-
----
-
-## Resultaat na implementatie
-
-- De filter dropdown toont categorieën in de volgorde zoals geconfigureerd
-- De inline edit dropdown toont dezelfde categorieën in dezelfde volgorde  
-- Nieuwe/verwijderde categorieën zijn direct zichtbaar in alle dropdowns
-- Consistente naamgeving "Categorieën" door de hele applicatie
+| `supabase/migrations/[timestamp]_convert_cost_category_to_text.sql` | **Nieuw** - Migratie script |
