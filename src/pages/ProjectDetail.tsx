@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { language, setLanguage, t } = useLanguage();
+  
+  // Determine initial tab based on URL parameter
+  const initialTab = searchParams.get('task') ? 'taken' : 'overzicht';
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
     email: null,
@@ -302,7 +306,7 @@ const ProjectDetail = () => {
 
       {/* Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 animate-fade-in">
-        <Tabs defaultValue="overzicht" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           {/* Scrollable tabs container with fade indicators */}
           <div className="relative mb-4 sm:mb-6">
             {/* Left fade indicator */}
