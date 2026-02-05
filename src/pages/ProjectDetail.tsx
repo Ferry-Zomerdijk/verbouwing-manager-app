@@ -50,13 +50,22 @@ const ProjectDetail = () => {
   const queryClient = useQueryClient();
   const { language, setLanguage, t } = useLanguage();
   
-  // Determine initial tab based on URL parameter
-  const initialTab = searchParams.get('task') ? 'taken' : 'overzicht';
+  // Controlled tab state that reacts to URL changes
+  const [activeTab, setActiveTab] = useState<string>(
+    searchParams.get('task') ? 'taken' : 'overzicht'
+  );
   const [userInfo, setUserInfo] = useState<{ naam: string | null; email: string | null; isAdmin: boolean }>({
     naam: null,
     email: null,
     isAdmin: false,
   });
+
+  // React to URL parameter changes (for same-page navigation)
+  useEffect(() => {
+    if (searchParams.get('task')) {
+      setActiveTab('taken');
+    }
+  }, [searchParams]);
 
   // Load user info
   useEffect(() => {
@@ -306,7 +315,7 @@ const ProjectDetail = () => {
 
       {/* Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 animate-fade-in">
-        <Tabs defaultValue={initialTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Scrollable tabs container with fade indicators */}
           <div className="relative mb-4 sm:mb-6">
             {/* Left fade indicator */}
