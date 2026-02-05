@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown, Settings } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown, Settings, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,9 @@ import MobileCostList from "./MobileCostList";
 import { CostPayersManager, useCostPayers } from "./CostPayersManager";
 import { CostCategoriesManager, useCostCategories, CATEGORY_COLOR_MAP } from "./CostCategoriesManager";
 import type { Database } from "@/integrations/supabase/types";
+
+type CostSortKey = "datum" | "bedrag";
+type SortDirection = "asc" | "desc";
 
 interface ProjectCostsProps {
   projectId: string;
@@ -77,6 +80,19 @@ const ProjectCosts = ({
   });
   const [payersManagerOpen, setPayersManagerOpen] = useState(false);
   const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: CostSortKey; direction: SortDirection } | null>(() => {
+    const stored = localStorage.getItem(`costs-sort-${projectId}`);
+    return stored ? JSON.parse(stored) : null;
+  });
+  
+  // Persist sort config to localStorage
+  useEffect(() => {
+    if (sortConfig) {
+      localStorage.setItem(`costs-sort-${projectId}`, JSON.stringify(sortConfig));
+    } else {
+      localStorage.removeItem(`costs-sort-${projectId}`);
+    }
+  }, [sortConfig, projectId]);
   
   // Get custom payer options for this project
   const { data: payerOptions = [] } = useCostPayers(projectId);
@@ -163,6 +179,59 @@ const ProjectCosts = ({
     });
   }, [costs, categoryFilter, deelVanHuisFilter, statusFilter, leverancierFilter, betaaldDoorFilter, searchQuery]);
 
+  // Sort filtered costs
+  const sortedCosts = useMemo(() => {
+    if (!filteredCosts.length || !sortConfig) return filteredCosts;
+    
+    return [...filteredCosts].sort((a, b) => {
+      let aVal: number, bVal: number;
+      
+      if (sortConfig.key === "datum") {
+        aVal = new Date(a.datum).getTime();
+        bVal = new Date(b.datum).getTime();
+      } else {
+        aVal = parseFloat(a.bedrag.toString());
+        bVal = parseFloat(b.bedrag.toString());
+      }
+      
+      return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+    });
+  }, [filteredCosts, sortConfig]);
+
+  const handleSort = (column: CostSortKey) => {
+    setSortConfig(current => {
+      if (!current || current.key !== column) {
+        // First click: ascending
+        return { key: column, direction: "asc" };
+      }
+      if (current.direction === "asc") {
+        // Second click: descending
+        return { key: column, direction: "desc" };
+      }
+      // Third click: reset
+      return null;
+    });
+  };
+
+  const SortButton = ({ column, label }: { column: CostSortKey; label: string }) => {
+    const isActive = sortConfig?.key === column;
+    const direction = isActive ? sortConfig?.direction : null;
+
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => handleSort(column)}
+        className="h-auto p-0 font-medium hover:bg-transparent"
+      >
+        {label}
+        {direction === "asc" && <ArrowUp className="ml-1 h-3 w-3" />}
+        {direction === "desc" && <ArrowDown className="ml-1 h-3 w-3" />}
+        {!direction && <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />}
+      </Button>
+    );
+  };
+
   const hasActiveFilters = categoryFilter !== "all" || deelVanHuisFilter !== "all" || statusFilter !== "all" || leverancierFilter !== "all" || betaaldDoorFilter !== "all" || searchQuery.trim() !== "";
 
   const clearFilters = () => {
@@ -233,8 +302,8 @@ const ProjectCosts = ({
       setDeleting(false);
     }
   };
-  const totalCosts = filteredCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
-  const costsByCategory = filteredCosts.reduce((acc, cost) => {
+  const totalCosts = sortedCosts.reduce((sum, cost) => sum + parseFloat(cost.bedrag.toString()), 0);
+  const costsByCategory = sortedCosts.reduce((acc, cost) => {
     const category = cost.categorie;
     if (!acc[category]) acc[category] = 0;
     acc[category] += parseFloat(cost.bedrag.toString());
@@ -251,7 +320,7 @@ const ProjectCosts = ({
   }, [costsByCategory, dynamicCategoryColors]);
 
   const statusChartData = useMemo(() => {
-    const byStatus = filteredCosts.reduce((acc, cost) => {
+    const byStatus = sortedCosts.reduce((acc, cost) => {
       const status = cost.status || "Schatting";
       if (!acc[status]) acc[status] = 0;
       acc[status] += parseFloat(cost.bedrag.toString());
@@ -263,7 +332,7 @@ const ProjectCosts = ({
       value,
       fill: STATUS_CHART_COLORS[name] || "#6b7280"
     }));
-  }, [filteredCosts]);
+  }, [sortedCosts]);
 
   // Betaald door chart data
   // Generate colors for payers dynamically
@@ -283,7 +352,7 @@ const ProjectCosts = ({
   }, [payerOptions]);
 
   const betaaldDoorChartData = useMemo(() => {
-    const byBetaaldDoor = filteredCosts.reduce((acc, cost) => {
+    const byBetaaldDoor = sortedCosts.reduce((acc, cost) => {
       const betaaldDoor = cost.betaald_door || "Ntb";
       if (!acc[betaaldDoor]) acc[betaaldDoor] = 0;
       acc[betaaldDoor] += parseFloat(cost.bedrag.toString());
@@ -300,13 +369,13 @@ const ProjectCosts = ({
         value: byBetaaldDoor[name],
         color: BETAALD_DOOR_COLORS[name] || "#6b7280"
       }));
-  }, [filteredCosts, payerOptions, BETAALD_DOOR_COLORS]);
+  }, [sortedCosts, payerOptions, BETAALD_DOOR_COLORS]);
 
   // Time series data - costs per month
   const timeSeriesData = useMemo(() => {
-    if (!filteredCosts.length) return [];
+    if (!sortedCosts.length) return [];
     
-    const byMonth = filteredCosts.reduce((acc, cost) => {
+    const byMonth = sortedCosts.reduce((acc, cost) => {
       const monthKey = format(new Date(cost.datum), "yyyy-MM");
       if (!acc[monthKey]) {
         acc[monthKey] = { Schatting: 0, Offerte: 0, Factuur: 0, total: 0 };
@@ -329,7 +398,7 @@ const ProjectCosts = ({
         cumulativeTotal
       };
     });
-  }, [filteredCosts]);
+  }, [sortedCosts]);
 
   // Calculate max Y value for chart including budget
   const maxYValue = useMemo(() => {
@@ -341,12 +410,12 @@ const ProjectCosts = ({
   }, [timeSeriesData, totalBudget]);
 
   const handleExportToExcel = () => {
-    if (filteredCosts.length === 0) {
+    if (sortedCosts.length === 0) {
       toast.error("Geen kostenposten om te exporteren");
       return;
     }
 
-    const exportData = filteredCosts.map(cost => ({
+    const exportData = sortedCosts.map(cost => ({
       "Datum": format(new Date(cost.datum), "dd-MM-yyyy"),
       "Status": cost.status || "Schatting",
       "Categorie": cost.categorie,
@@ -375,7 +444,7 @@ const ProjectCosts = ({
     worksheet["!cols"] = colWidths;
 
     XLSX.writeFile(workbook, `kosten-export-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
-    toast.success(`${filteredCosts.length} kostenposten geëxporteerd`);
+    toast.success(`${sortedCosts.length} kostenposten geëxporteerd`);
   };
 
   // Mobile view
@@ -421,7 +490,7 @@ const ProjectCosts = ({
             <Settings className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Betalers</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportToExcel} disabled={filteredCosts.length === 0} className="h-8 sm:h-9">
+          <Button variant="outline" size="sm" onClick={handleExportToExcel} disabled={sortedCosts.length === 0} className="h-8 sm:h-9">
             <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Exporteer</span>
           </Button>
@@ -751,24 +820,28 @@ const ProjectCosts = ({
             </div>
           </div>
 
-          {filteredCosts.length > 0 ? <div className="overflow-x-auto -mx-4 sm:mx-0">
+          {sortedCosts.length > 0 ? <div className="overflow-x-auto -mx-4 sm:mx-0">
             <Table className="min-w-[700px] sm:min-w-0">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Datum</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    <SortButton column="datum" label="Datum" />
+                  </TableHead>
                   <TableHead className="whitespace-nowrap">Status</TableHead>
                   <TableHead className="whitespace-nowrap">Categorie</TableHead>
                   <TableHead className="hidden lg:table-cell whitespace-nowrap">Betaald door</TableHead>
                   <TableHead className="hidden lg:table-cell whitespace-nowrap">Deel van huis</TableHead>
                   <TableHead className="hidden md:table-cell whitespace-nowrap">Leverancier</TableHead>
                   <TableHead className="hidden lg:table-cell">Beschrijving</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Bedrag</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    <SortButton column="bedrag" label="Bedrag" />
+                  </TableHead>
                   <TableHead className="w-[80px] sm:w-[100px]">Factuur</TableHead>
                   <TableHead className="w-[50px] sm:w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCosts.map(cost => <TableRow key={cost.id}>
+                {sortedCosts.map(cost => <TableRow key={cost.id}>
                     <TableCell>
                       <InlineEditableCell
                         type="date"
