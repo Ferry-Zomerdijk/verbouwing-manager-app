@@ -1,71 +1,118 @@
 
-# Plan: Fix doorklikken vanuit project leveringen widget
+# Plan: Smart Zoekfunctie voor Kostenposten
 
-## Probleem
+## Samenvatting
 
-De widget op de projectpagina navigeert naar dezelfde URL met een `?task=` parameter:
-```typescript
-navigate(`/project/${projectId}?task=${delivery.id}`)
-```
-
-Maar omdat je al op die projectpagina bent:
-- React Router mount de `ProjectDetail` component NIET opnieuw
-- `defaultValue={initialTab}` wordt alleen bij eerste render gebruikt
-- De Tabs component blijft op "overzicht" staan
-- De `ProjectTasksWithDnd` component (die de taak opent) wordt nooit gemount
+Verbeter de zoekfunctie voor kostenposten zodat deze intelligenter werkt met real-time resultaten en zoekt door alle relevante velden. Voeg visuele feedback toe zodat gebruikers zien welke velden matchen.
 
 ---
 
-## Oplossing
+## Huidige Situatie
 
-Maak de Tabs component "controlled" zodat deze reageert op URL-wijzigingen, ook als de gebruiker al op de pagina is.
+De zoekfunctie werkt al real-time bij het typen en doorzoekt de volgende velden:
+- Beschrijving
+- Leverancier  
+- Deel van huis
+- Categorie
+- Status
+- Betaald door
+- Koppeling begrotingspost
+- Bedrag
+
+**Niet doorzocht:**
+- Datum (bijv. zoeken op "januari" of "2024")
 
 ---
 
-## Technische wijzigingen
+## Verbeteringen
 
-### ProjectDetail.tsx
+### 1. Datum toevoegen aan zoekbare velden
 
-**1. State toevoegen voor actieve tab:**
+Gebruikers kunnen zoeken op datumwaarden:
+- Geformatteerde datum: "15-01-2024", "januari", "2024"
+- Dit maakt het makkelijk om alle kosten van een bepaalde maand te vinden
+
+### 2. Verbeterde placeholder tekst
+
+Vervang "Zoek..." met "Zoek in alle velden..." of toon een tooltip met doorzoekbare velden.
+
+### 3. Toon aantal resultaten tijdens zoeken
+
+Voeg direct onder het zoekveld een indicator toe die toont hoeveel resultaten gevonden zijn terwijl je typt.
+
+---
+
+## Technische Wijzigingen
+
+### ProjectCosts.tsx (Desktop)
+
 ```typescript
-const [activeTab, setActiveTab] = useState<string>(
-  searchParams.get('task') ? 'taken' : 'overzicht'
-);
+// In filteredCosts useMemo - toevoegen datum veld
+const matchSearch = !query || [
+  cost.beschrijving,
+  cost.leverancier,
+  cost.deel_van_huis,
+  cost.categorie,
+  cost.status,
+  cost.betaald_door,
+  cost.koppeling_begrotingspost,
+  cost.bedrag?.toString(),
+  // NIEUW: geformatteerde datum voor zoeken
+  format(new Date(cost.datum), "dd-MM-yyyy"),
+  format(new Date(cost.datum), "MMMM yyyy", { locale: nl }),
+].some(field => field?.toLowerCase().includes(query));
 ```
 
-**2. Effect om te reageren op URL wijzigingen:**
-```typescript
-useEffect(() => {
-  if (searchParams.get('task')) {
-    setActiveTab('taken');
-  }
-}, [searchParams]);
-```
-
-**3. Tabs component aanpassen naar controlled mode:**
 ```tsx
-<Tabs 
-  value={activeTab} 
-  onValueChange={setActiveTab} 
-  className="w-full"
->
+// Verbeterde placeholder en zoekresultaten indicator
+<Input
+  placeholder="Zoek in beschrijving, leverancier, datum..."
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  className="pl-9 pr-9 h-9"
+/>
+{searchQuery && (
+  <p className="text-xs text-muted-foreground mt-1">
+    {filteredCosts.length} resultaten gevonden
+  </p>
+)}
 ```
 
----
+### MobileCostList.tsx (Mobiel)
 
-## Flow na wijziging
-
-1. Gebruiker klikt op levering in project widget
-2. `navigate()` wijzigt de URL naar `?task={id}`
-3. `searchParams` verandert → useEffect triggert
-4. `setActiveTab('taken')` wordt aangeroepen
-5. Tabs switcht naar "taken" tab
-6. `ProjectTasksWithDnd` mount en opent de taak dialog
+Dezelfde verbeteringen toepassen:
+- Datum toevoegen aan zoekvelden
+- Verbeterde placeholder tekst
+- Resultaten teller toevoegen
 
 ---
 
-## Bestanden te wijzigen
+## Wijzigingen per bestand
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/pages/ProjectDetail.tsx` | Controlled Tabs met state + useEffect voor URL changes |
+| `src/components/project/ProjectCosts.tsx` | Datum toevoegen aan zoekfilter, placeholder verbeteren, resultaten indicator |
+| `src/components/project/MobileCostList.tsx` | Zelfde verbeteringen voor mobiele weergave |
+
+---
+
+## Gebruikerservaring
+
+- Typ "januari" → vindt alle kosten uit januari
+- Typ "2024" → vindt alle kosten uit 2024
+- Typ "IKEA" → vindt kosten met IKEA als leverancier
+- Typ "500" → vindt kosten met €500 of bevat "500" in beschrijving
+- Real-time teller toont "X resultaten gevonden"
+
+---
+
+## Voorbeeld Resultaat
+
+```
+┌──────────────────────────────────────────┐
+│ 🔍 Zoek in beschrijving, leverancier,    │
+│    datum, categorie...                   │
+│    ────────────────────────────────── X  │
+│ 3 resultaten gevonden                    │
+└──────────────────────────────────────────┘
+```
