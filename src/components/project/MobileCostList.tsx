@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Euro, Filter, ChevronDown, ChevronUp, FileSpreadsheet, RefreshCw, AlertTriangle, Search, X, Settings } from "lucide-react";
+import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { emptyStateMessages } from "@/lib/builderJokes";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -76,7 +78,7 @@ export const MobileCostList = ({
       const matchCategory = !categoryFilter || cost.categorie === categoryFilter;
       const matchBetaaldDoor = !betaaldDoorFilter || cost.betaald_door === betaaldDoorFilter;
       
-      // Search filter - search across all text fields
+      // Search filter - search across all text fields including formatted date
       const query = searchQuery.toLowerCase().trim();
       const matchSearch = !query || [
         cost.beschrijving,
@@ -86,7 +88,9 @@ export const MobileCostList = ({
         cost.status,
         cost.betaald_door,
         cost.koppeling_begrotingspost,
-        cost.bedrag?.toString()
+        cost.bedrag?.toString(),
+        format(new Date(cost.datum), "dd-MM-yyyy"),
+        format(new Date(cost.datum), "MMMM yyyy", { locale: nl }),
       ].some(field => field?.toLowerCase().includes(query));
       
       return matchStatus && matchCategory && matchBetaaldDoor && matchSearch;
@@ -191,7 +195,7 @@ export const MobileCostList = ({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Zoeken..."
+          placeholder="Zoek in beschrijving, leverancier, datum..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 pr-9"
@@ -207,6 +211,11 @@ export const MobileCostList = ({
           </Button>
         )}
       </div>
+      {searchQuery && (
+        <p className="text-xs text-muted-foreground -mt-2">
+          {filteredCosts.length} resultaten gevonden
+        </p>
+      )}
 
       {/* Total Amount Card */}
       <Card className={`${totalBudget > 0 && totalCosts > totalBudget ? 'bg-destructive/5 border-destructive/20' : 'bg-primary/5 border-primary/20'}`}>
