@@ -162,7 +162,7 @@ const ProjectCosts = ({
       const matchLeverancier = leverancierFilter === "all" || cost.leverancier === leverancierFilter;
       const matchBetaaldDoor = betaaldDoorFilter === "all" || cost.betaald_door === betaaldDoorFilter;
       
-      // Search filter - search across all text fields
+      // Search filter - search across all text fields including formatted date
       const query = searchQuery.toLowerCase().trim();
       const matchSearch = !query || [
         cost.beschrijving,
@@ -172,7 +172,9 @@ const ProjectCosts = ({
         cost.status,
         cost.betaald_door,
         cost.koppeling_begrotingspost,
-        cost.bedrag?.toString()
+        cost.bedrag?.toString(),
+        format(new Date(cost.datum), "dd-MM-yyyy"),
+        format(new Date(cost.datum), "MMMM yyyy", { locale: nl }),
       ].some(field => field?.toLowerCase().includes(query));
       
       return matchCategory && matchDeelVanHuis && matchStatus && matchLeverancier && matchBetaaldDoor && matchSearch;
@@ -718,7 +720,7 @@ const ProjectCosts = ({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Zoek..."
+                placeholder="Zoek in beschrijving, leverancier, datum..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-9 h-9"
@@ -734,6 +736,11 @@ const ProjectCosts = ({
                 </Button>
               )}
             </div>
+            {searchQuery && (
+              <p className="text-xs text-muted-foreground">
+                {filteredCosts.length} resultaten gevonden
+              </p>
+            )}
             
             <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
