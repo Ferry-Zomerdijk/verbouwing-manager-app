@@ -506,6 +506,11 @@ export type UITexts = {
         maintenance: string;
         keys: string;
       };
+      detail: {
+        title: string;
+        noItems: string;
+        linkedItems: string;
+      };
     };
   };
 };

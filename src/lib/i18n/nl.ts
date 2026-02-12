@@ -456,6 +456,11 @@ export const nl: UITexts = {
         maintenance: "onderhoudsinstructies",
         keys: "sleutels",
       },
+      detail: {
+        title: "Overzicht: {name}",
+        noItems: "Geen gekoppelde items",
+        linkedItems: "Gekoppelde items",
+      },
     },
   },
 };

@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Loader2, Link } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { HousePartDetailDialog } from "./HousePartDetailDialog";
 
 interface HousePart {
   id: string;
@@ -42,6 +44,7 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [newPartName, setNewPartName] = useState("");
   const [checkingUsage, setCheckingUsage] = useState<number | null>(null);
+  const [selectedPart, setSelectedPart] = useState<string | null>(null);
 
   const { data: parts = [], isLoading } = useQuery({
     queryKey: ["house-parts", projectId],
@@ -63,6 +66,22 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
     setLocalParts([...parts].sort((a, b) => a.naam.localeCompare(b.naam)));
     setHasChanges(false);
   }, [parts]);
+
+  // Fetch counts for each existing part
+  const { data: partCounts = {} } = useQuery({
+    queryKey: ["house-part-counts", projectId, parts.map((p) => p.naam).join(",")],
+    queryFn: async () => {
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        parts.map(async (part) => {
+          const usage = await checkHousePartUsage(projectId, part.naam);
+          counts[part.naam] = usage.tasks + usage.costs + usage.photos + usage.maintenance + usage.keys;
+        })
+      );
+      return counts;
+    },
+    enabled: parts.length > 0,
+  });
 
   const saveParts = useMutation({
     mutationFn: async (partsToSave: HousePart[]) => {
@@ -188,11 +207,27 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
               key={part.id}
               className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/30"
             >
-              <Input
-                value={part.naam}
-                onChange={(e) => handleUpdateName(index, e.target.value)}
-                className="flex-1 h-9 bg-background"
-              />
+              <button
+                type="button"
+                className="flex-1 flex items-center gap-2 text-left min-w-0"
+                onClick={() => !part.id.startsWith("new-") && setSelectedPart(part.naam)}
+              >
+                <Input
+                  value={part.naam}
+                  onChange={(e) => { e.stopPropagation(); handleUpdateName(index, e.target.value); }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 h-9 bg-background"
+                />
+                {!part.id.startsWith("new-") && (partCounts[part.naam] ?? 0) > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 cursor-pointer text-xs gap-1"
+                  >
+                    <Link className="h-3 w-3" />
+                    {partCounts[part.naam]}
+                  </Badge>
+                )}
+              </button>
 
               <Button
                 type="button"
@@ -236,6 +271,13 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
           </Button>
         </div>
       )}
+
+      <HousePartDetailDialog
+        projectId={projectId}
+        partName={selectedPart || ""}
+        open={!!selectedPart}
+        onOpenChange={(open) => !open && setSelectedPart(null)}
+      />
     </div>
   );
 }
