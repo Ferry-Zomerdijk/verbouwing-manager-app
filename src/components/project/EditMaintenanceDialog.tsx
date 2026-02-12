@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
 
 const HOUSE_PART_SUGGESTIONS = [
   "CV-ketel en verwarming",
@@ -56,6 +57,8 @@ export interface MaintenanceInstruction {
   frequentie: string | null;
   contact_naam: string | null;
   contact_telefoon: string | null;
+  bijlage_url: string | null;
+  document_id: string | null;
   volgorde: number;
   created_at: string;
 }
@@ -78,6 +81,24 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const [frequentie, setFrequentie] = useState("");
   const [contactNaam, setContactNaam] = useState("");
   const [contactTelefoon, setContactTelefoon] = useState("");
+  const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
+  const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
+
+  // Fetch linked document name if document_id exists
+  const { data: linkedDoc } = useQuery({
+    queryKey: ["document-name", instruction?.document_id],
+    queryFn: async () => {
+      if (!instruction?.document_id) return null;
+      const { data } = await supabase
+        .from("documents")
+        .select("bestandsnaam")
+        .eq("id", instruction.document_id)
+        .single();
+      return data;
+    },
+    enabled: open && !!instruction?.document_id,
+  });
 
   useEffect(() => {
     if (instruction) {
@@ -87,8 +108,16 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
       setFrequentie(instruction.frequentie || "");
       setContactNaam(instruction.contact_naam || "");
       setContactTelefoon(instruction.contact_telefoon || "");
+      setBijlageUrl(instruction.bijlage_url || null);
+      setDocumentId(instruction.document_id || null);
     }
   }, [instruction]);
+
+  useEffect(() => {
+    if (linkedDoc) {
+      setLinkedDocumentName(linkedDoc.bestandsnaam);
+    }
+  }, [linkedDoc]);
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
@@ -117,6 +146,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           frequentie: frequentie || null,
           contact_naam: contactNaam.trim() || null,
           contact_telefoon: contactTelefoon.trim() || null,
+          bijlage_url: bijlageUrl || null,
+          document_id: documentId || null,
         })
         .eq("id", instruction.id);
 
@@ -201,6 +232,18 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
             type="tel"
           />
         </div>
+
+        {instruction && (
+          <MaintenanceAttachmentSection
+            projectId={instruction.project_id}
+            bijlageUrl={bijlageUrl}
+            setBijlageUrl={setBijlageUrl}
+            documentId={documentId}
+            setDocumentId={setDocumentId}
+            linkedDocumentName={linkedDocumentName}
+            setLinkedDocumentName={setLinkedDocumentName}
+          />
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-4">

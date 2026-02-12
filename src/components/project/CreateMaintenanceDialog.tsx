@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
 
 const HOUSE_PART_SUGGESTIONS = [
   "CV-ketel en verwarming",
@@ -65,6 +66,9 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [frequentie, setFrequentie] = useState("");
   const [contactNaam, setContactNaam] = useState("");
   const [contactTelefoon, setContactTelefoon] = useState("");
+  const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
+  const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
@@ -83,6 +87,9 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
     setFrequentie("");
     setContactNaam("");
     setContactTelefoon("");
+    setBijlageUrl(null);
+    setDocumentId(null);
+    setLinkedDocumentName(null);
   };
 
   const handleSubmit = async () => {
@@ -103,6 +110,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           frequentie: frequentie || null,
           contact_naam: contactNaam.trim() || null,
           contact_telefoon: contactTelefoon.trim() || null,
+          bijlage_url: bijlageUrl || null,
+          document_id: documentId || null,
         });
 
       if (error) throw error;
@@ -187,6 +196,16 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
             type="tel"
           />
         </div>
+
+        <MaintenanceAttachmentSection
+          projectId={projectId}
+          bijlageUrl={bijlageUrl}
+          setBijlageUrl={setBijlageUrl}
+          documentId={documentId}
+          setDocumentId={setDocumentId}
+          linkedDocumentName={linkedDocumentName}
+          setLinkedDocumentName={setLinkedDocumentName}
+        />
       </div>
 
       <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-4">
