@@ -1,94 +1,139 @@
 
 
-# Plan: Bijlagen toevoegen aan Onderhoudsinstructies
+# Plan: Centraal beheer van "Deel van huis"
 
 ## Samenvatting
 
-Voeg aan onderhoudsinstructies de mogelijkheid toe om bijlagen te koppelen. Gebruikers kunnen:
-1. Een nieuw bestand uploaden (bijv. handleiding, garantiebewijs)
-2. Een bestaand document uit het project kiezen
+Maak een nieuwe database-tabel `house_parts` per project, vergelijkbaar met hoe `cost_categories` en `contact_categories` nu werken. Alle plekken die nu hardcoded lijsten of ad-hoc berekeningen gebruiken voor "deel van huis" gaan voortaan uit deze centrale bron lezen. Beheer (toevoegen, hernoemen, verwijderen, volgorde) komt in het Beheer-tabblad.
 
 ---
 
-## Aanpak
+## Huidige situatie
 
-### Database: twee nieuwe kolommen op `maintenance_instructions`
+"Deel van huis" opties zijn nu verspreid over meerdere bestanden met verschillende hardcoded lijsten:
+
+- **Taken**: Autocomplete op basis van bestaande waarden uit taken
+- **Kosten**: Dropdown uit gecombineerde taken + kosten waarden
+- **Foto's**: Hardcoded lijst ("Woning", "Keuken", "Badkamer", etc.) + waarden uit foto's en taken
+- **Onderhoud**: Aparte hardcoded lijst ("CV-ketel en verwarming", "Airconditioning", etc.)
+- **Sleutels**: Weer een andere hardcoded lijst ("Woning", "Garage", "Bijgebouw", etc.)
+
+---
+
+## Oplossing
+
+### 1. Nieuwe tabel: `house_parts`
 
 | Kolom | Type | Beschrijving |
 |-------|------|-------------|
-| `bijlage_url` | text | Pad naar geupload bestand in storage |
-| `document_id` | uuid | FK naar een bestaand document uit de `documents` tabel |
+| id | uuid | Primary key |
+| project_id | uuid | FK naar projects |
+| naam | text | Naam van het deel (bijv. "Keuken") |
+| volgorde | integer | Sorteervolgorde |
+| created_at | timestamptz | Aanmaakdatum |
 
-Beide zijn optioneel en kunnen naast elkaar bestaan (een instructie kan zowel een eigen upload als een gekoppeld document hebben).
+RLS-policies volgen het bestaande patroon (`has_project_access` voor SELECT/INSERT/UPDATE, admin+owner voor DELETE).
 
-### Storage
+Bij het eerste bezoek aan een project worden standaard-opties aangemaakt (seed), gecombineerd uit alle huidige lijsten:
+- Woning, Keuken, Badkamer, Slaapkamer, Woonkamer, Hal, Zolder
+- Garage, Schuur, Bijgebouw, Tuin en buitenruimte, Poort, Brievenbus
+- CV-ketel en verwarming, Airconditioning, Dakgoten en afvoer
+- Elektrische installatie, Waterleiding en sanitair
+- Alarm en beveiliging, Zonnepanelen, Ventilatie en afzuiging
+- Ramen en deuren, Dak, Gevels, Zwembad/jacuzzi
 
-Uploads gaan naar de bestaande `invoices` bucket (die al gebruikt wordt voor documenten), in het pad `{userId}/{projectId}/{timestamp}.ext`.
+### 2. Nieuw beheercomponent: `HousePartsManager.tsx`
 
-### UI in Create/Edit dialogen
+Vergelijkbaar met `CostCategoriesManager` en `ContactCategoriesManager`:
+- Lijst met drag-and-drop volgorde
+- Inline hernoemen
+- Toevoegen en verwijderen
+- Wordt getoond als derde accordion-sectie in het Beheer-tabblad
 
-Onder de bestaande velden komt een nieuw "Bijlage" gedeelte met twee opties:
+### 3. Alle componenten aanpassen
 
-```
-┌──────────────────────────────────────────────┐
-│ Bijlage                                      │
-│                                              │
-│  [Upload bestand]  of  [Kies uit documenten] │
-│                                              │
-│  ┌──────────────────────────────────┐        │
-│  │ handleiding-cv.pdf         [X]   │        │
-│  └──────────────────────────────────┘        │
-└──────────────────────────────────────────────┘
-```
+Vervang alle hardcoded lijsten en ad-hoc useMemo berekeningen door een query op `house_parts`:
 
-- **Upload bestand**: Opent een file picker, uploadt naar storage, slaat pad op in `bijlage_url`
-- **Kies uit documenten**: Toont een lijst van bestaande projectdocumenten in een dialog, slaat gekozen document_id op in `document_id`
-- Gekoppelde bijlage wordt getoond met bestandsnaam en een verwijder-knop
-- Bij bewerken worden bestaande bijlagen getoond
+| Component | Huidige bron | Nieuwe bron |
+|-----------|-------------|-------------|
+| ProjectTasksWithDnd | useMemo uit taken | Query `house_parts` |
+| ProjectCosts | useMemo uit taken+kosten | Query `house_parts` |
+| ProjectPhotos | Hardcoded DEFAULT_PARTS + data | Query `house_parts` |
+| CreateMaintenanceDialog | Hardcoded HOUSE_PART_SUGGESTIONS | Query `house_parts` |
+| EditMaintenanceDialog | Hardcoded HOUSE_PART_SUGGESTIONS | Query `house_parts` |
+| CreateKeyDialog | Hardcoded DEFAULT_PARTS | Query `house_parts` |
+| MobileTaskWizard | Props | Query `house_parts` |
+| CreateCostDialog | Props | Query `house_parts` |
+| EditCostDialog | Props | Query `house_parts` |
 
-### UI in de instructielijst (MaintenanceInstructions.tsx)
+### 4. Automatisch nieuwe waarden toevoegen
 
-Bij elke instructiekaart wordt een bijlage-indicator getoond met een klikbare link om het bestand te downloaden of bekijken.
+Wanneer een gebruiker in een Autocomplete-veld een nieuwe waarde typt die niet in `house_parts` staat, wordt deze automatisch toegevoegd aan de tabel. Dit behoudt de flexibiliteit.
 
 ---
 
 ## Technische wijzigingen
 
-### 1. Database migratie
+### Database migratie
 
-Twee kolommen toevoegen aan `maintenance_instructions`:
-- `bijlage_url text` (nullable)
-- `document_id uuid` (nullable, geen FK constraint om flexibiliteit te behouden)
+```sql
+CREATE TABLE public.house_parts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  naam text NOT NULL,
+  volgorde integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-### 2. Bestanden te wijzigen
+-- RLS policies (zelfde patroon als cost_categories)
+```
+
+Plus een database functie `initialize_house_parts(p_project_id)` die standaardwaarden aanmaakt als er nog geen bestaan.
+
+### Nieuwe bestanden
+
+| Bestand | Beschrijving |
+|---------|-------------|
+| `src/components/project/HousePartsManager.tsx` | Beheercomponent (lijst, hernoemen, toevoegen, verwijderen, volgorde) |
+
+### Te wijzigen bestanden
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/project/CreateMaintenanceDialog.tsx` | Bijlage upload + document picker toevoegen |
-| `src/components/project/EditMaintenanceDialog.tsx` | Zelfde bijlage functionaliteit + bestaande bijlage tonen |
-| `src/components/project/MaintenanceInstructions.tsx` | Bijlage-icoon/link tonen bij instructies |
-| `src/components/project/EditMaintenanceDialog.tsx` | Interface `MaintenanceInstruction` uitbreiden met `bijlage_url` en `document_id` |
-| `src/lib/i18n/nl.ts` | Labels: "Bijlage", "Upload bestand", "Kies uit documenten", "Bijlage verwijderen" |
-| `src/lib/i18n/en.ts` | Labels: "Attachment", "Upload file", "Choose from documents", "Remove attachment" |
-| `src/lib/i18n/types.ts` | Types uitbreiden voor nieuwe labels |
+| `src/components/project/ProjectManagement.tsx` | Derde accordion-sectie "Delen van huis" toevoegen |
+| `src/components/project/ProjectTasksWithDnd.tsx` | `house_parts` query i.p.v. useMemo |
+| `src/components/project/ProjectCosts.tsx` | `house_parts` query i.p.v. useMemo |
+| `src/components/project/ProjectPhotos.tsx` | `house_parts` query, verwijder DEFAULT_PARTS |
+| `src/components/project/CreateMaintenanceDialog.tsx` | `house_parts` query, verwijder HOUSE_PART_SUGGESTIONS |
+| `src/components/project/EditMaintenanceDialog.tsx` | Idem |
+| `src/components/admin/CreateKeyDialog.tsx` | `house_parts` query, verwijder DEFAULT_PARTS |
+| `src/components/project/MobileTaskWizard.tsx` | Gebruik house_parts |
+| `src/components/project/CreateCostDialog.tsx` | Gebruik house_parts |
+| `src/components/project/EditCostDialog.tsx` | Gebruik house_parts |
+| `src/lib/i18n/nl.ts` | Vertalingen voor "Delen van huis" beheer |
+| `src/lib/i18n/en.ts` | Vertalingen voor "Parts of house" management |
+| `src/lib/i18n/types.ts` | Types uitbreiden |
 
-### 3. Document picker subcomponent
+---
 
-Een kleine selectielijst die de bestaande `documents` query hergebruikt om projectdocumenten te tonen. Wordt weergegeven in een Dialog/Drawer met zoekfunctie.
+## Gebruikerservaring
 
-### 4. Upload flow
+In het Beheer-tabblad verschijnt een nieuwe sectie:
 
-1. Gebruiker klikt "Upload bestand"
-2. File picker opent
-3. Bestand wordt geupload naar `invoices` bucket
-4. `bijlage_url` wordt opgeslagen bij de instructie
-5. Bij weergave wordt een download-link getoond
+```
+Beheer
+├── Onderhoudsinstructies
+├── Sleutelbeheer  
+└── Delen van huis          <-- NIEUW
+    ┌─────────────────────────────────┐
+    │ Keuken                    [x]   │
+    │ Badkamer                  [x]   │
+    │ Woonkamer                 [x]   │
+    │ CV-ketel en verwarming    [x]   │
+    │ ...                             │
+    │                                 │
+    │ [+ Nieuwe toevoegen]            │
+    └─────────────────────────────────┘
+```
 
-### 5. Document koppelen flow
-
-1. Gebruiker klikt "Kies uit documenten"
-2. Dialog opent met lijst van projectdocumenten (uit `documents` tabel)
-3. Gebruiker selecteert een document
-4. `document_id` wordt opgeslagen bij de instructie
-5. Bij weergave wordt documentnaam + download-link getoond
-
+Alle dropdowns en autocomplete-velden in taken, kosten, foto's, onderhoud en sleutels gebruiken dan dezelfde lijst.
