@@ -14,7 +14,7 @@ export function useHouseParts(projectId: string) {
         .from("house_parts")
         .select("*")
         .eq("project_id", projectId)
-        .order("volgorde");
+        .order("naam");
 
       if (error) throw error;
       return (data || []) as Array<{ id: string; naam: string; volgorde: number; project_id: string; created_at: string }>;
@@ -28,12 +28,10 @@ export function useHouseParts(projectId: string) {
   const ensureHousePart = async (naam: string) => {
     if (!naam.trim() || housePartNames.includes(naam.trim())) return;
 
-    const maxVolgorde = Math.max(0, ...(query.data || []).map((hp) => hp.volgorde));
-    
     await (supabase as any).from("house_parts").insert({
       project_id: projectId,
       naam: naam.trim(),
-      volgorde: maxVolgorde + 1,
+      volgorde: 0,
     });
 
     queryClient.invalidateQueries({ queryKey: ["house-parts", projectId] });

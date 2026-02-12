@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -34,7 +34,7 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
         .from("house_parts")
         .select("*")
         .eq("project_id", projectId)
-        .order("volgorde");
+        .order("naam");
 
       if (error) throw error;
       return (data || []) as HousePart[];
@@ -42,7 +42,7 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
   });
 
   useEffect(() => {
-    setLocalParts(parts);
+    setLocalParts([...parts].sort((a, b) => a.naam.localeCompare(b.naam)));
     setHasChanges(false);
   }, [parts]);
 
@@ -60,10 +60,10 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
         const { error: insertError } = await (supabase as any)
           .from("house_parts")
           .insert(
-            partsToSave.map((p, index) => ({
+            partsToSave.map((p) => ({
               project_id: projectId,
               naam: p.naam,
-              volgorde: index,
+              volgorde: 0,
             }))
           );
 
@@ -95,10 +95,11 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
       toast.error(t.management.houseParts.messages.duplicate);
       return;
     }
-    setLocalParts([
+    const updated = [
       ...localParts,
-      { id: `new-${Date.now()}`, naam: name, volgorde: localParts.length },
-    ]);
+      { id: `new-${Date.now()}`, naam: name, volgorde: 0 },
+    ].sort((a, b) => a.naam.localeCompare(b.naam));
+    setLocalParts(updated);
     setNewPartName("");
     setHasChanges(true);
   };
@@ -108,21 +109,6 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
     setHasChanges(true);
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return;
-    const updated = [...localParts];
-    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
-    setLocalParts(updated);
-    setHasChanges(true);
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index === localParts.length - 1) return;
-    const updated = [...localParts];
-    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
-    setLocalParts(updated);
-    setHasChanges(true);
-  };
 
   const handleSave = () => {
     const valid = localParts.filter((p) => p.naam.trim() !== "");
@@ -148,29 +134,6 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
               key={part.id}
               className="flex items-center gap-1.5 p-1.5 rounded-lg border bg-muted/30"
             >
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveUp(index)}
-                  disabled={index === 0}
-                >
-                  <ChevronUp className="h-3 w-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveDown(index)}
-                  disabled={index === localParts.length - 1}
-                >
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </div>
-
               <Input
                 value={part.naam}
                 onChange={(e) => handleUpdateName(index, e.target.value)}
