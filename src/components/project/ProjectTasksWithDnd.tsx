@@ -235,9 +235,8 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   }, [displayTasks]);
 
   const availableDelenVanHuis = useMemo(() => {
-    const taskValues = displayTasks?.map((t) => t.deel_van_huis).filter(Boolean) || [];
-    return [...new Set([...housePartNames, ...taskValues])].sort();
-  }, [displayTasks, housePartNames]);
+    return [...housePartNames].sort();
+  }, [housePartNames]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {

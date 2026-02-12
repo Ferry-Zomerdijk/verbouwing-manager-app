@@ -44,7 +44,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { housePartNames } = useHouseParts(projectId);
+  const { housePartNames, ensureHousePart } = useHouseParts(projectId);
 
   const [titel, setTitel] = useState("");
   const [beschrijving, setBeschrijving] = useState("");
@@ -101,6 +101,11 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
         });
 
       if (error) throw error;
+
+      // Ensure house part is registered centrally
+      if (deelVanHuis.trim()) {
+        await ensureHousePart(deelVanHuis.trim());
+      }
 
       toast.success(t.management.maintenance.messages.created);
       queryClient.invalidateQueries({ queryKey: ["maintenance-instructions", projectId] });

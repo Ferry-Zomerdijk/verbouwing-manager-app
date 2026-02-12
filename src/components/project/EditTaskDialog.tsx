@@ -36,6 +36,7 @@ import { taskTypeIconMap, DefaultTaskTypeIcon, getTaskTypeIconColor } from "@/li
 import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
 import { UI } from "@/lib/uiTexts";
+import { useHouseParts } from "@/hooks/useHouseParts";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -48,6 +49,7 @@ interface EditTaskDialogProps {
 const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVanHuis = [] }: EditTaskDialogProps) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const { ensureHousePart } = useHouseParts(task?.project_id || "");
   
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -268,7 +270,11 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
       queryClient.setQueryData(["tasks", task.project_id], context?.previousTasks);
       toast.error(error?.message || error?.error_description || "Er is een fout opgetreden");
     },
-    onSuccess: () => {
+    onSuccess: async (_, updates) => {
+      // Ensure house part is registered centrally
+      if (updates.deel_van_huis && typeof updates.deel_van_huis === 'string') {
+        await ensureHousePart(updates.deel_van_huis);
+      }
       toast.success(navigator.onLine ? "Taak bijgewerkt" : "Taak lokaal bijgewerkt (wordt gesync'd)");
       onSuccess();
       onOpenChange(false);
