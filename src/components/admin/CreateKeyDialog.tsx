@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useHouseParts } from "@/hooks/useHouseParts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -28,7 +29,7 @@ interface CreateKeyDialogProps {
   existingParts: string[];
 }
 
-const DEFAULT_PARTS = ["Woning", "Garage", "Bijgebouw", "Schuur", "Poort", "Brievenbus"];
+// DEFAULT_PARTS removed - now using useHouseParts hook
 
 export function CreateKeyDialog({
   open,
@@ -37,6 +38,7 @@ export function CreateKeyDialog({
   existingParts,
 }: CreateKeyDialogProps) {
   const queryClient = useQueryClient();
+  const { housePartNames } = useHouseParts(projectId);
   const [isLoading, setIsLoading] = useState(false);
   const [deelVanHuis, setDeelVanHuis] = useState("");
   const [customPart, setCustomPart] = useState("");
@@ -44,8 +46,8 @@ export function CreateKeyDialog({
   const [notes, setNotes] = useState("");
   const [nextSequence, setNextSequence] = useState<number | null>(null);
 
-  // Combine default parts with existing parts from the database
-  const allParts = [...new Set([...DEFAULT_PARTS, ...existingParts])].sort();
+  // Combine hook parts with existing parts from the database
+  const allParts = [...new Set([...housePartNames, ...existingParts])].sort();
 
   const handlePartChange = async (value: string) => {
     setDeelVanHuis(value);

@@ -434,5 +434,15 @@ export const en: UITexts = {
     keys: {
       title: "Key management",
     },
+    houseParts: {
+      title: "Parts of house",
+      description: "Manage the 'part of house' options used across tasks, costs, photos, maintenance and keys.",
+      placeholder: "Add new part...",
+      messages: {
+        saved: "Parts of house saved",
+        duplicate: "This part already exists",
+        minOne: "Add at least one part",
+      },
+    },
   },
 };

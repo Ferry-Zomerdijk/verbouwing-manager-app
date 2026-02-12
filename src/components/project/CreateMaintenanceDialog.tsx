@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useHouseParts } from "@/hooks/useHouseParts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,23 +31,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
 
-const HOUSE_PART_SUGGESTIONS = [
-  "CV-ketel en verwarming",
-  "Airconditioning",
-  "Dakgoten en afvoer",
-  "Elektrische installatie",
-  "Waterleiding en sanitair",
-  "Tuin en buitenruimte",
-  "Alarm en beveiliging",
-  "Zonnepanelen",
-  "Ventilatie en afzuiging",
-  "Zwembad/jacuzzi",
-  "Keuken",
-  "Badkamer",
-  "Dak",
-  "Gevels",
-  "Ramen en deuren",
-];
+// HOUSE_PART_SUGGESTIONS removed - now using useHouseParts hook
 
 interface CreateMaintenanceDialogProps {
   open: boolean;
@@ -59,6 +44,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { housePartNames } = useHouseParts(projectId);
 
   const [titel, setTitel] = useState("");
   const [beschrijving, setBeschrijving] = useState("");
@@ -147,7 +133,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
               <SelectValue placeholder={t.management.maintenance.placeholders.partOfHouse} />
             </SelectTrigger>
             <SelectContent>
-              {HOUSE_PART_SUGGESTIONS.map((part) => (
+              {housePartNames.map((part) => (
                 <SelectItem key={part} value={part}>{part}</SelectItem>
               ))}
             </SelectContent>
