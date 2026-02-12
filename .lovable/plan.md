@@ -1,32 +1,62 @@
 
 
-# Plan: Automatische A-Z sortering voor "Delen van huis"
+# Plan: Gebruikscontrole bij verwijderen "Deel van huis"
 
 ## Samenvatting
 
-Sorteer de lijst "Delen van huis" altijd automatisch alfabetisch (A-Z). Handmatige sortering (pijltjes omhoog/omlaag) wordt verwijderd uit de beheerweergave.
+Voordat een "deel van huis" verwijderd kan worden, controleren we of het gekoppeld is aan taken, kosten, foto's, onderhoudsinstructies of sleutels. Als het in gebruik is, tonen we een foutmelding met precies waar het voorkomt.
 
-## Wijzigingen
+## Aanpak
 
-### 1. `src/hooks/useHouseParts.tsx`
+### Controle bij verwijderen
 
-- Wijzig `.order("volgorde")` naar `.order("naam")` zodat de database de data alfabetisch retourneert
-- `housePartNames` is dan automatisch ook A-Z gesorteerd
-- `ensureHousePart` hoeft geen `volgorde` meer te berekenen, gewoon `volgorde: 0` gebruiken
+Wanneer een gebruiker op het prullenbak-icoon klikt, wordt er een query uitgevoerd op de volgende tabellen (kolom `deel_van_huis`):
 
-### 2. `src/components/project/HousePartsManager.tsx`
+| Tabel | Kolom |
+|-------|-------|
+| `tasks` | `deel_van_huis` |
+| `costs` | `deel_van_huis` |
+| `photos` | `deel_van_huis` |
+| `maintenance_instructions` | `deel_van_huis` |
+| `keys` | `deel_van_huis` |
 
-- Verwijder de `ChevronUp`/`ChevronDown` import en de `handleMoveUp`/`handleMoveDown` functies
-- Verwijder de pijltjesknoppen uit de lijst-items
-- Sorteer `localParts` altijd alfabetisch bij laden en na toevoegen/hernoemen
-- Bij opslaan (`saveParts`): `volgorde` gewoon op 0 zetten (niet meer relevant)
+Als er resultaten zijn, wordt een `toast.error` getoond met een opsomming, bijvoorbeeld:
 
-### 3. `src/components/project/ProjectTasksWithDnd.tsx`
+> **"Keuken" is nog in gebruik bij:**
+> - 3 taken
+> - 1 kostenpost
+> - 2 foto's
 
-- De `availableDelenVanHuis` useMemo combineert `housePartNames` met waarden uit taken. Sorteer het resultaat ook A-Z (dit gebeurt al met `.sort()`, dus dit is al correct).
+Het item wordt dan **niet** verwijderd uit de lokale lijst.
 
-## Resultaat
+### Ook controle bij opslaan
 
-- Overal waar "Deel van huis" opties verschijnen (taken, kosten, foto's, onderhoud, sleutels, beheer) is de lijst automatisch A-Z gesorteerd
-- Geen handmatige volgorde meer nodig
-- Eenvoudiger UI in het beheer
+De huidige save-functie verwijdert **alle** house_parts en voegt ze opnieuw in. Als een gebruiker een deel verwijdert en dan op "Opslaan" klikt, moeten we ook controleren of verwijderde items niet in gebruik zijn. We vergelijken de opgeslagen lijst met de oorspronkelijke lijst om te bepalen welke namen zijn verwijderd, en controleren deze.
+
+## Technische wijzigingen
+
+### `src/components/project/HousePartsManager.tsx`
+
+- Nieuwe async functie `checkUsage(naam: string)` die 5 count-queries uitvoert
+- `handleDelete` wordt async: roept `checkUsage` aan en toont foutmelding als het item in gebruik is
+- `handleSave` controleert ook verwijderde items voordat de mutatie wordt uitgevoerd
+
+### `src/lib/i18n/types.ts`
+
+- Nieuw message: `inUse: string`
+
+### `src/lib/i18n/nl.ts`
+
+- `inUse`: `"'{name}' is nog in gebruik bij: {details}. Verwijder deze eerst."`
+- Plus labels voor de entiteiten: taken, kosten, foto's, onderhoudsinstructies, sleutels
+
+### `src/lib/i18n/en.ts`
+
+- `inUse`: `"'{name}' is still in use by: {details}. Remove these first."`
+
+## Gebruikerservaring
+
+1. Gebruiker klikt op prullenbak bij "Keuken"
+2. Systeem controleert alle tabellen
+3. Als in gebruik: rode toast met lijst waar het voorkomt
+4. Als niet in gebruik: item verdwijnt uit de lijst (zoals nu)
