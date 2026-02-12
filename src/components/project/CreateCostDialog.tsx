@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useCostPayers } from "./CostPayersManager";
 import { useCostCategories } from "./CostCategoriesManager";
 import { UI } from "@/lib/uiTexts";
+import { useHouseParts } from "@/hooks/useHouseParts";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { ensureHousePart } = useHouseParts(projectId);
   const { canUseAi, remaining, limit, isUnlimited, isLoading: isLoadingAi, refetch: refetchAiUsage } = useAiUsage();
   const { currentTier } = useSubscription();
   
@@ -202,6 +204,11 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       }]);
 
       if (error) throw error;
+
+      // Ensure house part is registered centrally
+      if (formData.deel_van_huis) {
+        await ensureHousePart(formData.deel_van_huis);
+      }
 
       onSuccess();
       onOpenChange(false);

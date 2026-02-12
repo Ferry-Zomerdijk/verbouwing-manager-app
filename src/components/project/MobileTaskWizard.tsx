@@ -19,6 +19,7 @@ import { AutocompleteInput } from "./AutocompleteInput";
 import { format, parseISO, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import { UI } from "@/lib/uiTexts";
+import { useHouseParts } from "@/hooks/useHouseParts";
 
 interface MobileTaskWizardProps {
   open: boolean;
@@ -58,6 +59,7 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
   const queryClient = useQueryClient();
+  const { ensureHousePart } = useHouseParts(projectId);
 
   // Get current task count
   const { data: taskCount = 0 } = useQuery({
@@ -206,8 +208,11 @@ const MobileTaskWizard = ({ open, onOpenChange, projectId, onSuccess, availableD
       queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
       toast.error(error.message || "Er is een fout opgetreden");
     },
-    onSuccess: () => {
+    onSuccess: async (_, taskData) => {
       pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
+      if (taskData.deel_van_huis) {
+        await ensureHousePart(taskData.deel_van_huis);
+      }
       toast.success(navigator.onLine ? "Taak aangemaakt" : "Taak lokaal aangemaakt (wordt gesync'd)");
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
       onSuccess();

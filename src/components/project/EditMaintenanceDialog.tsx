@@ -59,7 +59,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { housePartNames } = useHouseParts(instruction?.project_id || "");
+  const { housePartNames, ensureHousePart } = useHouseParts(instruction?.project_id || "");
 
   const [titel, setTitel] = useState("");
   const [beschrijving, setBeschrijving] = useState("");
@@ -138,6 +138,11 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
         .eq("id", instruction.id);
 
       if (error) throw error;
+
+      // Ensure house part is registered centrally
+      if (deelVanHuis.trim()) {
+        await ensureHousePart(deelVanHuis.trim());
+      }
 
       toast.success(t.management.maintenance.messages.updated);
       queryClient.invalidateQueries({ queryKey: ["maintenance-instructions", instruction.project_id] });

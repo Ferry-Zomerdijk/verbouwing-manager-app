@@ -128,11 +128,10 @@ const ProjectCosts = ({
     }
   });
 
-  // Get unique "deel van huis" values combining house_parts and costs
+  // Use house parts as the source of truth for "deel van huis"
   const availableDelenVanHuis = useMemo(() => {
-    const costValues = costs?.map(c => c.deel_van_huis).filter((v): v is string => !!v) || [];
-    return [...new Set([...housePartNames, ...costValues])].sort();
-  }, [housePartNames, costs]);
+    return [...housePartNames].sort();
+  }, [housePartNames]);
 
   // Get unique leveranciers from costs
   const availableLeveranciers = useMemo(() => {

@@ -38,7 +38,7 @@ export function CreateKeyDialog({
   existingParts,
 }: CreateKeyDialogProps) {
   const queryClient = useQueryClient();
-  const { housePartNames } = useHouseParts(projectId);
+  const { housePartNames, ensureHousePart } = useHouseParts(projectId);
   const [isLoading, setIsLoading] = useState(false);
   const [deelVanHuis, setDeelVanHuis] = useState("");
   const [customPart, setCustomPart] = useState("");
@@ -135,6 +135,11 @@ export function CreateKeyDialog({
       });
 
       if (error) throw error;
+
+      // Ensure house part is registered centrally
+      if (deelVanHuis === "custom" && customPart.trim()) {
+        await ensureHousePart(customPart.trim());
+      }
 
       toast.success(`Sleutel "${keyNumber}" aangemaakt`);
       queryClient.invalidateQueries({ queryKey: ["keys", projectId] });

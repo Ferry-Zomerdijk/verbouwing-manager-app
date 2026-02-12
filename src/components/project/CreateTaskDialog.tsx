@@ -23,6 +23,7 @@ import { AutocompleteInput } from "./AutocompleteInput";
 import { DatePicker } from "@/components/ui/date-picker";
 import MobileTaskWizard from "./MobileTaskWizard";
 import { UI } from "@/lib/uiTexts";
+import { useHouseParts } from "@/hooks/useHouseParts";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -53,6 +54,7 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const isMobile = useIsMobile();
   const { currentTier, hasReachedLimit, limits } = useSubscription();
   const queryClient = useQueryClient();
+  const { ensureHousePart } = useHouseParts(projectId);
 
   // Get current task count for this project
   const { data: taskCount = 0 } = useQuery({
@@ -267,10 +269,15 @@ const CreateTaskDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       queryClient.setQueryData(["tasks", projectId], context?.previousTasks);
       toast.error(error.message || "Er is een fout opgetreden");
     },
-    onSuccess: () => {
+    onSuccess: async (_, taskData) => {
       // Cleanup previews
       pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
       
+      // Ensure house part is registered centrally
+      if (taskData.deel_van_huis) {
+        await ensureHousePart(taskData.deel_van_huis);
+      }
+
       toast.success(navigator.onLine ? "Taak aangemaakt" : "Taak lokaal aangemaakt (wordt gesync'd)");
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
       onSuccess();

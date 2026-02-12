@@ -14,6 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useCostPayers } from "./CostPayersManager";
 import { useCostCategories } from "./CostCategoriesManager";
 import { UI } from "@/lib/uiTexts";
+import { useHouseParts } from "@/hooks/useHouseParts";
 
 interface EditCostDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
   
   // Get project_id from cost to fetch payer and category options
   const projectId = cost?.project_id;
+  const { ensureHousePart } = useHouseParts(projectId || "");
   const { data: payerOptions = [] } = useCostPayers(projectId || "");
   const { data: categoryOptions = [] } = useCostCategories(projectId || "");
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
@@ -118,6 +120,11 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         .eq("id", cost.id);
 
       if (error) throw error;
+
+      // Ensure house part is registered centrally
+      if (formData.deel_van_huis) {
+        await ensureHousePart(formData.deel_van_huis);
+      }
 
       toast.success("Kosten bijgewerkt");
       onSuccess();

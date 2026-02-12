@@ -86,14 +86,12 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
 
   // Calculate available parts from house_parts hook
   const availableDelenVanHuis = useMemo(() => {
-    const photoValues = displayPhotos?.map(p => p.deel_van_huis).filter(Boolean) || [];
-    const allValues = [...new Set([...housePartNames, ...photoValues])];
-    return allValues.sort((a, b) => {
+    return [...housePartNames].sort((a, b) => {
       if (a === "Nog invullen") return 1;
       if (b === "Nog invullen") return -1;
       return a.localeCompare(b);
     });
-  }, [displayPhotos, housePartNames]);
+  }, [housePartNames]);
 
   // Unique locations used in photos for filter
   const usedLocations = useMemo(() => {
@@ -262,6 +260,8 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     }
   };
 
+  const { ensureHousePart } = useHouseParts(projectId);
+
   const handleUpdateDeelVanHuis = async (photoId: string, newDeelVanHuis: string) => {
     setUpdatingPhotoId(photoId);
     try {
@@ -272,6 +272,9 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
       
       if (error) throw error;
       
+      // Ensure house part is registered centrally
+      await ensureHousePart(newDeelVanHuis);
+
       toast.success("Locatie bijgewerkt");
       refetch();
     } catch (error: any) {
