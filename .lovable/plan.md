@@ -1,80 +1,77 @@
 
+# Plan: Detailpagina per "Deel van huis" met gekoppelde items
 
-# Plan: Synchroniseer "Deel van huis" waarden naar Beheer
+## Samenvatting
 
-## Probleem
+Wanneer je in Beheer op een "deel van huis" klikt, opent een detail-dialog (Drawer op mobiel, Dialog op desktop) met een overzicht van alle gekoppelde items (taken, kosten, foto's, onderhoudsinstructies, sleutels). Daarnaast wordt bij elk deel in de lijst een badge getoond met het totaal aantal gekoppelde items.
 
-Wanneer een gebruiker bij taken, kosten of foto's een eigen "deel van huis" waarde intypt (bijv. "Tuinhuis"), verschijnt die wel in de dropdown van dat onderdeel, maar wordt deze **niet** opgeslagen in de `house_parts` tabel. Daardoor ontbreekt de waarde in Beheer en in andere rubrieken.
+## Wijzigingen
 
-De `ensureHousePart` functie bestaat al in de `useHouseParts` hook, maar wordt nergens aangeroepen.
+### 1. Nieuw component: `src/components/project/HousePartDetailDialog.tsx`
 
-## Oplossing
+- Dialog/Drawer (mobiel = Drawer, desktop = Dialog, conform bestaand patroon)
+- Props: `projectId`, `partName`, `open`, `onOpenChange`
+- Haalt gekoppelde items op via 5 queries (taken, kosten, foto's, onderhoud, sleutels) met volledige data (niet alleen count)
+- Toont items gegroepeerd per type in een accordion of sectie-indeling met iconen:
+  - Taken (ListTodo): titel, status
+  - Kosten (Euro): beschrijving, bedrag
+  - Foto's (Image): notitie of bestandsnaam
+  - Onderhoud (Wrench): titel
+  - Sleutels (Key): key_number, deel_van_huis
+- Lege secties worden verborgen
 
-Roep `ensureHousePart` aan op alle plekken waar een gebruiker een "deel van huis" waarde kan invoeren of selecteren. Dit zorgt ervoor dat nieuwe waarden automatisch in de centrale tabel terechtkomen.
+### 2. Wijziging: `src/components/project/HousePartsManager.tsx`
 
-## Te wijzigen bestanden
+- Per item in de lijst: een klikbaar badge/chip tonen met het totaal aantal gekoppelde items (bijv. "5")
+- Gebruik `useQuery` om voor elk deel de counts op te halen (hergebruik `checkHousePartUsage`)
+- Klik op de naam of de badge opent de `HousePartDetailDialog`
+- State toevoegen: `selectedPart` voor welk deel het detailscherm open is
 
-| Bestand | Wijziging |
-|---------|-----------|
-| `src/components/project/CreateTaskDialog.tsx` | Na succesvol aanmaken: `ensureHousePart(deel_van_huis)` aanroepen |
-| `src/components/project/EditTaskDialog.tsx` | Na succesvol opslaan: `ensureHousePart(deel_van_huis)` aanroepen |
-| `src/components/project/MobileTaskWizard.tsx` | Idem bij aanmaken taak |
-| `src/components/project/CreateCostDialog.tsx` | Na succesvol aanmaken: `ensureHousePart(deel_van_huis)` aanroepen |
-| `src/components/project/EditCostDialog.tsx` | Na succesvol opslaan: `ensureHousePart(deel_van_huis)` aanroepen |
-| `src/components/project/ProjectPhotos.tsx` | Bij wijzigen deel_van_huis van een foto: `ensureHousePart` aanroepen |
-| `src/components/project/CreateMaintenanceDialog.tsx` | Bij aanmaken onderhoudsinstructie |
-| `src/components/project/EditMaintenanceDialog.tsx` | Bij opslaan onderhoudsinstructie |
-| `src/components/admin/CreateKeyDialog.tsx` | Bij aanmaken sleutel |
+### 3. i18n uitbreidingen (`types.ts`, `nl.ts`, `en.ts`)
 
-Elk van deze componenten importeert `useHouseParts` (of krijgt `ensureHousePart` als prop) en roept het aan met de ingevulde waarde na een succesvolle create/update.
-
-## Aanvullend: eenmalige synchronisatie bestaande data
-
-Daarnaast verwijderen we de `useMemo`-samenvoeging in `ProjectTasksWithDnd`, `ProjectCosts` en `ProjectPhotos` die bestaande waarden uit de data samenvoegt met `housePartNames`. In plaats daarvan gebruiken we enkel `housePartNames`. Doordat `ensureHousePart` nu altijd wordt aangeroepen, zijn alle waarden al in de tabel aanwezig.
-
-Om bestaande "losse" waarden (zoals "Tuinhuis") alsnog op te nemen, voegen we een eenmalige sync toe in de `useHouseParts` hook: bij het laden van house parts worden ook de unieke `deel_van_huis` waarden uit `tasks`, `costs`, `photos`, `maintenance_instructions` en `keys` opgehaald en eventueel toegevoegd aan `house_parts`.
+- `houseParts.detail.title`: "Overzicht: {name}" / "Overview: {name}"
+- `houseParts.detail.noItems`: "Geen gekoppelde items" / "No linked items"
+- `houseParts.detail.linkedItems`: "Gekoppelde items" / "Linked items"
 
 ## Technische details
 
-### Eenmalige sync in `useHouseParts.tsx`
+### Count-badge per item
 
-Na het aanroepen van `initialize_house_parts`, haal ook de bestaande `deel_van_huis` waarden op uit de 5 tabellen en voeg ontbrekende toe:
+In `HousePartsManager`, na het laden van de parts, worden de counts per part opgehaald via een enkele `useQuery` die `checkHousePartUsage` aanroept voor elk bestaand part (niet voor nieuwe). Het resultaat wordt opgeslagen als een map: `Record<string, number>`.
 
-```typescript
-// Gather existing values from all tables
-const [tasks, costs, photos, maint, keys] = await Promise.all([
-  supabase.from("tasks").select("deel_van_huis").eq("project_id", projectId).not("deel_van_huis", "is", null),
-  // ... idem voor andere tabellen
-]);
-
-const existingNames = new Set(data.map(hp => hp.naam));
-const allUsedValues = new Set([...tasks, ...costs, ...photos, ...maint, ...keys]
-  .flatMap(r => r.data?.map(d => d.deel_van_huis) || [])
-  .filter(Boolean));
-
-const missing = [...allUsedValues].filter(v => !existingNames.has(v));
-if (missing.length > 0) {
-  await supabase.from("house_parts").insert(
-    missing.map(naam => ({ project_id: projectId, naam, volgorde: 0 }))
-  );
-}
+```text
+  [Badkamer] ---- [3] ---- [prullenbak]
+  [Keuken]  ---- [7] ---- [prullenbak]
+  [Tuin]    ---- [0] ---- [prullenbak]
 ```
 
-### `ensureHousePart` aanroepen in dialogen
+### Detail-dialog structuur
 
-Voorbeeld in een create-dialog:
-
-```typescript
-const { ensureHousePart } = useHouseParts(projectId);
-
-// Na succesvolle insert:
-if (deelVanHuis) {
-  await ensureHousePart(deelVanHuis);
-}
+```text
++----------------------------------+
+| Overzicht: Keuken            [X] |
++----------------------------------+
+| > Taken (3)                      |
+|   - Tegels leggen (Te doen)      |
+|   - Kraan vervangen (Lopend)     |
+|   - Afzuigkap (Afgerond)        |
+|                                  |
+| > Kosten (2)                     |
+|   - Tegels   EUR 450            |
+|   - Kraan    EUR 120            |
+|                                  |
+| > Foto's (2)                     |
+|   - Foto 1                      |
+|   - Foto 2                      |
++----------------------------------+
 ```
 
-## Resultaat
+### Bestanden die worden aangemaakt/gewijzigd
 
-- Alle bestaande waarden (zoals "Tuinhuis") verschijnen automatisch in Beheer
-- Nieuwe waarden die worden ingetypt worden direct aan de `house_parts` tabel toegevoegd
-- Alle rubrieken (taken, kosten, foto's, onderhoud, sleutels) tonen dezelfde lijst
+| Bestand | Actie |
+|---------|-------|
+| `src/components/project/HousePartDetailDialog.tsx` | Nieuw |
+| `src/components/project/HousePartsManager.tsx` | Badge + klik-handler toevoegen |
+| `src/lib/i18n/types.ts` | Detail-teksten toevoegen |
+| `src/lib/i18n/nl.ts` | NL vertalingen |
+| `src/lib/i18n/en.ts` | EN vertalingen |
