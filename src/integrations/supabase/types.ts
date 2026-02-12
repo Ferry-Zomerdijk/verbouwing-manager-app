@@ -591,10 +591,12 @@ export type Database = {
       maintenance_instructions: {
         Row: {
           beschrijving: string | null
+          bijlage_url: string | null
           contact_naam: string | null
           contact_telefoon: string | null
           created_at: string
           deel_van_huis: string | null
+          document_id: string | null
           frequentie: string | null
           id: string
           project_id: string
@@ -603,10 +605,12 @@ export type Database = {
         }
         Insert: {
           beschrijving?: string | null
+          bijlage_url?: string | null
           contact_naam?: string | null
           contact_telefoon?: string | null
           created_at?: string
           deel_van_huis?: string | null
+          document_id?: string | null
           frequentie?: string | null
           id?: string
           project_id: string
@@ -615,10 +619,12 @@ export type Database = {
         }
         Update: {
           beschrijving?: string | null
+          bijlage_url?: string | null
           contact_naam?: string | null
           contact_telefoon?: string | null
           created_at?: string
           deel_van_huis?: string | null
+          document_id?: string | null
           frequentie?: string | null
           id?: string
           project_id?: string

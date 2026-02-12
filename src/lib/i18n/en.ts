@@ -401,6 +401,11 @@ export const en: UITexts = {
         frequency: "Frequency",
         contactName: "Contact person",
         contactPhone: "Phone number",
+        attachment: "Attachment",
+        uploadFile: "Upload file",
+        chooseFromDocuments: "Choose from documents",
+        removeAttachment: "Remove attachment",
+        linkedDocument: "Linked document",
       },
       placeholders: {
         title: "E.g. Bleed central heating",

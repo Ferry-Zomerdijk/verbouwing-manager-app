@@ -456,6 +456,11 @@ export type UITexts = {
         frequency: string;
         contactName: string;
         contactPhone: string;
+        attachment: string;
+        uploadFile: string;
+        chooseFromDocuments: string;
+        removeAttachment: string;
+        linkedDocument: string;
       };
       placeholders: {
         title: string;

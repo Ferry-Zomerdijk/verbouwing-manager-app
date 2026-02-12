@@ -406,6 +406,11 @@ export const nl: UITexts = {
         frequency: "Frequentie",
         contactName: "Contactpersoon",
         contactPhone: "Telefoonnummer",
+        attachment: "Bijlage",
+        uploadFile: "Upload bestand",
+        chooseFromDocuments: "Kies uit documenten",
+        removeAttachment: "Bijlage verwijderen",
+        linkedDocument: "Gekoppeld document",
       },
       placeholders: {
         title: "Bijv. CV-ketel ontluchten",

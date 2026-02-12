@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, Paperclip } from "lucide-react";
 import { CreateMaintenanceDialog } from "./CreateMaintenanceDialog";
 import { EditMaintenanceDialog, type MaintenanceInstruction } from "./EditMaintenanceDialog";
 
@@ -196,6 +196,22 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
                                 >
                                   <Phone className="h-3 w-3" />
                                   {item.contact_telefoon}
+                                </a>
+                              )}
+                              {(item.bijlage_url || item.document_id) && (
+                                <a
+                                  href={item.bijlage_url || "#"}
+                                  target={item.bijlage_url ? "_blank" : undefined}
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-primary hover:underline"
+                                  onClick={(e) => {
+                                    if (!item.bijlage_url && item.document_id) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                >
+                                  <Paperclip className="h-3 w-3" />
+                                  {t.management.maintenance.labels.attachment}
                                 </a>
                               )}
                             </div>
