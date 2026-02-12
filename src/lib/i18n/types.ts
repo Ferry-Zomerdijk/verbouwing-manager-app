@@ -497,6 +497,14 @@ export type UITexts = {
         saved: string;
         duplicate: string;
         minOne: string;
+        inUse: string;
+      };
+      entities: {
+        tasks: string;
+        costs: string;
+        photos: string;
+        maintenance: string;
+        keys: string;
       };
     };
   };

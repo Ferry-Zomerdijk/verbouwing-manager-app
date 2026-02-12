@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -17,17 +17,35 @@ interface HousePartsManagerProps {
   projectId: string;
 }
 
+async function checkHousePartUsage(projectId: string, naam: string) {
+  const [tasks, costs, photos, maintenance, keys] = await Promise.all([
+    (supabase as any).from("tasks").select("*", { count: "exact", head: true }).eq("project_id", projectId).eq("deel_van_huis", naam),
+    (supabase as any).from("costs").select("*", { count: "exact", head: true }).eq("project_id", projectId).eq("deel_van_huis", naam),
+    (supabase as any).from("photos").select("*", { count: "exact", head: true }).eq("project_id", projectId).eq("deel_van_huis", naam),
+    (supabase as any).from("maintenance_instructions").select("*", { count: "exact", head: true }).eq("project_id", projectId).eq("deel_van_huis", naam),
+    (supabase as any).from("keys").select("*", { count: "exact", head: true }).eq("project_id", projectId).eq("deel_van_huis", naam),
+  ]);
+
+  return {
+    tasks: tasks.count || 0,
+    costs: costs.count || 0,
+    photos: photos.count || 0,
+    maintenance: maintenance.count || 0,
+    keys: keys.count || 0,
+  };
+}
+
 export function HousePartsManager({ projectId }: HousePartsManagerProps) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [localParts, setLocalParts] = useState<HousePart[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [newPartName, setNewPartName] = useState("");
+  const [checkingUsage, setCheckingUsage] = useState<number | null>(null);
 
   const { data: parts = [], isLoading } = useQuery({
     queryKey: ["house-parts", projectId],
     queryFn: async () => {
-      // Initialize if needed
       await supabase.rpc("initialize_house_parts", { p_project_id: projectId });
 
       const { data, error } = await (supabase as any)
@@ -48,7 +66,24 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
 
   const saveParts = useMutation({
     mutationFn: async (partsToSave: HousePart[]) => {
-      // Delete all existing
+      // Check if any removed parts are still in use
+      const removedNames = parts
+        .map((p) => p.naam)
+        .filter((naam) => !partsToSave.some((s) => s.naam === naam));
+
+      for (const naam of removedNames) {
+        const usage = await checkHousePartUsage(projectId, naam);
+        const total = usage.tasks + usage.costs + usage.photos + usage.maintenance + usage.keys;
+        if (total > 0) {
+          const details = formatUsageDetails(usage, t);
+          throw new Error(
+            t.management.houseParts.messages.inUse
+              .replace("{name}", naam)
+              .replace("{details}", details)
+          );
+        }
+      }
+
       const { error: deleteError } = await (supabase as any)
         .from("house_parts")
         .delete()
@@ -77,7 +112,7 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
     },
     onError: (error) => {
       console.error("Error saving house parts:", error);
-      toast.error(t.errors.generic);
+      toast.error(error.message || t.errors.generic);
     },
   });
 
@@ -104,11 +139,30 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
     setHasChanges(true);
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = async (index: number) => {
+    const part = localParts[index];
+    // Only check usage for existing parts (not newly added ones)
+    if (!part.id.startsWith("new-")) {
+      setCheckingUsage(index);
+      try {
+        const usage = await checkHousePartUsage(projectId, part.naam);
+        const total = usage.tasks + usage.costs + usage.photos + usage.maintenance + usage.keys;
+        if (total > 0) {
+          const details = formatUsageDetails(usage, t);
+          toast.error(
+            t.management.houseParts.messages.inUse
+              .replace("{name}", part.naam)
+              .replace("{details}", details)
+          );
+          return;
+        }
+      } finally {
+        setCheckingUsage(null);
+      }
+    }
     setLocalParts(localParts.filter((_, i) => i !== index));
     setHasChanges(true);
   };
-
 
   const handleSave = () => {
     const valid = localParts.filter((p) => p.naam.trim() !== "");
@@ -146,8 +200,13 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
                 size="icon"
                 className="h-9 w-9 text-destructive hover:text-destructive"
                 onClick={() => handleDelete(index)}
+                disabled={checkingUsage === index}
               >
-                <Trash2 className="h-4 w-4" />
+                {checkingUsage === index ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </Button>
             </div>
           ))
@@ -179,4 +238,18 @@ export function HousePartsManager({ projectId }: HousePartsManagerProps) {
       )}
     </div>
   );
+}
+
+function formatUsageDetails(
+  usage: { tasks: number; costs: number; photos: number; maintenance: number; keys: number },
+  t: any
+) {
+  const parts: string[] = [];
+  const e = t.management.houseParts.entities;
+  if (usage.tasks > 0) parts.push(`${usage.tasks} ${e.tasks}`);
+  if (usage.costs > 0) parts.push(`${usage.costs} ${e.costs}`);
+  if (usage.photos > 0) parts.push(`${usage.photos} ${e.photos}`);
+  if (usage.maintenance > 0) parts.push(`${usage.maintenance} ${e.maintenance}`);
+  if (usage.keys > 0) parts.push(`${usage.keys} ${e.keys}`);
+  return parts.join(", ");
 }
