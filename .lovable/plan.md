@@ -1,120 +1,94 @@
 
 
-# Plan: Nieuw tabblad "Beheer" voor huisonderhoud en -instructies
+# Plan: Bijlagen toevoegen aan Onderhoudsinstructies
 
 ## Samenvatting
 
-Vervang het huidige "Sleutels" tabblad door een breder "Beheer" tabblad. Dit bundelt sleutelbeheer met nieuwe functionaliteit voor onderhoudsinstructies en gebruiksaanwijzingen van het huis.
+Voeg aan onderhoudsinstructies de mogelijkheid toe om bijlagen te koppelen. Gebruikers kunnen:
+1. Een nieuw bestand uploaden (bijv. handleiding, garantiebewijs)
+2. Een bestaand document uit het project kiezen
 
 ---
 
-## Voorstel functionaliteit "Beheer"
+## Aanpak
 
-Het Beheer-tabblad wordt een verzamelplek voor alles rondom het dagelijks gebruik en onderhoud van het huis, opgedeeld in secties:
+### Database: twee nieuwe kolommen op `maintenance_instructions`
 
-### 1. Sleutelbeheer (bestaand)
-- Bestaande functionaliteit blijft volledig intact
-- Wordt een subsectie binnen Beheer
+| Kolom | Type | Beschrijving |
+|-------|------|-------------|
+| `bijlage_url` | text | Pad naar geupload bestand in storage |
+| `document_id` | uuid | FK naar een bestaand document uit de `documents` tabel |
 
-### 2. Onderhoudsinstructies (nieuw)
-- Instructies per ruimte/onderdeel van het huis (bijv. "Keuken", "CV-ketel", "Dakgoot")
-- Per instructie:
-  - Titel (bijv. "CV-ketel ontluchten")
-  - Categorie/ruimte (deel van huis)
-  - Beschrijving met stapsgewijze instructies
-  - Frequentie (bijv. "Jaarlijks", "Maandelijks", "Bij storing")
-  - Optioneel: contactpersoon/bedrijf voor onderhoud
-  - Aanmaakdatum
+Beide zijn optioneel en kunnen naast elkaar bestaan (een instructie kan zowel een eigen upload als een gekoppeld document hebben).
 
-### 3. Suggesties voor categorien instructies
-Bij het aanmaken automatische suggesties aanbieden:
-- CV-ketel en verwarming
-- Airconditioning
-- Dakgoten en afvoer
-- Elektrische installatie
-- Waterleiding en sanitair
-- Tuin en buitenruimte
-- Alarm en beveiliging
-- Zonnepanelen
-- Ventilatie en afzuiging
-- Zwembad/jacuzzi
+### Storage
+
+Uploads gaan naar de bestaande `invoices` bucket (die al gebruikt wordt voor documenten), in het pad `{userId}/{projectId}/{timestamp}.ext`.
+
+### UI in Create/Edit dialogen
+
+Onder de bestaande velden komt een nieuw "Bijlage" gedeelte met twee opties:
+
+```
+┌──────────────────────────────────────────────┐
+│ Bijlage                                      │
+│                                              │
+│  [Upload bestand]  of  [Kies uit documenten] │
+│                                              │
+│  ┌──────────────────────────────────┐        │
+│  │ handleiding-cv.pdf         [X]   │        │
+│  └──────────────────────────────────┘        │
+└──────────────────────────────────────────────┘
+```
+
+- **Upload bestand**: Opent een file picker, uploadt naar storage, slaat pad op in `bijlage_url`
+- **Kies uit documenten**: Toont een lijst van bestaande projectdocumenten in een dialog, slaat gekozen document_id op in `document_id`
+- Gekoppelde bijlage wordt getoond met bestandsnaam en een verwijder-knop
+- Bij bewerken worden bestaande bijlagen getoond
+
+### UI in de instructielijst (MaintenanceInstructions.tsx)
+
+Bij elke instructiekaart wordt een bijlage-indicator getoond met een klikbare link om het bestand te downloaden of bekijken.
 
 ---
 
 ## Technische wijzigingen
 
-### Database: nieuwe tabel `maintenance_instructions`
+### 1. Database migratie
 
-| Kolom | Type | Beschrijving |
-|-------|------|-------------|
-| id | uuid | Primary key |
-| project_id | uuid | FK naar projects |
-| titel | text | Titel van de instructie |
-| beschrijving | text | Uitgebreide instructie/uitleg |
-| deel_van_huis | text | Ruimte of onderdeel |
-| frequentie | text | Jaarlijks, Maandelijks, etc. |
-| contact_naam | text | Optioneel: contactpersoon |
-| contact_telefoon | text | Optioneel: telefoonnummer |
-| volgorde | integer | Sorteervolgorde |
-| created_at | timestamptz | Aanmaakdatum |
+Twee kolommen toevoegen aan `maintenance_instructions`:
+- `bijlage_url text` (nullable)
+- `document_id uuid` (nullable, geen FK constraint om flexibiliteit te behouden)
 
-RLS-policies volgen het bestaande patroon: `has_project_access()` voor SELECT/INSERT/UPDATE, admin+owner voor DELETE.
-
-### Nieuwe componenten
-
-| Component | Beschrijving |
-|-----------|-------------|
-| `ProjectManagement.tsx` | Hoofdcomponent voor Beheer-tab met sub-navigatie |
-| `MaintenanceInstructions.tsx` | Lijst van onderhoudsinstructies met zoek/filter |
-| `CreateMaintenanceDialog.tsx` | Aanmaakdialog (met Drawer op mobiel) |
-| `EditMaintenanceDialog.tsx` | Bewerkdialog |
-
-### Bestaande wijzigingen
+### 2. Bestanden te wijzigen
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/pages/ProjectDetail.tsx` | "Sleutels" tab vervangen door "Beheer" tab met icoon `Settings` of `Wrench`. Render `ProjectManagement` i.p.v. `KeyManagement` |
-| `src/lib/i18n/nl.ts` + `en.ts` | Vertalingen toevoegen voor Beheer-sectie |
-| `src/lib/i18n/types.ts` | Types uitbreiden |
+| `src/components/project/CreateMaintenanceDialog.tsx` | Bijlage upload + document picker toevoegen |
+| `src/components/project/EditMaintenanceDialog.tsx` | Zelfde bijlage functionaliteit + bestaande bijlage tonen |
+| `src/components/project/MaintenanceInstructions.tsx` | Bijlage-icoon/link tonen bij instructies |
+| `src/components/project/EditMaintenanceDialog.tsx` | Interface `MaintenanceInstruction` uitbreiden met `bijlage_url` en `document_id` |
+| `src/lib/i18n/nl.ts` | Labels: "Bijlage", "Upload bestand", "Kies uit documenten", "Bijlage verwijderen" |
+| `src/lib/i18n/en.ts` | Labels: "Attachment", "Upload file", "Choose from documents", "Remove attachment" |
+| `src/lib/i18n/types.ts` | Types uitbreiden voor nieuwe labels |
 
-### ProjectManagement component structuur
+### 3. Document picker subcomponent
 
-Het component toont twee secties via een accordion of sub-tabs:
+Een kleine selectielijst die de bestaande `documents` query hergebruikt om projectdocumenten te tonen. Wordt weergegeven in een Dialog/Drawer met zoekfunctie.
 
-```
-┌─────────────────────────────────────┐
-│ Beheer                              │
-├─────────────────────────────────────┤
-│                                     │
-│ ▼ Onderhoudsinstructies        [+]  │
-│   ┌─────────────────────────────┐   │
-│   │ CV-ketel ontluchten         │   │
-│   │ Frequentie: Jaarlijks       │   │
-│   │ Contact: Warmtebedrijf X    │   │
-│   ├─────────────────────────────┤   │
-│   │ Dakgoten schoonmaken        │   │
-│   │ Frequentie: Halfjaarlijks   │   │
-│   └─────────────────────────────┘   │
-│                                     │
-│ ▼ Sleutelbeheer                [+]  │
-│   (bestaande KeyManagement)         │
-│                                     │
-└─────────────────────────────────────┘
-```
+### 4. Upload flow
 
----
+1. Gebruiker klikt "Upload bestand"
+2. File picker opent
+3. Bestand wordt geupload naar `invoices` bucket
+4. `bijlage_url` wordt opgeslagen bij de instructie
+5. Bij weergave wordt een download-link getoond
 
-## Bestanden overzicht
+### 5. Document koppelen flow
 
-| Actie | Bestand |
-|-------|---------|
-| Nieuw | `src/components/project/ProjectManagement.tsx` |
-| Nieuw | `src/components/project/MaintenanceInstructions.tsx` |
-| Nieuw | `src/components/project/CreateMaintenanceDialog.tsx` |
-| Nieuw | `src/components/project/EditMaintenanceDialog.tsx` |
-| Wijzig | `src/pages/ProjectDetail.tsx` |
-| Wijzig | `src/lib/i18n/nl.ts` |
-| Wijzig | `src/lib/i18n/en.ts` |
-| Wijzig | `src/lib/i18n/types.ts` |
-| Migratie | Nieuwe tabel `maintenance_instructions` met RLS |
+1. Gebruiker klikt "Kies uit documenten"
+2. Dialog opent met lijst van projectdocumenten (uit `documents` tabel)
+3. Gebruiker selecteert een document
+4. `document_id` wordt opgeslagen bij de instructie
+5. Bij weergave wordt documentnaam + download-link getoond
 
