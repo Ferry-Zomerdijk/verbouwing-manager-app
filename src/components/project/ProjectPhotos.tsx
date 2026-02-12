@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useHouseParts } from "@/hooks/useHouseParts";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ interface PhotoUpload {
   deelVanHuis: string;
 }
 
-const DEFAULT_PARTS = ["Woning", "Keuken", "Badkamer", "Slaapkamer", "Woonkamer", "Garage", "Tuin", "Zolder", "Hal"];
+// DEFAULT_PARTS removed - now using useHouseParts hook
 
 const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPhotosProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -61,6 +62,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
   const [isDragging, setIsDragging] = useState(false);
 
   const { currentTier, hasReachedLimit, limits } = useSubscription();
+  const { housePartNames } = useHouseParts(projectId);
 
   const { data: photos, refetch } = useQuery({
     queryKey: ["photos", projectId],
@@ -77,36 +79,21 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
     enabled: !readOnly,
   });
 
-  // Fetch tasks for deel_van_huis options
-  const { data: tasks } = useQuery({
-    queryKey: ["tasks-delen-voor-fotos", projectId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("tasks")
-        .select("deel_van_huis")
-        .eq("project_id", projectId);
-      return data || [];
-    },
-    enabled: !readOnly,
-  });
-
   // Use public data in readOnly mode
   const displayPhotos = readOnly && publicPhotos ? publicPhotos : photos;
   const photoCount = displayPhotos?.length || 0;
   const isLimitReached = hasReachedLimit("maxPhotos", photoCount);
 
-  // Calculate available parts
+  // Calculate available parts from house_parts hook
   const availableDelenVanHuis = useMemo(() => {
     const photoValues = displayPhotos?.map(p => p.deel_van_huis).filter(Boolean) || [];
-    const taskValues = tasks?.map(t => t.deel_van_huis).filter((v): v is string => !!v) || [];
-    const allValues = [...new Set([...DEFAULT_PARTS, ...photoValues, ...taskValues])];
-    // Sort but keep "Nog invullen" at the end
+    const allValues = [...new Set([...housePartNames, ...photoValues])];
     return allValues.sort((a, b) => {
       if (a === "Nog invullen") return 1;
       if (b === "Nog invullen") return -1;
       return a.localeCompare(b);
     });
-  }, [displayPhotos, tasks]);
+  }, [displayPhotos, housePartNames]);
 
   // Unique locations used in photos for filter
   const usedLocations = useMemo(() => {

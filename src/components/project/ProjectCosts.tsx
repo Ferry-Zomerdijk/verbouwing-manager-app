@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useHouseParts } from "@/hooks/useHouseParts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +64,7 @@ const ProjectCosts = ({
   totalBudget = 0
 }: ProjectCostsProps) => {
   const isMobile = useIsMobile();
+  const { housePartNames } = useHouseParts(projectId);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -126,25 +128,11 @@ const ProjectCosts = ({
     }
   });
 
-  // Fetch deel_van_huis values from tasks
-  const { data: tasks } = useQuery({
-    queryKey: ["tasks-deel-van-huis", projectId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select("deel_van_huis")
-        .eq("project_id", projectId);
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Get unique "deel van huis" values combining tasks and costs
+  // Get unique "deel van huis" values combining house_parts and costs
   const availableDelenVanHuis = useMemo(() => {
-    const taskValues = tasks?.map(t => t.deel_van_huis).filter((v): v is string => !!v) || [];
     const costValues = costs?.map(c => c.deel_van_huis).filter((v): v is string => !!v) || [];
-    return [...new Set([...taskValues, ...costValues])].sort();
-  }, [tasks, costs]);
+    return [...new Set([...housePartNames, ...costValues])].sort();
+  }, [housePartNames, costs]);
 
   // Get unique leveranciers from costs
   const availableLeveranciers = useMemo(() => {

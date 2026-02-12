@@ -439,5 +439,15 @@ export const nl: UITexts = {
     keys: {
       title: "Sleutelbeheer",
     },
+    houseParts: {
+      title: "Delen van huis",
+      description: "Beheer de opties voor 'deel van huis' die worden gebruikt bij taken, kosten, foto's, onderhoud en sleutels.",
+      placeholder: "Nieuw deel toevoegen...",
+      messages: {
+        saved: "Delen van huis opgeslagen",
+        duplicate: "Dit deel bestaat al",
+        minOne: "Voeg minimaal één deel toe",
+      },
+    },
   },
 };

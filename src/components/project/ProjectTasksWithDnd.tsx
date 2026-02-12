@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useHouseParts } from "@/hooks/useHouseParts";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,6 +92,7 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   });
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { housePartNames } = useHouseParts(projectId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -233,9 +235,9 @@ const ProjectTasksWithDnd = ({ projectId, isProjectUserView = false, readOnly = 
   }, [displayTasks]);
 
   const availableDelenVanHuis = useMemo(() => {
-    const unique = new Set(displayTasks?.map((t) => t.deel_van_huis).filter(Boolean) || []);
-    return Array.from(unique).sort();
-  }, [displayTasks]);
+    const taskValues = displayTasks?.map((t) => t.deel_van_huis).filter(Boolean) || [];
+    return [...new Set([...housePartNames, ...taskValues])].sort();
+  }, [displayTasks, housePartNames]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {

@@ -489,5 +489,15 @@ export type UITexts = {
     keys: {
       title: string;
     };
+    houseParts: {
+      title: string;
+      description: string;
+      placeholder: string;
+      messages: {
+        saved: string;
+        duplicate: string;
+        minOne: string;
+      };
+    };
   };
 };

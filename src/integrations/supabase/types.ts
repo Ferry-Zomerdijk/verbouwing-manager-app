@@ -503,6 +503,38 @@ export type Database = {
           },
         ]
       }
+      house_parts: {
+        Row: {
+          created_at: string
+          id: string
+          naam: string
+          project_id: string
+          volgorde: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          naam: string
+          project_id: string
+          volgorde?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          naam?: string
+          project_id?: string
+          volgorde?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_parts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_history: {
         Row: {
           created_at: string
@@ -1423,6 +1455,10 @@ export type Database = {
         Returns: boolean
       }
       initialize_document_types: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
+      initialize_house_parts: {
         Args: { p_project_id: string }
         Returns: undefined
       }
