@@ -451,6 +451,11 @@ export const en: UITexts = {
         maintenance: "maintenance instructions",
         keys: "keys",
       },
+      detail: {
+        title: "Overview: {name}",
+        noItems: "No linked items",
+        linkedItems: "Linked items",
+      },
     },
   },
 };
