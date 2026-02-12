@@ -386,4 +386,53 @@ export const nl: UITexts = {
     dutch: "Nederlands",
     english: "English",
   },
+
+  management: {
+    title: "Beheer",
+    maintenance: {
+      title: "Onderhoudsinstructies",
+      singular: "Instructie",
+      buttons: {
+        new: "Nieuwe instructie",
+      },
+      dialogs: {
+        createTitle: "Nieuwe onderhoudsinstructie",
+        editTitle: "Instructie bewerken",
+      },
+      labels: {
+        title: "Titel",
+        description: "Beschrijving / instructies",
+        partOfHouse: "Deel van huis",
+        frequency: "Frequentie",
+        contactName: "Contactpersoon",
+        contactPhone: "Telefoonnummer",
+      },
+      placeholders: {
+        title: "Bijv. CV-ketel ontluchten",
+        description: "Stapsgewijze instructies...",
+        partOfHouse: "Selecteer of typ...",
+        frequency: "Selecteer frequentie...",
+        contactName: "Naam bedrijf of contactpersoon",
+        contactPhone: "Telefoonnummer",
+      },
+      frequencies: {
+        weekly: "Wekelijks",
+        monthly: "Maandelijks",
+        quarterly: "Per kwartaal",
+        biannual: "Halfjaarlijks",
+        yearly: "Jaarlijks",
+        onFailure: "Bij storing",
+        asNeeded: "Indien nodig",
+      },
+      messages: {
+        created: "Instructie toegevoegd!",
+        updated: "Instructie bijgewerkt",
+        deleted: "Instructie verwijderd",
+        noInstructions: "Nog geen onderhoudsinstructies",
+      },
+    },
+    keys: {
+      title: "Sleutelbeheer",
+    },
+  },
 };

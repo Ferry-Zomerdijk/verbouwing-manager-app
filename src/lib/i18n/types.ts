@@ -433,4 +433,56 @@ export type UITexts = {
     dutch: string;
     english: string;
   };
+
+  // ============================================
+  // BEHEER
+  // ============================================
+  management: {
+    title: string;
+    maintenance: {
+      title: string;
+      singular: string;
+      buttons: {
+        new: string;
+      };
+      dialogs: {
+        createTitle: string;
+        editTitle: string;
+      };
+      labels: {
+        title: string;
+        description: string;
+        partOfHouse: string;
+        frequency: string;
+        contactName: string;
+        contactPhone: string;
+      };
+      placeholders: {
+        title: string;
+        description: string;
+        partOfHouse: string;
+        frequency: string;
+        contactName: string;
+        contactPhone: string;
+      };
+      frequencies: {
+        weekly: string;
+        monthly: string;
+        quarterly: string;
+        biannual: string;
+        yearly: string;
+        onFailure: string;
+        asNeeded: string;
+      };
+      messages: {
+        created: string;
+        updated: string;
+        deleted: string;
+        noInstructions: string;
+      };
+    };
+    keys: {
+      title: string;
+    };
+  };
 };

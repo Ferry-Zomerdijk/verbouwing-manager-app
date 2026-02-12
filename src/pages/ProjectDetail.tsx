@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, BookUser, Users, Home, ChevronDown, LogOut, Share2, Key, CalendarDays, Globe } from "lucide-react";
+import { ArrowLeft, Settings, UserPlus, LayoutGrid, ListTodo, Euro, FileText, Image, BookUser, Users, Home, ChevronDown, LogOut, Share2, Wrench, CalendarDays, Globe } from "lucide-react";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,7 +27,7 @@ import ProjectPhotos from "@/components/project/ProjectPhotos";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import SharePublicLinkDialog from "@/components/SharePublicLinkDialog";
-import { KeyManagement } from "@/components/admin/KeyManagement";
+import ProjectManagement from "@/components/project/ProjectManagement";
 import ProjectAttendance from "@/components/project/ProjectAttendance";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -384,11 +384,11 @@ const ProjectDetail = () => {
                 </TabsTrigger>
                 {isAdminOrOwner && (
                   <TabsTrigger 
-                    value="sleutels" 
+                    value="beheer" 
                     className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition-all whitespace-nowrap active:scale-[0.98] min-h-[40px]"
                   >
-                    <Key className="w-4 h-4" />
-                    <span>Sleutels</span>
+                    <Wrench className="w-4 h-4" />
+                    <span>{t.management.title}</span>
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -426,8 +426,8 @@ const ProjectDetail = () => {
           </TabsContent>
 
           {isAdminOrOwner && (
-            <TabsContent value="sleutels" className="animate-fade-in">
-              <KeyManagement projectId={project.id} />
+            <TabsContent value="beheer" className="animate-fade-in">
+              <ProjectManagement projectId={project.id} isAdminOrOwner={isAdminOrOwner} />
             </TabsContent>
           )}
         </Tabs>

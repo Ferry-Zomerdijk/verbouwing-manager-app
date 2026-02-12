@@ -381,4 +381,53 @@ export const en: UITexts = {
     dutch: "Nederlands",
     english: "English",
   },
+
+  management: {
+    title: "Management",
+    maintenance: {
+      title: "Maintenance instructions",
+      singular: "Instruction",
+      buttons: {
+        new: "New instruction",
+      },
+      dialogs: {
+        createTitle: "New maintenance instruction",
+        editTitle: "Edit instruction",
+      },
+      labels: {
+        title: "Title",
+        description: "Description / instructions",
+        partOfHouse: "Part of house",
+        frequency: "Frequency",
+        contactName: "Contact person",
+        contactPhone: "Phone number",
+      },
+      placeholders: {
+        title: "E.g. Bleed central heating",
+        description: "Step-by-step instructions...",
+        partOfHouse: "Select or type...",
+        frequency: "Select frequency...",
+        contactName: "Company or contact name",
+        contactPhone: "Phone number",
+      },
+      frequencies: {
+        weekly: "Weekly",
+        monthly: "Monthly",
+        quarterly: "Quarterly",
+        biannual: "Biannual",
+        yearly: "Yearly",
+        onFailure: "On failure",
+        asNeeded: "As needed",
+      },
+      messages: {
+        created: "Instruction added!",
+        updated: "Instruction updated",
+        deleted: "Instruction deleted",
+        noInstructions: "No maintenance instructions yet",
+      },
+    },
+    keys: {
+      title: "Key management",
+    },
+  },
 };

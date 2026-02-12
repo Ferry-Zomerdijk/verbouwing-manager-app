@@ -41,7 +41,7 @@ export function usePushSubscription() {
         
         // Check if already subscribed
         const registration = await navigator.serviceWorker.ready;
-        const existingSub = await registration.pushManager.getSubscription();
+        const existingSub = await (registration as any).pushManager?.getSubscription();
         if (existingSub) {
           setSubscription(existingSub);
           setIsSubscribed(true);
@@ -94,7 +94,7 @@ export function usePushSubscription() {
 
       // Subscribe to push
       const vapidKeyArray = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      const newSubscription = await registration.pushManager.subscribe({
+      const newSubscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidKeyArray.buffer as ArrayBuffer
       });

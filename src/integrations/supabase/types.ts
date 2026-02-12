@@ -588,6 +588,53 @@ export type Database = {
           },
         ]
       }
+      maintenance_instructions: {
+        Row: {
+          beschrijving: string | null
+          contact_naam: string | null
+          contact_telefoon: string | null
+          created_at: string
+          deel_van_huis: string | null
+          frequentie: string | null
+          id: string
+          project_id: string
+          titel: string
+          volgorde: number
+        }
+        Insert: {
+          beschrijving?: string | null
+          contact_naam?: string | null
+          contact_telefoon?: string | null
+          created_at?: string
+          deel_van_huis?: string | null
+          frequentie?: string | null
+          id?: string
+          project_id: string
+          titel: string
+          volgorde?: number
+        }
+        Update: {
+          beschrijving?: string | null
+          contact_naam?: string | null
+          contact_telefoon?: string | null
+          created_at?: string
+          deel_van_huis?: string | null
+          frequentie?: string | null
+          id?: string
+          project_id?: string
+          titel?: string
+          volgorde?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_instructions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           bericht: string
