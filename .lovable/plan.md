@@ -1,85 +1,63 @@
 
 
-# Plan: Meerdere bestanden uploaden bij kostenposten
+# Plan: Tweewekelijks + aangepaste periode bij frequentie
 
 ## Samenvatting
 
-De huidige kostenpost ondersteunt maar 1 factuurbestand (`factuur_url` als tekstveld). Dit plan maakt het mogelijk om meerdere bestanden te uploaden, zowel bij het aanmaken als bij het bewerken van een kostenpost.
+Twee toevoegingen aan het frequentiemenu van onderhoudsinstructies:
+1. **Tweewekelijks** als vaste optie tussen Wekelijks en Maandelijks
+2. **Aangepast** als optie onderaan het menu, waarmee de gebruiker zelf een getal + eenheid kan kiezen (bijv. "Elke 3 maanden", "Elke 6 weken")
 
-## Aanpak
+## Gebruikerservaring
 
-### Database: kolom toevoegen
-
-Een nieuwe kolom `factuur_urls` (text array) wordt toegevoegd aan de `costs` tabel. De bestaande `factuur_url` waarde wordt gemigreerd naar de nieuwe array. De oude kolom blijft bestaan voor backward compatibility maar wordt niet meer gebruikt in de code.
+Wanneer de gebruiker "Aangepast" selecteert in het frequentiemenu, verschijnen twee extra invoervelden:
 
 ```text
-costs tabel:
-  factuur_url  text      (bestaand, wordt niet meer gebruikt)
-  factuur_urls text[]    (nieuw, vervangt factuur_url)
+Frequentie:  [Aangepast        v]
+
+  Elke [ 3 ]  [ maanden  v ]
 ```
 
-De migratie kopieert bestaande waarden automatisch:
-- `factuur_urls = ARRAY[factuur_url]` waar `factuur_url IS NOT NULL`
+De eenheden zijn: dagen, weken, maanden, jaren.
 
-### UI-wijzigingen
+De waarde wordt opgeslagen als tekst in de bestaande `frequentie` kolom, bijv. `"Elke 3 maanden"`. Er is geen databasewijziging nodig.
 
-#### CreateCostDialog.tsx
-- `uploadedFilePath` wordt `uploadedFilePaths: string[]` (array)
-- `selectedFile` wordt `selectedFiles: File[]` (array)
-- File input krijgt `multiple` attribuut
-- Na AI-scan: bestand wordt toegevoegd aan de lijst (niet vervangen)
-- Lijst van geüploade bestanden getoond met per bestand een verwijder-knop
-- Bij submit: `factuur_urls` array meesturen
+## Technische wijzigingen
 
-#### EditCostDialog.tsx
-- `formData.factuur_url` wordt `factuur_urls: string[]`
-- Bestaande bestanden getoond als lijst met verwijder- en bekijk-knoppen
-- Nieuw bestand toevoegen via upload-knop (toevoegen aan lijst, niet vervangen)
-- Meerdere bestanden tegelijk selecteerbaar via `multiple` attribuut
-- Bij submit: `factuur_urls` array meesturen
+### i18n (`types.ts`, `nl.ts`, `en.ts`)
 
-#### ProjectCosts.tsx (desktop tabel)
-- Factuur-kolom toont badge met aantal bestanden (bijv. "2") in plaats van enkele download-knop
-- Klik op badge toont dropdown met download-opties per bestand
+Nieuwe vertalingen toevoegen:
 
-#### MobileCostCard.tsx
-- "Factuur" knop toont aantal bestanden
-- Bij meerdere bestanden: expandable lijst met download per bestand
+| Key | NL | EN |
+|-----|----|----|
+| `frequencies.biweekly` | Tweewekelijks | Biweekly |
+| `frequencies.custom` | Aangepast | Custom |
+| `frequencies.every` | Elke | Every |
+| `frequencies.days` | dagen | days |
+| `frequencies.weeks` | weken | weeks |
+| `frequencies.months` | maanden | months |
+| `frequencies.years` | jaren | years |
 
-#### ProjectDocuments.tsx
-- Cross-linking aangepast: itereert over `factuur_urls` array in plaats van enkele `factuur_url`
+### CreateMaintenanceDialog.tsx
+
+- "Tweewekelijks" toevoegen als vaste optie na "Wekelijks"
+- "Aangepast" toevoegen als laatste optie
+- State toevoegen: `customAmount` (number) en `customUnit` (string)
+- Wanneer "Aangepast" geselecteerd: extra invoervelden tonen (number input + select voor eenheid)
+- Bij submit: als frequentie "Aangepast" is, wordt de waarde samengesteld als `"Elke {amount} {unit}"` (bijv. "Elke 3 maanden")
+- Bij laden: als bestaande waarde begint met "Elke", automatisch "Aangepast" selecteren en de velden vullen
+
+### EditMaintenanceDialog.tsx
+
+- Identieke wijzigingen als CreateMaintenanceDialog
+- Bij openen: als de opgeslagen frequentie begint met "Elke", wordt "Aangepast" geselecteerd en worden `customAmount` en `customUnit` geparsed uit de bestaande waarde
 
 ### Te wijzigen bestanden
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `supabase/migrations/` | Nieuwe migratie: kolom `factuur_urls text[]` toevoegen + data migreren |
-| `src/integrations/supabase/types.ts` | Wordt automatisch bijgewerkt |
-| `src/components/project/CreateCostDialog.tsx` | Multi-file upload bij handmatig en AI tab |
-| `src/components/project/EditCostDialog.tsx` | Multi-file upload + bestaande bestanden beheren |
-| `src/components/project/ProjectCosts.tsx` | Factuur-kolom aanpassen voor meerdere bestanden |
-| `src/components/project/MobileCostCard.tsx` | Factuur-weergave aanpassen voor meerdere bestanden |
-| `src/components/project/ProjectDocuments.tsx` | Cross-linking aanpassen voor array |
-
-### Gebruikerservaring
-
-**Aanmaken kostenpost:**
-1. Gebruiker klikt op "Nieuwe kostenpost"
-2. Bij AI Upload: bestand uploaden en scannen. Bestand verschijnt in lijst
-3. Gebruiker kan extra bestanden toevoegen via "+ Bestand toevoegen" knop
-4. Per bestand: bestandsnaam + verwijder-knop
-5. Bij opslaan worden alle bestanden meegestuurd
-
-**Bewerken kostenpost:**
-1. Bestaande bestanden getoond als lijst
-2. Per bestand: bekijk-knop (opent in nieuw tabblad) + verwijder-knop
-3. "Bestand toevoegen" knop onderaan om extra bestanden toe te voegen
-4. Verwijderde bestanden worden ook uit storage verwijderd bij opslaan
-
-**Desktop tabel:**
-```text
-| ... | Factuur      | ... |
-| ... | [3 bestanden]| ... |  <-- klikbaar, toont dropdown
-| ... | -            | ... |  <-- geen bestanden
-```
-
+| `src/lib/i18n/types.ts` | Nieuwe frequency-keys |
+| `src/lib/i18n/nl.ts` | NL vertalingen |
+| `src/lib/i18n/en.ts` | EN vertalingen |
+| `src/components/project/CreateMaintenanceDialog.tsx` | Tweewekelijks + aangepaste periode UI |
+| `src/components/project/EditMaintenanceDialog.tsx` | Tweewekelijks + aangepaste periode UI |
