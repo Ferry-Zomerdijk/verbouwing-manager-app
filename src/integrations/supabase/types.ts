@@ -347,6 +347,7 @@ export type Database = {
           datum: string
           deel_van_huis: string | null
           factuur_url: string | null
+          factuur_urls: string[] | null
           id: string
           koppeling_begrotingspost: string | null
           leverancier: string | null
@@ -363,6 +364,7 @@ export type Database = {
           datum?: string
           deel_van_huis?: string | null
           factuur_url?: string | null
+          factuur_urls?: string[] | null
           id?: string
           koppeling_begrotingspost?: string | null
           leverancier?: string | null
@@ -379,6 +381,7 @@ export type Database = {
           datum?: string
           deel_van_huis?: string | null
           factuur_url?: string | null
+          factuur_urls?: string[] | null
           id?: string
           koppeling_begrotingspost?: string | null
           leverancier?: string | null

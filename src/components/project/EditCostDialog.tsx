@@ -32,7 +32,7 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
     leverancier: "",
     beschrijving: "",
     bedrag: "",
-    factuur_url: "",
+    factuur_urls: [] as string[],
     deel_van_huis: "",
     status: "Schatting",
     betaald_door: "Ntb",
@@ -49,13 +49,20 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
 
   useEffect(() => {
     if (cost) {
+      // Build factuur_urls from either new array field or legacy single field
+      const urls: string[] = cost.factuur_urls && cost.factuur_urls.length > 0
+        ? [...cost.factuur_urls]
+        : cost.factuur_url
+          ? [cost.factuur_url]
+          : [];
+      
       setFormData({
         datum: cost.datum || "",
         categorie: cost.categorie || "Materiaal",
         leverancier: cost.leverancier || "",
         beschrijving: (cost as any).beschrijving || "",
         bedrag: cost.bedrag?.toString() || "",
-        factuur_url: cost.factuur_url || "",
+        factuur_urls: urls,
         deel_van_huis: cost.deel_van_huis || "",
         status: cost.status || "Schatting",
         betaald_door: cost.betaald_door || "Ntb",
@@ -64,8 +71,8 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
   }, [cost]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
     try {
@@ -76,27 +83,36 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         return;
       }
 
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      const newPaths: string[] = [];
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("invoices")
-        .upload(filePath, file);
+        const { error: uploadError } = await supabase.storage
+          .from("invoices")
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
-
-      // Verwijder oude factuur indien aanwezig
-      if (formData.factuur_url) {
-        await supabase.storage.from("invoices").remove([formData.factuur_url]);
+        if (uploadError) throw uploadError;
+        newPaths.push(filePath);
       }
 
-      setFormData({ ...formData, factuur_url: filePath });
-      toast.success("Nieuwe factuur geüpload");
+      setFormData(prev => ({ ...prev, factuur_urls: [...prev.factuur_urls, ...newPaths] }));
+      toast.success(`${newPaths.length} bestand${newPaths.length > 1 ? 'en' : ''} geüpload`);
     } catch (error: any) {
       toast.error("Fout bij uploaden: " + error.message);
     } finally {
       setUploading(false);
     }
+    e.target.value = "";
+  };
+
+  const handleRemoveUploadedFile = async (index: number) => {
+    const path = formData.factuur_urls[index];
+    await supabase.storage.from("invoices").remove([path]);
+    setFormData(prev => ({
+      ...prev,
+      factuur_urls: prev.factuur_urls.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,7 +128,8 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
           leverancier: formData.leverancier || null,
           beschrijving: formData.beschrijving || null,
           bedrag: parseFloat(formData.bedrag),
-          factuur_url: formData.factuur_url || null,
+          factuur_url: formData.factuur_urls.length > 0 ? formData.factuur_urls[0] : null,
+          factuur_urls: formData.factuur_urls,
           deel_van_huis: formData.deel_van_huis || null,
           status: formData.status as any,
           betaald_door: formData.betaald_door,
@@ -247,44 +264,41 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
         </div>
 
         <div className="col-span-1 sm:col-span-2">
-          <Label htmlFor="factuur">Factuur (optioneel)</Label>
+          <Label>Bestanden ({formData.factuur_urls.length})</Label>
           
-          {formData.factuur_url ? (
-            <div className="mt-2 p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {formData.factuur_url.split("/").pop()}
-                </p>
-                <p className="text-xs text-muted-foreground">Factuur bijgevoegd</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    const url = supabase.storage.from("invoices").getPublicUrl(formData.factuur_url).data.publicUrl;
-                    window.open(url, "_blank");
-                  }}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => setFormData({ ...formData, factuur_url: "" })}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+          {formData.factuur_urls.length > 0 && (
+            <div className="space-y-2 mt-2">
+              {formData.factuur_urls.map((url, index) => (
+                <div key={url} className="p-2 border rounded-lg bg-muted/30 flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-sm truncate flex-1">{url.split("/").pop()}</p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => {
+                        const publicUrl = supabase.storage.from("invoices").getPublicUrl(url).data.publicUrl;
+                        window.open(publicUrl, "_blank");
+                      }}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleRemoveUploadedFile(index)}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : null}
+          )}
 
           <div className="flex items-center gap-2 mt-2">
             <Button
@@ -295,12 +309,13 @@ const EditCostDialog = ({ open, onOpenChange, cost, onSuccess }: EditCostDialogP
               onClick={() => document.getElementById("factuur")?.click()}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {uploading ? "Uploaden..." : formData.factuur_url ? "Vervangen" : "Uploaden"}
+              {uploading ? "Uploaden..." : "Bestand toevoegen"}
             </Button>
             <Input
               id="factuur"
               type="file"
               accept="image/*,application/pdf"
+              multiple
               onChange={handleFileUpload}
               className="hidden"
             />

@@ -275,9 +275,14 @@ const ProjectCosts = ({
     if (!selectedCost) return;
     setDeleting(true);
     try {
-      // Delete invoice file if exists
-      if (selectedCost.factuur_url) {
-        await supabase.storage.from("invoices").remove([selectedCost.factuur_url]);
+      // Delete invoice files if exists
+      const urls = selectedCost.factuur_urls?.length > 0 
+        ? selectedCost.factuur_urls 
+        : selectedCost.factuur_url 
+          ? [selectedCost.factuur_url] 
+          : [];
+      if (urls.length > 0) {
+        await supabase.storage.from("invoices").remove(urls);
       }
       const {
         error
@@ -947,9 +952,37 @@ const ProjectCosts = ({
                       />
                     </TableCell>
                     <TableCell>
-                      {cost.factuur_url ? <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(cost.factuur_url!, cost.id)}>
-                          <Download className="w-4 h-4" />
-                        </Button> : <span className="text-muted-foreground text-sm">-</span>}
+                      {(() => {
+                        const urls = cost.factuur_urls?.length > 0 
+                          ? cost.factuur_urls 
+                          : cost.factuur_url 
+                            ? [cost.factuur_url] 
+                            : [];
+                        if (urls.length === 0) return <span className="text-muted-foreground text-sm">-</span>;
+                        if (urls.length === 1) return (
+                          <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(urls[0], cost.id)}>
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        );
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Download className="w-4 h-4 mr-1" />
+                                {urls.length}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {urls.map((url: string, i: number) => (
+                                <DropdownMenuItem key={url} onClick={() => handleDownloadInvoice(url, cost.id)}>
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Bestand {i + 1}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

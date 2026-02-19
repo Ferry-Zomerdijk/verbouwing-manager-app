@@ -42,11 +42,19 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
   const [deleting, setDeleting] = useState(false);
   const [swipeState, setSwipeState] = useState<"idle" | "left" | "right">("idle");
 
+  const getFactuurUrls = (): string[] => {
+    if (cost.factuur_urls?.length > 0) return cost.factuur_urls;
+    if (cost.factuur_url) return [cost.factuur_url];
+    return [];
+  };
+
+  const factuurUrls = getFactuurUrls();
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      if (cost.factuur_url) {
-        await supabase.storage.from("invoices").remove([cost.factuur_url]);
+      if (factuurUrls.length > 0) {
+        await supabase.storage.from("invoices").remove(factuurUrls);
       }
       const { error } = await supabase.from("costs").delete().eq("id", cost.id);
       if (error) throw error;
@@ -60,16 +68,15 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
     }
   };
 
-  const handleDownloadInvoice = async () => {
-    if (!cost.factuur_url) return;
+  const handleDownloadInvoice = async (fileUrl: string) => {
     try {
-      const { data, error } = await supabase.storage.from('invoices').download(cost.factuur_url);
+      const { data, error } = await supabase.storage.from('invoices').download(fileUrl);
       if (error) throw error;
 
       const url = window.URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `factuur-${cost.id}.${cost.factuur_url.split('.').pop()}`;
+      a.download = `factuur-${cost.id}.${fileUrl.split('.').pop()}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -180,18 +187,39 @@ export const MobileCostCard = ({ cost, onUpdate }: MobileCostCardProps) => {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
-              {cost.factuur_url && (
-                <Button 
-                  variant="outline" 
-                  className="h-11"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadInvoice();
-                  }}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Factuur
-                </Button>
+              {factuurUrls.length > 0 && (
+                factuurUrls.length === 1 ? (
+                  <Button 
+                    variant="outline" 
+                    className="h-11"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadInvoice(factuurUrls[0]);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Factuur
+                  </Button>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">{factuurUrls.length} bestanden</span>
+                    {factuurUrls.map((url, i) => (
+                      <Button 
+                        key={url}
+                        variant="outline" 
+                        size="sm"
+                        className="h-9"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadInvoice(url);
+                        }}
+                      >
+                        <Download className="w-3.5 h-3.5 mr-1.5" />
+                        Bestand {i + 1}
+                      </Button>
+                    ))}
+                  </div>
+                )
               )}
               <Button
                 variant="outline"
