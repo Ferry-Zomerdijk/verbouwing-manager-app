@@ -427,8 +427,64 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           )}
         </TabsContent>
 
-        <TabsContent value="manual">
-          {/* Manual form is always available below */}
+        <TabsContent value="manual" className="space-y-4">
+          <div 
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              const files = e.dataTransfer.files;
+              if (files) {
+                const fakeEvent = { target: { files, value: "" } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                handleManualFileUpload(fakeEvent);
+              }
+            }}
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+              isDragging 
+                ? 'border-primary bg-primary/5 scale-[1.02]' 
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input
+              type="file"
+              id="manual-tab-file-upload"
+              className="hidden"
+              accept="image/*,application/pdf"
+              multiple
+              onChange={handleManualFileUpload}
+            />
+            <label htmlFor="manual-tab-file-upload" className="cursor-pointer block">
+              <Upload className={`w-10 h-10 mx-auto mb-3 transition-colors ${
+                isDragging ? 'text-primary' : 'text-muted-foreground'
+              }`} />
+              <p className="text-sm font-medium mb-1">
+                {isDragging ? 'Laat los om te uploaden' : 'Klik of sleep facturen hierheen'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                PDF, JPG, PNG of andere afbeeldingen (max 20MB per bestand)
+              </p>
+            </label>
+          </div>
+          {uploadedFilePaths.length > 0 && (
+            <div className="space-y-2">
+              {uploadedFilePaths.map((path, index) => (
+                <div key={path} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm truncate flex-1">{path.split('/').pop()}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => handleRemoveUploadedFile(index)}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
