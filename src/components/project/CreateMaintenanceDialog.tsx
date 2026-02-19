@@ -50,6 +50,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [beschrijving, setBeschrijving] = useState("");
   const [deelVanHuis, setDeelVanHuis] = useState("");
   const [frequentie, setFrequentie] = useState("");
+  const [customAmount, setCustomAmount] = useState(1);
+  const [customUnit, setCustomUnit] = useState("maanden");
   const [contactNaam, setContactNaam] = useState("");
   const [contactTelefoon, setContactTelefoon] = useState("");
   const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
@@ -58,19 +60,37 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
+    { value: "Tweewekelijks", label: t.management.maintenance.frequencies.biweekly },
     { value: "Maandelijks", label: t.management.maintenance.frequencies.monthly },
     { value: "Per kwartaal", label: t.management.maintenance.frequencies.quarterly },
     { value: "Halfjaarlijks", label: t.management.maintenance.frequencies.biannual },
     { value: "Jaarlijks", label: t.management.maintenance.frequencies.yearly },
     { value: "Bij storing", label: t.management.maintenance.frequencies.onFailure },
     { value: "Indien nodig", label: t.management.maintenance.frequencies.asNeeded },
+    { value: "Aangepast", label: t.management.maintenance.frequencies.custom },
   ];
+
+  const customUnits = [
+    { value: "dagen", label: t.management.maintenance.frequencies.days },
+    { value: "weken", label: t.management.maintenance.frequencies.weeks },
+    { value: "maanden", label: t.management.maintenance.frequencies.months },
+    { value: "jaren", label: t.management.maintenance.frequencies.years },
+  ];
+
+  const getFrequentieValue = () => {
+    if (frequentie === "Aangepast") {
+      return `Elke ${customAmount} ${customUnit}`;
+    }
+    return frequentie || null;
+  };
 
   const resetForm = () => {
     setTitel("");
     setBeschrijving("");
     setDeelVanHuis("");
     setFrequentie("");
+    setCustomAmount(1);
+    setCustomUnit("maanden");
     setContactNaam("");
     setContactTelefoon("");
     setBijlageUrl(null);
@@ -93,7 +113,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           titel: titel.trim(),
           beschrijving: beschrijving.trim() || null,
           deel_van_huis: deelVanHuis.trim() || null,
-          frequentie: frequentie || null,
+          frequentie: getFrequentieValue(),
           contact_naam: contactNaam.trim() || null,
           contact_telefoon: contactTelefoon.trim() || null,
           bijlage_url: bijlageUrl || null,
@@ -145,7 +165,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           </Select>
         </div>
 
-        <div>
+        <div className={frequentie === "Aangepast" ? "sm:col-span-2" : ""}>
           <Label>{t.management.maintenance.labels.frequency}</Label>
           <Select value={frequentie} onValueChange={setFrequentie}>
             <SelectTrigger>
@@ -157,6 +177,28 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
               ))}
             </SelectContent>
           </Select>
+          {frequentie === "Aangepast" && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">{t.management.maintenance.frequencies.every}</span>
+              <Input
+                type="number"
+                min={1}
+                value={customAmount}
+                onChange={(e) => setCustomAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-20"
+              />
+              <Select value={customUnit} onValueChange={setCustomUnit}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {customUnits.map((u) => (
+                    <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="sm:col-span-2">
