@@ -1,77 +1,85 @@
 
-# Plan: Detailpagina per "Deel van huis" met gekoppelde items
+
+# Plan: Meerdere bestanden uploaden bij kostenposten
 
 ## Samenvatting
 
-Wanneer je in Beheer op een "deel van huis" klikt, opent een detail-dialog (Drawer op mobiel, Dialog op desktop) met een overzicht van alle gekoppelde items (taken, kosten, foto's, onderhoudsinstructies, sleutels). Daarnaast wordt bij elk deel in de lijst een badge getoond met het totaal aantal gekoppelde items.
+De huidige kostenpost ondersteunt maar 1 factuurbestand (`factuur_url` als tekstveld). Dit plan maakt het mogelijk om meerdere bestanden te uploaden, zowel bij het aanmaken als bij het bewerken van een kostenpost.
 
-## Wijzigingen
+## Aanpak
 
-### 1. Nieuw component: `src/components/project/HousePartDetailDialog.tsx`
+### Database: kolom toevoegen
 
-- Dialog/Drawer (mobiel = Drawer, desktop = Dialog, conform bestaand patroon)
-- Props: `projectId`, `partName`, `open`, `onOpenChange`
-- Haalt gekoppelde items op via 5 queries (taken, kosten, foto's, onderhoud, sleutels) met volledige data (niet alleen count)
-- Toont items gegroepeerd per type in een accordion of sectie-indeling met iconen:
-  - Taken (ListTodo): titel, status
-  - Kosten (Euro): beschrijving, bedrag
-  - Foto's (Image): notitie of bestandsnaam
-  - Onderhoud (Wrench): titel
-  - Sleutels (Key): key_number, deel_van_huis
-- Lege secties worden verborgen
-
-### 2. Wijziging: `src/components/project/HousePartsManager.tsx`
-
-- Per item in de lijst: een klikbaar badge/chip tonen met het totaal aantal gekoppelde items (bijv. "5")
-- Gebruik `useQuery` om voor elk deel de counts op te halen (hergebruik `checkHousePartUsage`)
-- Klik op de naam of de badge opent de `HousePartDetailDialog`
-- State toevoegen: `selectedPart` voor welk deel het detailscherm open is
-
-### 3. i18n uitbreidingen (`types.ts`, `nl.ts`, `en.ts`)
-
-- `houseParts.detail.title`: "Overzicht: {name}" / "Overview: {name}"
-- `houseParts.detail.noItems`: "Geen gekoppelde items" / "No linked items"
-- `houseParts.detail.linkedItems`: "Gekoppelde items" / "Linked items"
-
-## Technische details
-
-### Count-badge per item
-
-In `HousePartsManager`, na het laden van de parts, worden de counts per part opgehaald via een enkele `useQuery` die `checkHousePartUsage` aanroept voor elk bestaand part (niet voor nieuwe). Het resultaat wordt opgeslagen als een map: `Record<string, number>`.
+Een nieuwe kolom `factuur_urls` (text array) wordt toegevoegd aan de `costs` tabel. De bestaande `factuur_url` waarde wordt gemigreerd naar de nieuwe array. De oude kolom blijft bestaan voor backward compatibility maar wordt niet meer gebruikt in de code.
 
 ```text
-  [Badkamer] ---- [3] ---- [prullenbak]
-  [Keuken]  ---- [7] ---- [prullenbak]
-  [Tuin]    ---- [0] ---- [prullenbak]
+costs tabel:
+  factuur_url  text      (bestaand, wordt niet meer gebruikt)
+  factuur_urls text[]    (nieuw, vervangt factuur_url)
 ```
 
-### Detail-dialog structuur
+De migratie kopieert bestaande waarden automatisch:
+- `factuur_urls = ARRAY[factuur_url]` waar `factuur_url IS NOT NULL`
 
+### UI-wijzigingen
+
+#### CreateCostDialog.tsx
+- `uploadedFilePath` wordt `uploadedFilePaths: string[]` (array)
+- `selectedFile` wordt `selectedFiles: File[]` (array)
+- File input krijgt `multiple` attribuut
+- Na AI-scan: bestand wordt toegevoegd aan de lijst (niet vervangen)
+- Lijst van geüploade bestanden getoond met per bestand een verwijder-knop
+- Bij submit: `factuur_urls` array meesturen
+
+#### EditCostDialog.tsx
+- `formData.factuur_url` wordt `factuur_urls: string[]`
+- Bestaande bestanden getoond als lijst met verwijder- en bekijk-knoppen
+- Nieuw bestand toevoegen via upload-knop (toevoegen aan lijst, niet vervangen)
+- Meerdere bestanden tegelijk selecteerbaar via `multiple` attribuut
+- Bij submit: `factuur_urls` array meesturen
+
+#### ProjectCosts.tsx (desktop tabel)
+- Factuur-kolom toont badge met aantal bestanden (bijv. "2") in plaats van enkele download-knop
+- Klik op badge toont dropdown met download-opties per bestand
+
+#### MobileCostCard.tsx
+- "Factuur" knop toont aantal bestanden
+- Bij meerdere bestanden: expandable lijst met download per bestand
+
+#### ProjectDocuments.tsx
+- Cross-linking aangepast: itereert over `factuur_urls` array in plaats van enkele `factuur_url`
+
+### Te wijzigen bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `supabase/migrations/` | Nieuwe migratie: kolom `factuur_urls text[]` toevoegen + data migreren |
+| `src/integrations/supabase/types.ts` | Wordt automatisch bijgewerkt |
+| `src/components/project/CreateCostDialog.tsx` | Multi-file upload bij handmatig en AI tab |
+| `src/components/project/EditCostDialog.tsx` | Multi-file upload + bestaande bestanden beheren |
+| `src/components/project/ProjectCosts.tsx` | Factuur-kolom aanpassen voor meerdere bestanden |
+| `src/components/project/MobileCostCard.tsx` | Factuur-weergave aanpassen voor meerdere bestanden |
+| `src/components/project/ProjectDocuments.tsx` | Cross-linking aanpassen voor array |
+
+### Gebruikerservaring
+
+**Aanmaken kostenpost:**
+1. Gebruiker klikt op "Nieuwe kostenpost"
+2. Bij AI Upload: bestand uploaden en scannen. Bestand verschijnt in lijst
+3. Gebruiker kan extra bestanden toevoegen via "+ Bestand toevoegen" knop
+4. Per bestand: bestandsnaam + verwijder-knop
+5. Bij opslaan worden alle bestanden meegestuurd
+
+**Bewerken kostenpost:**
+1. Bestaande bestanden getoond als lijst
+2. Per bestand: bekijk-knop (opent in nieuw tabblad) + verwijder-knop
+3. "Bestand toevoegen" knop onderaan om extra bestanden toe te voegen
+4. Verwijderde bestanden worden ook uit storage verwijderd bij opslaan
+
+**Desktop tabel:**
 ```text
-+----------------------------------+
-| Overzicht: Keuken            [X] |
-+----------------------------------+
-| > Taken (3)                      |
-|   - Tegels leggen (Te doen)      |
-|   - Kraan vervangen (Lopend)     |
-|   - Afzuigkap (Afgerond)        |
-|                                  |
-| > Kosten (2)                     |
-|   - Tegels   EUR 450            |
-|   - Kraan    EUR 120            |
-|                                  |
-| > Foto's (2)                     |
-|   - Foto 1                      |
-|   - Foto 2                      |
-+----------------------------------+
+| ... | Factuur      | ... |
+| ... | [3 bestanden]| ... |  <-- klikbaar, toont dropdown
+| ... | -            | ... |  <-- geen bestanden
 ```
 
-### Bestanden die worden aangemaakt/gewijzigd
-
-| Bestand | Actie |
-|---------|-------|
-| `src/components/project/HousePartDetailDialog.tsx` | Nieuw |
-| `src/components/project/HousePartsManager.tsx` | Badge + klik-handler toevoegen |
-| `src/lib/i18n/types.ts` | Detail-teksten toevoegen |
-| `src/lib/i18n/nl.ts` | NL vertalingen |
-| `src/lib/i18n/en.ts` | EN vertalingen |
