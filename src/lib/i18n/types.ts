@@ -472,12 +472,19 @@ export type UITexts = {
       };
       frequencies: {
         weekly: string;
+        biweekly: string;
         monthly: string;
         quarterly: string;
         biannual: string;
         yearly: string;
         onFailure: string;
         asNeeded: string;
+        custom: string;
+        every: string;
+        days: string;
+        weeks: string;
+        months: string;
+        years: string;
       };
       messages: {
         created: string;
