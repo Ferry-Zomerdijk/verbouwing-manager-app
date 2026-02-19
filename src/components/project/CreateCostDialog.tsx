@@ -33,7 +33,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const [loading, setLoading] = useState(false);
   const [processingOCR, setProcessingOCR] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
+  const [uploadedFilePaths, setUploadedFilePaths] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split("T")[0],
@@ -126,7 +126,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
       if (uploadError) throw uploadError;
       
-      setUploadedFilePath(fileName);
+      setUploadedFilePaths(prev => [...prev, fileName]);
 
       toast.info("Factuur wordt geanalyseerd...");
       
@@ -168,9 +168,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       console.error("OCR error:", error);
       toast.error(error.message || "Fout bij het verwerken van de factuur");
       
-      if (uploadedFilePath) {
-        await supabase.storage.from('invoices').remove([uploadedFilePath]);
-        setUploadedFilePath(null);
+      if (uploadedFilePaths.length > 0) {
+        await supabase.storage.from('invoices').remove(uploadedFilePaths);
+        setUploadedFilePaths([]);
       }
     } finally {
       setProcessingOCR(false);
@@ -178,11 +178,46 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   };
 
   const handleRemoveFile = async () => {
-    if (uploadedFilePath) {
-      await supabase.storage.from('invoices').remove([uploadedFilePath]);
-      setUploadedFilePath(null);
+    // Remove the last uploaded file (the one from AI scan)
+    if (uploadedFilePaths.length > 0) {
+      const lastPath = uploadedFilePaths[uploadedFilePaths.length - 1];
+      await supabase.storage.from('invoices').remove([lastPath]);
+      setUploadedFilePaths(prev => prev.slice(0, -1));
     }
     setSelectedFile(null);
+  };
+
+  const handleManualFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of Array.from(files)) {
+      if (!validateFile(file)) continue;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Niet ingelogd");
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('invoices')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+        setUploadedFilePaths(prev => [...prev, fileName]);
+        toast.success(`${file.name} geüpload`);
+      } catch (error: any) {
+        toast.error(`Fout bij uploaden ${file.name}: ${error.message}`);
+      }
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveUploadedFile = async (index: number) => {
+    const path = uploadedFilePaths[index];
+    await supabase.storage.from('invoices').remove([path]);
+    setUploadedFilePaths(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,7 +232,8 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         leverancier: formData.leverancier || null,
         categorie: formData.categorie as any,
         beschrijving: formData.beschrijving || null,
-        factuur_url: uploadedFilePath || null,
+        factuur_url: uploadedFilePaths.length > 0 ? uploadedFilePaths[0] : null,
+        factuur_urls: uploadedFilePaths.length > 0 ? uploadedFilePaths : [],
         deel_van_huis: formData.deel_van_huis || null,
         status: formData.status as any,
         betaald_door: formData.betaald_door,
@@ -224,7 +260,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         betaald_door: "Ntb",
       });
       setSelectedFile(null);
-      setUploadedFilePath(null);
+      setUploadedFilePaths([]);
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
@@ -365,7 +401,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
                     </Button>
                   </div>
 
-                  {!uploadedFilePath && (
+              {!uploadedFilePaths.length && (
                     <Button
                       type="button"
                       onClick={handleFileUpload}
@@ -516,6 +552,48 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           />
         </div>
 
+        {/* Uploaded files list + manual upload button */}
+        <div>
+          <Label>Bestanden ({uploadedFilePaths.length})</Label>
+          {uploadedFilePaths.length > 0 && (
+            <div className="space-y-2 mt-2">
+              {uploadedFilePaths.map((path, index) => (
+                <div key={path} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm truncate flex-1">{path.split('/').pop()}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => handleRemoveUploadedFile(index)}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-2">
+            <input
+              type="file"
+              id="manual-file-upload"
+              className="hidden"
+              accept="image/*,application/pdf"
+              multiple
+              onChange={handleManualFileUpload}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('manual-file-upload')?.click()}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Bestand toevoegen
+            </Button>
+          </div>
+        </div>
         {!isMobile && (
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

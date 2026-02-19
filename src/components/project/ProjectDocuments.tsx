@@ -130,13 +130,15 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("costs")
-        .select("id, factuur_url, leverancier, beschrijving, datum, categorie")
+        .select("id, factuur_url, factuur_urls, leverancier, beschrijving, datum, categorie")
         .eq("project_id", projectId)
-        .not("factuur_url", "is", null)
         .order("datum", { ascending: false });
       
       if (error) throw error;
-      return data;
+      // Filter to only costs that have files
+      return (data || []).filter(c => 
+        (c.factuur_urls && c.factuur_urls.length > 0) || c.factuur_url
+      );
     },
     enabled: isAdminOrOwner && !readOnly,
   });
@@ -175,19 +177,26 @@ const ProjectDocuments = ({ projectId, isAdminOrOwner = false, readOnly = false,
           ...doc,
           source: 'document' as const,
         })),
-        ...(invoices || []).map(inv => ({
-          id: inv.id,
-          bestandsnaam: inv.leverancier 
-            ? `Factuur - ${inv.leverancier}` 
-            : inv.beschrijving 
-              ? `Factuur - ${inv.beschrijving.slice(0, 30)}` 
-              : 'Factuur',
-          bestand_url: inv.factuur_url!,
-          type: 'Factuur' as const,
-          upload_datum: inv.datum,
-          source: 'cost' as const,
-          categorie: inv.categorie,
-        })),
+        ...(invoices || []).flatMap(inv => {
+          const urls = inv.factuur_urls?.length > 0 
+            ? inv.factuur_urls 
+            : inv.factuur_url 
+              ? [inv.factuur_url] 
+              : [];
+          return urls.map((url: string, i: number) => ({
+            id: `${inv.id}-${i}`,
+            bestandsnaam: inv.leverancier 
+              ? `Factuur - ${inv.leverancier}${urls.length > 1 ? ` (${i + 1})` : ''}` 
+              : inv.beschrijving 
+                ? `Factuur - ${inv.beschrijving.slice(0, 30)}${urls.length > 1 ? ` (${i + 1})` : ''}` 
+                : `Factuur${urls.length > 1 ? ` (${i + 1})` : ''}`,
+            bestand_url: url,
+            type: 'Factuur' as const,
+            upload_datum: inv.datum,
+            source: 'cost' as const,
+            categorie: inv.categorie,
+          }));
+        }),
       ].sort((a, b) => new Date(b.upload_datum).getTime() - new Date(a.upload_datum).getTime());
 
   // Calculate document count (excluding invoices from costs)
