@@ -1,55 +1,44 @@
 
 
-# Plan: Fix — Betalers beheren toont lege velden (queryKey conflict)
+# Plan: Zoekfunctie in leveranciers-filter dropdown
 
-## Probleem
+## Samenvatting
 
-De "Betalers beheren" dialog toont lege invoervelden omdat twee queries dezelfde cache-key delen maar verschillende data-transformaties uitvoeren:
+De leveranciers-dropdown in het Kosten-filter vervangen door een doorzoekbaar menu, zodat je snel een leverancier kunt vinden door te typen.
+
+## Gebruikerservaring
+
+De leverancier-filterknop blijft er hetzelfde uitzien, maar bij openen verschijnt er bovenaan een zoekveld. Terwijl je typt worden de leveranciers direct gefilterd. "Alle leveranciers" blijft altijd zichtbaar bovenaan.
 
 ```text
-useCostPayers() hook:
-  queryKey: ["cost-payers", projectId]
-  queryFn: returns string[]  -->  ["Ron", "Monique", ...]
-
-CostPayersManager query:
-  queryKey: ["cost-payers", projectId]
-  queryFn: returns CostPayer[]  -->  [{id, naam, sort_order}, ...]
++---------------------------+
+| [Zoek leverancier...]     |
++---------------------------+
+| v  Alle leveranciers      |
+|    ABE maatwerk            |
+|    Aannemingsbedrijf R...  |
+|    AliExpress              |
++---------------------------+
 ```
 
-Omdat `useCostPayers` altijd actief is (gebruikt in ProjectCosts, CreateCostDialog, EditCostDialog), wordt de cache gevuld met `string[]`. Wanneer de dialog opent, leest die de gecachte strings als objecten. `payer.naam` is dan `undefined`, wat lege velden oplevert.
+## Technische wijzigingen
 
-## Oplossing
+### ProjectCosts.tsx
 
-De `useCostPayers` hook aanpassen om een **aparte queryKey** te gebruiken, zodat de twee queries hun eigen cache hebben.
+De bestaande `Select` component voor leveranciers (regels 780-792) vervangen door een **Popover + Command** combobox:
 
-## Te wijzigen bestand
+- `Popover` als container (uit `@/components/ui/popover`)
+- `Command` met `CommandInput` (zoekveld), `CommandList`, `CommandEmpty`, `CommandGroup` en `CommandItem` (uit `@/components/ui/command`)
+- De trigger-knop behoudt dezelfde styling als de andere filterknopppen
+- Bij selectie van een leverancier: `setLeverancierFilter()` aanroepen en popover sluiten
+- State toevoegen: `leverancierPopoverOpen` (boolean)
+- Geselecteerde leverancier tonen met een vinkje in de lijst
+
+### Te wijzigen bestand
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/project/CostPayersManager.tsx` | queryKey in `useCostPayers` hook wijzigen van `["cost-payers", projectId]` naar `["cost-payer-names", projectId]` |
+| `src/components/project/ProjectCosts.tsx` | Leverancier `Select` vervangen door `Popover + Command` combobox met zoekfunctie |
 
-## Concrete wijziging
-
-In de `useCostPayers` functie (regel 274):
-
-```text
-Huidige code:   queryKey: ["cost-payers", projectId]
-Nieuwe code:    queryKey: ["cost-payer-names", projectId]
-```
-
-Daarnaast moet de `savePayers` mutatie in `onSuccess` ook deze tweede queryKey invalideren zodat de namen-lijst mee-update na opslaan:
-
-```text
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ["cost-payers", projectId] });
-  queryClient.invalidateQueries({ queryKey: ["cost-payer-names", projectId] });  // toevoegen
-  ...
-}
-```
-
-## Verwacht resultaat
-
-- De dialog toont bestaande betalers correct (of de standaardnamen als er geen opgeslagen zijn)
-- Na opslaan worden beide caches bijgewerkt
-- De dropdowns in CreateCostDialog en EditCostDialog blijven correct werken
+Er zijn geen database- of i18n-wijzigingen nodig. De bestaande imports van `Popover` en `Command` componenten worden hergebruikt.
 
