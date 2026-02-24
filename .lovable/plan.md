@@ -1,63 +1,42 @@
 
 
-# Plan: Tweewekelijks + aangepaste periode bij frequentie
+# Plan: Fix — Betalers beheren toont lege velden
 
-## Samenvatting
+## Probleem
 
-Twee toevoegingen aan het frequentiemenu van onderhoudsinstructies:
-1. **Tweewekelijks** als vaste optie tussen Wekelijks en Maandelijks
-2. **Aangepast** als optie onderaan het menu, waarmee de gebruiker zelf een getal + eenheid kan kiezen (bijv. "Elke 3 maanden", "Elke 6 weken")
+De "Betalers beheren" dialog toont 4 lege invoervelden met placeholder "Naam betaler", terwijl de standaardnamen (Ron, Monique, Gezamenlijk, Ntb) getoond zouden moeten worden.
 
-## Gebruikerservaring
-
-Wanneer de gebruiker "Aangepast" selecteert in het frequentiemenu, verschijnen twee extra invoervelden:
+De `cost_payers` tabel is leeg, dus het fallback-pad naar `DEFAULT_PAYERS` zou moeten werken. Het probleem zit in een race condition in de `useEffect`:
 
 ```text
-Frequentie:  [Aangepast        v]
-
-  Elke [ 3 ]  [ maanden  v ]
+Huidige flow:
+1. Dialog opent: open=true, query start (isLoading=true)
+2. payers = [] (destructuring default, data=undefined)
+3. Effect zet DEFAULT_PAYERS (correct)
+4. Query resolves: data=[] (lege tabel)
+5. payers referentie verandert (undefined -> [])
+6. Effect draait opnieuw, payers=[], zet DEFAULT_PAYERS opnieuw
 ```
 
-De eenheden zijn: dagen, weken, maanden, jaren.
+Het probleem is dat de `payers` default `[]` via destructuring bij elke render een nieuwe array-referentie aanmaakt zolang `data` undefined is (tijdens loading). Dit kan leiden tot onvoorspelbaar gedrag waarbij React state updates batcht en de uiteindelijke state niet de defaults bevat.
 
-De waarde wordt opgeslagen als tekst in de bestaande `frequentie` kolom, bijv. `"Elke 3 maanden"`. Er is geen databasewijziging nodig.
+## Oplossing
 
-## Technische wijzigingen
+In `CostPayersManager.tsx`, de `useEffect` aanpassen om pas local state te zetten wanneer de query klaar is met laden:
 
-### i18n (`types.ts`, `nl.ts`, `en.ts`)
+```text
+Wijziging in useEffect:
+- Voeg !isLoading toe als voorwaarde
+- Voeg isLoading toe aan dependency array
+- Dit garandeert dat defaults pas worden gezet na bevestiging dat de tabel leeg is
+```
 
-Nieuwe vertalingen toevoegen:
-
-| Key | NL | EN |
-|-----|----|----|
-| `frequencies.biweekly` | Tweewekelijks | Biweekly |
-| `frequencies.custom` | Aangepast | Custom |
-| `frequencies.every` | Elke | Every |
-| `frequencies.days` | dagen | days |
-| `frequencies.weeks` | weken | weeks |
-| `frequencies.months` | maanden | months |
-| `frequencies.years` | jaren | years |
-
-### CreateMaintenanceDialog.tsx
-
-- "Tweewekelijks" toevoegen als vaste optie na "Wekelijks"
-- "Aangepast" toevoegen als laatste optie
-- State toevoegen: `customAmount` (number) en `customUnit` (string)
-- Wanneer "Aangepast" geselecteerd: extra invoervelden tonen (number input + select voor eenheid)
-- Bij submit: als frequentie "Aangepast" is, wordt de waarde samengesteld als `"Elke {amount} {unit}"` (bijv. "Elke 3 maanden")
-- Bij laden: als bestaande waarde begint met "Elke", automatisch "Aangepast" selecteren en de velden vullen
-
-### EditMaintenanceDialog.tsx
-
-- Identieke wijzigingen als CreateMaintenanceDialog
-- Bij openen: als de opgeslagen frequentie begint met "Elke", wordt "Aangepast" geselecteerd en worden `customAmount` en `customUnit` geparsed uit de bestaande waarde
-
-### Te wijzigen bestanden
+## Te wijzigen bestand
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/lib/i18n/types.ts` | Nieuwe frequency-keys |
-| `src/lib/i18n/nl.ts` | NL vertalingen |
-| `src/lib/i18n/en.ts` | EN vertalingen |
-| `src/components/project/CreateMaintenanceDialog.tsx` | Tweewekelijks + aangepaste periode UI |
-| `src/components/project/EditMaintenanceDialog.tsx` | Tweewekelijks + aangepaste periode UI |
+| `src/components/project/CostPayersManager.tsx` | `useEffect` guard toevoegen: `if (open && !isLoading)` + `isLoading` in dependency array |
+
+## Verwacht resultaat
+
+Wanneer de dialog opent en er geen betalers in de database staan, worden de standaardnamen (Ron, Monique, Gezamenlijk, Ntb) correct getoond in de invoervelden.
