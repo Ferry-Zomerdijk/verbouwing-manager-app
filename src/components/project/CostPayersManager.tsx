@@ -54,8 +54,8 @@ export function CostPayersManager({ projectId, open, onOpenChange }: CostPayersM
 
   // Update local state when dialog opens or payers load
   useEffect(() => {
-    if (open) {
-      if (payers.length > 0) {
+    if (open && !isLoading) {
+      if (payers && payers.length > 0) {
         setLocalPayers(payers);
       } else {
         // If no payers exist, show defaults
@@ -63,7 +63,7 @@ export function CostPayersManager({ projectId, open, onOpenChange }: CostPayersM
       }
       setHasChanges(false);
     }
-  }, [open, payers]);
+  }, [open, payers, isLoading]);
 
   const savePayers = useMutation({
     mutationFn: async (payersToSave: Omit<CostPayer, "id">[]) => {
