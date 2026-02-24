@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useHouseParts } from "@/hooks/useHouseParts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown, Settings, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Euro, Download, MoreVertical, Trash2, Filter, X, FileSpreadsheet, Search, Pencil, BarChart3, ChevronDown, Settings, ArrowUpDown, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart, Line, CartesianGrid, ReferenceLine } from "recharts";
@@ -74,6 +76,7 @@ const ProjectCosts = ({
   const [deelVanHuisFilter, setDeelVanHuisFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [leverancierFilter, setLeverancierFilter] = useState<string>("all");
+  const [leverancierPopoverOpen, setLeverancierPopoverOpen] = useState(false);
   const [betaaldDoorFilter, setBetaaldDoorFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [chartsOpen, setChartsOpen] = useState(() => {
@@ -778,17 +781,41 @@ const ProjectCosts = ({
                 </Select>
 
                 {availableLeveranciers.length > 0 && (
-                  <Select value={leverancierFilter} onValueChange={setLeverancierFilter}>
-                    <SelectTrigger className="w-[120px] lg:w-[150px] h-8 text-xs sm:text-sm">
-                      <SelectValue placeholder="Leverancier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle leveranciers</SelectItem>
-                      {availableLeveranciers.map(leverancier => (
-                        <SelectItem key={leverancier} value={leverancier}>{leverancier}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={leverancierPopoverOpen} onOpenChange={setLeverancierPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-[120px] lg:w-[150px] h-8 text-xs sm:text-sm justify-between font-normal">
+                        <span className="truncate">{leverancierFilter === "all" ? "Alle leveranciers" : leverancierFilter}</span>
+                        <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[220px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Zoek leverancier..." />
+                        <CommandList>
+                          <CommandEmpty>Geen leverancier gevonden.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="Alle leveranciers"
+                              onSelect={() => { setLeverancierFilter("all"); setLeverancierPopoverOpen(false); }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", leverancierFilter === "all" ? "opacity-100" : "opacity-0")} />
+                              Alle leveranciers
+                            </CommandItem>
+                            {availableLeveranciers.map(leverancier => (
+                              <CommandItem
+                                key={leverancier}
+                                value={leverancier}
+                                onSelect={() => { setLeverancierFilter(leverancier); setLeverancierPopoverOpen(false); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", leverancierFilter === leverancier ? "opacity-100" : "opacity-0")} />
+                                {leverancier}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )}
 
                 <Select value={betaaldDoorFilter} onValueChange={setBetaaldDoorFilter}>
