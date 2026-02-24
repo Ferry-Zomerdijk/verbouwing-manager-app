@@ -1,42 +1,55 @@
 
 
-# Plan: Fix — Betalers beheren toont lege velden
+# Plan: Fix — Betalers beheren toont lege velden (queryKey conflict)
 
 ## Probleem
 
-De "Betalers beheren" dialog toont 4 lege invoervelden met placeholder "Naam betaler", terwijl de standaardnamen (Ron, Monique, Gezamenlijk, Ntb) getoond zouden moeten worden.
-
-De `cost_payers` tabel is leeg, dus het fallback-pad naar `DEFAULT_PAYERS` zou moeten werken. Het probleem zit in een race condition in de `useEffect`:
+De "Betalers beheren" dialog toont lege invoervelden omdat twee queries dezelfde cache-key delen maar verschillende data-transformaties uitvoeren:
 
 ```text
-Huidige flow:
-1. Dialog opent: open=true, query start (isLoading=true)
-2. payers = [] (destructuring default, data=undefined)
-3. Effect zet DEFAULT_PAYERS (correct)
-4. Query resolves: data=[] (lege tabel)
-5. payers referentie verandert (undefined -> [])
-6. Effect draait opnieuw, payers=[], zet DEFAULT_PAYERS opnieuw
+useCostPayers() hook:
+  queryKey: ["cost-payers", projectId]
+  queryFn: returns string[]  -->  ["Ron", "Monique", ...]
+
+CostPayersManager query:
+  queryKey: ["cost-payers", projectId]
+  queryFn: returns CostPayer[]  -->  [{id, naam, sort_order}, ...]
 ```
 
-Het probleem is dat de `payers` default `[]` via destructuring bij elke render een nieuwe array-referentie aanmaakt zolang `data` undefined is (tijdens loading). Dit kan leiden tot onvoorspelbaar gedrag waarbij React state updates batcht en de uiteindelijke state niet de defaults bevat.
+Omdat `useCostPayers` altijd actief is (gebruikt in ProjectCosts, CreateCostDialog, EditCostDialog), wordt de cache gevuld met `string[]`. Wanneer de dialog opent, leest die de gecachte strings als objecten. `payer.naam` is dan `undefined`, wat lege velden oplevert.
 
 ## Oplossing
 
-In `CostPayersManager.tsx`, de `useEffect` aanpassen om pas local state te zetten wanneer de query klaar is met laden:
-
-```text
-Wijziging in useEffect:
-- Voeg !isLoading toe als voorwaarde
-- Voeg isLoading toe aan dependency array
-- Dit garandeert dat defaults pas worden gezet na bevestiging dat de tabel leeg is
-```
+De `useCostPayers` hook aanpassen om een **aparte queryKey** te gebruiken, zodat de twee queries hun eigen cache hebben.
 
 ## Te wijzigen bestand
 
 | Bestand | Wijziging |
 |---------|-----------|
-| `src/components/project/CostPayersManager.tsx` | `useEffect` guard toevoegen: `if (open && !isLoading)` + `isLoading` in dependency array |
+| `src/components/project/CostPayersManager.tsx` | queryKey in `useCostPayers` hook wijzigen van `["cost-payers", projectId]` naar `["cost-payer-names", projectId]` |
+
+## Concrete wijziging
+
+In de `useCostPayers` functie (regel 274):
+
+```text
+Huidige code:   queryKey: ["cost-payers", projectId]
+Nieuwe code:    queryKey: ["cost-payer-names", projectId]
+```
+
+Daarnaast moet de `savePayers` mutatie in `onSuccess` ook deze tweede queryKey invalideren zodat de namen-lijst mee-update na opslaan:
+
+```text
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: ["cost-payers", projectId] });
+  queryClient.invalidateQueries({ queryKey: ["cost-payer-names", projectId] });  // toevoegen
+  ...
+}
+```
 
 ## Verwacht resultaat
 
-Wanneer de dialog opent en er geen betalers in de database staan, worden de standaardnamen (Ron, Monique, Gezamenlijk, Ntb) correct getoond in de invoervelden.
+- De dialog toont bestaande betalers correct (of de standaardnamen als er geen opgeslagen zijn)
+- Na opslaan worden beide caches bijgewerkt
+- De dropdowns in CreateCostDialog en EditCostDialog blijven correct werken
+
