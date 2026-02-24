@@ -92,6 +92,7 @@ export function CostPayersManager({ projectId, open, onOpenChange }: CostPayersM
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cost-payers", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["cost-payer-names", projectId] });
       toast.success("Betalers opgeslagen");
       setHasChanges(false);
       onOpenChange(false);
@@ -271,7 +272,7 @@ export function CostPayersManager({ projectId, open, onOpenChange }: CostPayersM
 // Hook to get payer options for a project
 export function useCostPayers(projectId: string) {
   return useQuery({
-    queryKey: ["cost-payers", projectId],
+    queryKey: ["cost-payer-names", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cost_payers")
