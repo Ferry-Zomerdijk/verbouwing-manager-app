@@ -411,6 +411,8 @@ export const nl: UITexts = {
         chooseFromDocuments: "Kies uit documenten",
         removeAttachment: "Bijlage verwijderen",
         linkedDocument: "Gekoppeld document",
+        periodFrom: "Periode van",
+        periodTo: "Periode tot",
       },
       placeholders: {
         title: "Bijv. CV-ketel ontluchten",
@@ -435,6 +437,16 @@ export const nl: UITexts = {
         weeks: "weken",
         months: "maanden",
         years: "jaren",
+      },
+      timeline: {
+        groupView: "Groepsweergave",
+        timelineView: "Tijdlijn",
+        overdue: "Achterstallig",
+        thisWeek: "Deze week",
+        active: "Actief",
+        planned: "Gepland",
+        noPeriod: "Geen periode",
+        noTasks: "Geen taken deze maand",
       },
       messages: {
         created: "Instructie toegevoegd!",

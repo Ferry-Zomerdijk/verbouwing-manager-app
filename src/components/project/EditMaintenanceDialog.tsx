@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // HOUSE_PART_SUGGESTIONS removed - now using useHouseParts hook
 
@@ -46,6 +47,8 @@ export interface MaintenanceInstruction {
   document_id: string | null;
   volgorde: number;
   created_at: string;
+  periode_van: string | null;
+  periode_tot: string | null;
 }
 
 interface EditMaintenanceDialogProps {
@@ -72,6 +75,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
+  const [periodeVan, setPeriodeVan] = useState("");
+  const [periodeTot, setPeriodeTot] = useState("");
 
   // Fetch linked document name if document_id exists
   const { data: linkedDoc } = useQuery({
@@ -109,6 +114,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
       setContactTelefoon(instruction.contact_telefoon || "");
       setBijlageUrl(instruction.bijlage_url || null);
       setDocumentId(instruction.document_id || null);
+      setPeriodeVan(instruction.periode_van || "");
+      setPeriodeTot(instruction.periode_tot || "");
     }
   }, [instruction]);
 
@@ -163,6 +170,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           contact_telefoon: contactTelefoon.trim() || null,
           bijlage_url: bijlageUrl || null,
           document_id: documentId || null,
+          periode_van: periodeVan || null,
+          periode_tot: periodeTot || null,
         })
         .eq("id", instruction.id);
 
@@ -253,6 +262,23 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
             onChange={(e) => setBeschrijving(e.target.value)}
             placeholder={t.management.maintenance.placeholders.description}
             rows={4}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.periodFrom}</Label>
+          <DatePicker
+            value={periodeVan}
+            onChange={setPeriodeVan}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.periodTo}</Label>
+          <DatePicker
+            value={periodeTot}
+            onChange={setPeriodeTot}
+            minDate={periodeVan || undefined}
           />
         </div>
 

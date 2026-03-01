@@ -634,6 +634,8 @@ export type Database = {
           document_id: string | null
           frequentie: string | null
           id: string
+          periode_tot: string | null
+          periode_van: string | null
           project_id: string
           titel: string
           volgorde: number
@@ -648,6 +650,8 @@ export type Database = {
           document_id?: string | null
           frequentie?: string | null
           id?: string
+          periode_tot?: string | null
+          periode_van?: string | null
           project_id: string
           titel: string
           volgorde?: number
@@ -662,6 +666,8 @@ export type Database = {
           document_id?: string | null
           frequentie?: string | null
           id?: string
+          periode_tot?: string | null
+          periode_van?: string | null
           project_id?: string
           titel?: string
           volgorde?: number
