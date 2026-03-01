@@ -472,7 +472,7 @@ const UserManagement = () => {
             {projectId && (
               <TabsTrigger value="keys" className="gap-2">
                 <Key className="w-4 h-4" />
-                Sleutelbeheer
+                Beheer
               </TabsTrigger>
             )}
           </TabsList>
