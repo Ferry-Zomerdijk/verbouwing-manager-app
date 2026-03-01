@@ -348,6 +348,7 @@ export type Database = {
           deel_van_huis: string | null
           factuur_url: string | null
           factuur_urls: string[] | null
+          file_hashes: string[] | null
           id: string
           koppeling_begrotingspost: string | null
           leverancier: string | null
@@ -365,6 +366,7 @@ export type Database = {
           deel_van_huis?: string | null
           factuur_url?: string | null
           factuur_urls?: string[] | null
+          file_hashes?: string[] | null
           id?: string
           koppeling_begrotingspost?: string | null
           leverancier?: string | null
@@ -382,6 +384,7 @@ export type Database = {
           deel_van_huis?: string | null
           factuur_url?: string | null
           factuur_urls?: string[] | null
+          file_hashes?: string[] | null
           id?: string
           koppeling_begrotingspost?: string | null
           leverancier?: string | null
@@ -1174,6 +1177,38 @@ export type Database = {
             columns: ["price_id"]
             isOneToOne: false
             referencedRelation: "prices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          naam: string
+          project_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          naam: string
+          project_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          naam?: string
+          project_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

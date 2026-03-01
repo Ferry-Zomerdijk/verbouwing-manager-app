@@ -18,8 +18,13 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { useCostPayers } from "./CostPayersManager";
 import { useCostCategories } from "./CostCategoriesManager";
+import { useSuppliers, useAddSupplier } from "./SuppliersManager";
 import { UI } from "@/lib/uiTexts";
 import { useHouseParts } from "@/hooks/useHouseParts";
+import { AutocompleteInput } from "./AutocompleteInput";
+import { computeFileHash, checkDuplicateHash, DuplicateMatch } from "@/lib/fileHashUtils";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
 
 interface CreateCostDialogProps {
   open: boolean;
@@ -35,6 +40,9 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedFilePaths, setUploadedFilePaths] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [fileHashes, setFileHashes] = useState<string[]>([]);
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateMatch | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ file: File; hash: string; path?: string } | null>(null);
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split("T")[0],
     bedrag: "",
@@ -52,9 +60,11 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const { canUseAi, remaining, limit, isUnlimited, isLoading: isLoadingAi, refetch: refetchAiUsage } = useAiUsage();
   const { currentTier } = useSubscription();
   
-  // Get custom payer and category options for this project
+  // Get custom payer, category and supplier options for this project
   const { data: payerOptions = [] } = useCostPayers(projectId);
   const { data: categoryOptions = [] } = useCostCategories(projectId);
+  const { data: supplierNames = [] } = useSuppliers(projectId);
+  const addSupplier = useAddSupplier(projectId);
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : ["Ron", "Monique", "Gezamenlijk", "Ntb"];
 
   const validateFile = (file: File): boolean => {
@@ -114,19 +124,42 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
     setProcessingOCR(true);
     try {
+      // Compute hash and check for duplicates
+      const hash = await computeFileHash(selectedFile);
+      const duplicate = await checkDuplicateHash(projectId, hash);
+      if (duplicate) {
+        setDuplicateWarning(duplicate);
+        setPendingFile({ file: selectedFile, hash });
+        setProcessingOCR(false);
+        return;
+      }
+
+      await processAiUpload(selectedFile, hash);
+    } catch (error: any) {
+      console.error("OCR error:", error);
+      toast.error(error.message || "Fout bij het verwerken van de factuur");
+    } finally {
+      setProcessingOCR(false);
+    }
+  };
+
+  const processAiUpload = async (file: File, hash: string) => {
+    setProcessingOCR(true);
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Niet ingelogd");
 
-      const fileExt = selectedFile.name.split('.').pop();
+      const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('invoices')
-        .upload(fileName, selectedFile);
+        .upload(fileName, file);
 
       if (uploadError) throw uploadError;
       
       setUploadedFilePaths(prev => [...prev, fileName]);
+      setFileHashes(prev => [...prev, hash]);
 
       toast.info("Factuur wordt geanalyseerd...");
       
@@ -194,24 +227,58 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     for (const file of Array.from(files)) {
       if (!validateFile(file)) continue;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Niet ingelogd");
+        // Compute hash and check for duplicates
+        const hash = await computeFileHash(file);
+        const duplicate = await checkDuplicateHash(projectId, hash);
+        if (duplicate) {
+          setDuplicateWarning(duplicate);
+          setPendingFile({ file, hash });
+          e.target.value = "";
+          return; // Stop processing, wait for user decision
+        }
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('invoices')
-          .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-        setUploadedFilePaths(prev => [...prev, fileName]);
-        toast.success(`${file.name} geüpload`);
+        await uploadManualFile(file, hash);
       } catch (error: any) {
         toast.error(`Fout bij uploaden ${file.name}: ${error.message}`);
       }
     }
     e.target.value = "";
+  };
+
+  const uploadManualFile = async (file: File, hash: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Niet ingelogd");
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('invoices')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+    setUploadedFilePaths(prev => [...prev, fileName]);
+    setFileHashes(prev => [...prev, hash]);
+    toast.success(`${file.name} geüpload`);
+  };
+
+  const handleDuplicateConfirm = async () => {
+    if (!pendingFile) return;
+    const { file, hash } = pendingFile;
+    setDuplicateWarning(null);
+    setPendingFile(null);
+    
+    // Determine if it was an AI upload or manual upload
+    if (selectedFile && file === selectedFile) {
+      await processAiUpload(file, hash);
+    } else {
+      await uploadManualFile(file, hash);
+    }
+  };
+
+  const handleDuplicateCancel = () => {
+    setDuplicateWarning(null);
+    setPendingFile(null);
   };
 
   const handleRemoveUploadedFile = async (index: number) => {
@@ -225,6 +292,11 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     setLoading(true);
 
     try {
+      // Add supplier to list if new
+      if (formData.leverancier.trim()) {
+        addSupplier.mutate(formData.leverancier.trim());
+      }
+
       const { error } = await supabase.from("costs").insert([{
         project_id: projectId,
         datum: formData.datum,
@@ -237,6 +309,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         deel_van_huis: formData.deel_van_huis || null,
         status: formData.status as any,
         betaald_door: formData.betaald_door,
+        file_hashes: fileHashes,
       }]);
 
       if (error) throw error;
@@ -261,6 +334,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
       });
       setSelectedFile(null);
       setUploadedFilePaths([]);
+      setFileHashes([]);
     } catch (error: any) {
       toast.error(error.message || "Er is een fout opgetreden");
     } finally {
@@ -588,11 +662,14 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
         <div>
           <Label htmlFor="leverancier">Leverancier</Label>
-          <Input
-            id="leverancier"
+          <AutocompleteInput
             value={formData.leverancier}
-            onChange={(e) => setFormData({ ...formData, leverancier: e.target.value })}
+            onChange={(value) => setFormData({ ...formData, leverancier: value })}
+            suggestions={supplierNames}
             placeholder="Naam leverancier"
+            allowCreate
+            createLabel="Voeg toe:"
+            showAllOnFocus
           />
         </div>
 
@@ -664,48 +741,77 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     </>
   );
 
+  const duplicateDialog = (
+    <AlertDialog open={!!duplicateWarning} onOpenChange={(open) => { if (!open) handleDuplicateCancel(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Mogelijk duplicaat gevonden</AlertDialogTitle>
+          <AlertDialogDescription>
+            Dit bestand lijkt al eerder te zijn geüpload bij een andere kostenpost:
+            <br /><br />
+            <strong>Bedrag:</strong> €{duplicateWarning?.bedrag?.toLocaleString("nl-NL")}<br />
+            <strong>Leverancier:</strong> {duplicateWarning?.leverancier || "Onbekend"}<br />
+            <strong>Datum:</strong> {duplicateWarning?.datum ? format(new Date(duplicateWarning.datum), "dd-MM-yyyy") : "Onbekend"}
+            <br /><br />
+            Wil je het bestand toch uploaden?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleDuplicateCancel}>Annuleren</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDuplicateConfirm}>Toch uploaden</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <KeyboardAwareDrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle>{UI.costs.dialogs.createTitle}</DrawerTitle>
-            <DrawerDescription>
-              Voeg een kostenpost toe of upload een factuur.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4 pb-4">
-            {formContent}
-          </div>
-          <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              {UI.actions.cancel}
-            </Button>
-            <Button 
-              onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
-              disabled={loading || processingOCR} 
-              className="flex-1"
-            >
-              {loading ? UI.actions.processing : UI.actions.add}
-            </Button>
-          </div>
-        </KeyboardAwareDrawerContent>
-      </Drawer>
+      <>
+        {duplicateDialog}
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <KeyboardAwareDrawerContent className="max-h-[90vh]">
+            <DrawerHeader className="text-left">
+              <DrawerTitle>{UI.costs.dialogs.createTitle}</DrawerTitle>
+              <DrawerDescription>
+                Voeg een kostenpost toe of upload een factuur.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-4">
+              {formContent}
+            </div>
+            <div className="sticky bottom-0 p-4 bg-background border-t flex gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                {UI.actions.cancel}
+              </Button>
+              <Button 
+                onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} 
+                disabled={loading || processingOCR} 
+                className="flex-1"
+              >
+                {loading ? UI.actions.processing : UI.actions.add}
+              </Button>
+            </div>
+          </KeyboardAwareDrawerContent>
+        </Drawer>
+      </>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{UI.costs.dialogs.createTitle}</DialogTitle>
-          <DialogDescription>
-            {UI.costs.dialogs.createDescription}
-          </DialogDescription>
-        </DialogHeader>
-        {formContent}
-      </DialogContent>
-    </Dialog>
+    <>
+      {duplicateDialog}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{UI.costs.dialogs.createTitle}</DialogTitle>
+            <DialogDescription>
+              {UI.costs.dialogs.createDescription}
+            </DialogDescription>
+          </DialogHeader>
+          {formContent}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

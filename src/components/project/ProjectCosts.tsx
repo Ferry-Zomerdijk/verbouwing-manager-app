@@ -27,6 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import MobileCostList from "./MobileCostList";
 import { CostPayersManager, useCostPayers } from "./CostPayersManager";
 import { CostCategoriesManager, useCostCategories, CATEGORY_COLOR_MAP } from "./CostCategoriesManager";
+import { SuppliersManager, useSuppliers } from "./SuppliersManager";
 import type { Database } from "@/integrations/supabase/types";
 
 type CostSortKey = "datum" | "bedrag";
@@ -85,6 +86,7 @@ const ProjectCosts = ({
   });
   const [payersManagerOpen, setPayersManagerOpen] = useState(false);
   const [categoriesManagerOpen, setCategoriesManagerOpen] = useState(false);
+  const [suppliersManagerOpen, setSuppliersManagerOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: CostSortKey; direction: SortDirection } | null>(() => {
     const stored = localStorage.getItem(`costs-sort-${projectId}`);
     return stored ? JSON.parse(stored) : null;
@@ -136,11 +138,13 @@ const ProjectCosts = ({
     return [...housePartNames].sort();
   }, [housePartNames]);
 
-  // Get unique leveranciers from costs
+  // Get supplier names from suppliers table
+  const { data: supplierNamesList = [] } = useSuppliers(projectId);
   const availableLeveranciers = useMemo(() => {
-    const leveranciers = costs?.map(c => c.leverancier).filter((v): v is string => !!v && v.trim() !== "") || [];
-    return [...new Set(leveranciers)].sort();
-  }, [costs]);
+    // Combine suppliers table with any unique names from costs not yet in the table
+    const costLeveranciers = costs?.map(c => c.leverancier).filter((v): v is string => !!v && v.trim() !== "") || [];
+    return [...new Set([...supplierNamesList, ...costLeveranciers])].sort();
+  }, [costs, supplierNamesList]);
 
   // Filter costs based on selected filters and search query
   const filteredCosts = useMemo(() => {
@@ -459,6 +463,7 @@ const ProjectCosts = ({
           categoryOptions={categoryOptions}
           onOpenPayersManager={() => setPayersManagerOpen(true)}
           onOpenCategoriesManager={() => setCategoriesManagerOpen(true)}
+          onOpenSuppliersManager={() => setSuppliersManagerOpen(true)}
         />
         <CostPayersManager
           projectId={projectId}
@@ -469,6 +474,11 @@ const ProjectCosts = ({
           projectId={projectId}
           open={categoriesManagerOpen}
           onOpenChange={setCategoriesManagerOpen}
+        />
+        <SuppliersManager
+          projectId={projectId}
+          open={suppliersManagerOpen}
+          onOpenChange={setSuppliersManagerOpen}
         />
       </>
     );
@@ -482,6 +492,10 @@ const ProjectCosts = ({
           <Button variant="outline" size="sm" onClick={() => setCategoriesManagerOpen(true)} className="h-8 sm:h-9">
             <Settings className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Categorieën</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setSuppliersManagerOpen(true)} className="h-8 sm:h-9">
+            <Settings className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Leveranciers</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => setPayersManagerOpen(true)} className="h-8 sm:h-9">
             <Settings className="w-4 h-4 sm:mr-2" />
