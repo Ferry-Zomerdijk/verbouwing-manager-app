@@ -1,77 +1,128 @@
 
-
-# Plan: Status toevoegen aan onderhoudsinstructies
+# Plan: Duplicaat-factuurdetectie & Leverancierslijst
 
 ## Samenvatting
 
-Een statusveld toevoegen aan onderhoudsinstructies met vier opties: **Nog doen**, **Mee bezig**, **Gedaan** en **On hold**. De status is direct aanpasbaar met een enkele tik op een kleurgecodeerde badge, zonder een dialoog te openen — ideaal voor mobiel gebruik.
+Twee verbeteringen aan het kostenbeheer:
 
-## Gebruikerservaring
+1. **Duplicaat-factuurdetectie**: Bij het uploaden van een factuur controleren of hetzelfde bestand al eerder is geupload, zodat dubbelingen worden voorkomen.
+2. **Leverancierslijst**: Een centrale leverancierstabel per project, vergelijkbaar met hoe `cost_payers` en `cost_categories` al werken. Leveranciersnamen worden hergebruikt via een autocomplete-veld met de mogelijkheid om nieuwe leveranciers toe te voegen.
 
-Op elke onderhoudskaart verschijnt een gekleurde statusbadge. Bij het tikken opent een compact dropdown-menu met de vier opties. De statuswijziging wordt direct opgeslagen.
+---
 
-```text
-+---------------------------------------------+
-|  CV-ketel service                           |
-|  [Nog doen ▼]   Maandelijks   Keuken       |
-|                                              |
-|  Statusmenu (bij tik):                      |
-|  +--------------------+                     |
-|  |  ● Nog doen        |  <- blauw           |
-|  |  ● Mee bezig       |  <- oranje          |
-|  |  ● Gedaan          |  <- groen           |
-|  |  ● On hold         |  <- grijs           |
-|  +--------------------+                     |
-+---------------------------------------------+
-```
+## 1. Duplicaat-factuurdetectie
 
-### Kleuren
+### Aanpak
 
-| Status | Kleur | Achtergrond |
-|--------|-------|-------------|
-| Nog doen | Blauw | `bg-blue-100 text-blue-700` |
-| Mee bezig | Oranje | `bg-orange-100 text-orange-700` |
-| Gedaan | Groen | `bg-green-100 text-green-700` |
-| On hold | Grijs | `bg-gray-100 text-gray-600` |
+Bij het uploaden van een factuur (zowel via AI-scan als handmatige upload) wordt een hash (SHA-256) van het bestand berekend en vergeleken met eerder opgeslagen hashes.
 
-Op mobiel is de badge extra groot (touch-friendly, min 44px taphoogte) en opent het menu als een `DropdownMenu` component.
+### Database
 
-## Technische wijzigingen
-
-### 1. Database migratie
-
-Een nieuw `status` kolom toevoegen aan `maintenance_instructions`:
+Een nieuwe kolom toevoegen aan de `costs` tabel:
 
 ```sql
-ALTER TABLE maintenance_instructions
-  ADD COLUMN status text NOT NULL DEFAULT 'Nog doen';
+ALTER TABLE costs ADD COLUMN file_hashes text[] DEFAULT '{}';
 ```
 
-De status wordt opgeslagen als tekst met vaste waarden: `Nog doen`, `Mee bezig`, `Gedaan`, `On hold`.
+Deze kolom bevat de SHA-256 hashes van alle geuploadde factuurbestanden bij die kostenpost.
 
-### 2. Te wijzigen bestanden
+### Werking
+
+1. Gebruiker selecteert een bestand
+2. In de browser wordt een SHA-256 hash berekend via de Web Crypto API (snel, geen server nodig)
+3. Een query controleert of deze hash al voorkomt in `costs.file_hashes` binnen hetzelfde project
+4. Bij een match: toon een waarschuwing met details van de bestaande kostenpost (bedrag, leverancier, datum)
+5. De gebruiker kan alsnog doorgaan (geen harde blokkade) of annuleren
+6. Bij opslaan wordt de hash opgeslagen in `file_hashes`
+
+### Te wijzigen bestanden
 
 | Bestand | Wijziging |
 |---------|-----------|
-| **Migratie** | `status` kolom toevoegen |
-| `EditMaintenanceDialog.tsx` | `status` veld toevoegen aan interface + formulier (Select dropdown) + meesturen bij update |
-| `CreateMaintenanceDialog.tsx` | `status` veld toevoegen aan formulier + meesturen bij insert |
-| `MaintenanceInstructions.tsx` | Inline statusbadge met `DropdownMenu` op elke kaart in groepsweergave; direct update via Supabase |
-| `MaintenanceTimelineView.tsx` | Statusbadge tonen op timeline-kaarten met dezelfde inline-wijzig functionaliteit |
-| `nl.ts` | i18n keys voor de vier statussen |
-| `en.ts` | Engelse vertalingen (To do, In progress, Done, On hold) |
-| `types.ts` | i18n type-definities uitbreiden |
+| **Migratie** | `file_hashes` kolom toevoegen aan `costs` |
+| `CreateCostDialog.tsx` | Hash berekenen bij upload, duplicaatcheck uitvoeren, waarschuwing tonen, hash meesturen bij insert |
+| `EditCostDialog.tsx` | Hash berekenen bij nieuwe upload, duplicaatcheck, hash meesturen bij update |
+| `MobileCostCard.tsx` | Geen wijziging nodig |
 
-### 3. Inline status-toggle component
+---
 
-Een herbruikbaar `MaintenanceStatusBadge` component dat:
-- De huidige status toont als gekleurde badge
-- Bij klik/tik een `DropdownMenu` opent met de vier opties
-- Bij selectie direct een Supabase `update` uitvoert op het `status` veld
-- De query-cache invalideert na succesvolle update
-- `e.stopPropagation()` gebruikt zodat de kaart-klik (edit) niet triggert
+## 2. Leverancierslijst
 
-### 4. Formulieren
+### Huidige situatie
 
-In Create en Edit dialogen komt een Select-dropdown voor status, met als standaard "Nog doen". Dit biedt een alternatieve manier om de status te wijzigen naast de inline badge.
+Het leveranciersveld is nu een vrij tekstveld (`Input`). Unieke leveranciers worden afgeleid uit bestaande kostenposten voor het filter. Er is al een `AutocompleteInput` component beschikbaar en er bestaan al vergelijkbare patronen voor `cost_payers` en `cost_categories`.
 
+### Aanpak
+
+Een nieuwe `suppliers` tabel per project, met een bijbehorende `SuppliersManager` component (vergelijkbaar met `CostPayersManager`). Het leveranciersveld in de formulieren wordt vervangen door de bestaande `AutocompleteInput` component, gevoed met de leverancierslijst. Nieuwe namen kunnen direct vanuit het veld worden toegevoegd.
+
+### Database
+
+```sql
+CREATE TABLE suppliers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  naam text NOT NULL,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(project_id, naam)
+);
+
+ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
+-- RLS policies: has_project_access patroon (SELECT, INSERT, UPDATE, DELETE)
+```
+
+### Werking
+
+- In `CreateCostDialog` en `EditCostDialog`: het `Input`-veld voor leverancier wordt vervangen door `AutocompleteInput` met `allowCreate=true`
+- Bij het selecteren van een bestaande leverancier wordt de naam overgenomen
+- Bij het typen van een nieuwe naam en bevestigen wordt automatisch een nieuwe leverancier aangemaakt in de `suppliers` tabel
+- Een `SuppliersManager` component (bereikbaar via het instellingen-menu bij kosten) toont alle leveranciers en biedt de mogelijkheid om namen te bewerken, samen te voegen of te verwijderen
+- Het filter in `ProjectCosts` gebruikt ook de `suppliers` tabel als bron
+
+### Te wijzigen bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| **Migratie** | `suppliers` tabel aanmaken met RLS policies |
+| Nieuw: `SuppliersManager.tsx` | Beheercomponent voor leveranciers (CRUD), inclusief `useSuppliers` hook, naar voorbeeld van `CostPayersManager` |
+| `CreateCostDialog.tsx` | `Input` vervangen door `AutocompleteInput` met leverancierslijst + auto-create |
+| `EditCostDialog.tsx` | Idem |
+| `ProjectCosts.tsx` | Leveranciersfilter voeden vanuit `suppliers` tabel i.p.v. unieke waarden uit kosten; settings-menu uitbreiden met "Leveranciers beheren" |
+| `MobileCostList.tsx` | Settings-menu uitbreiden met leveranciersbeheer |
+
+### Migratie van bestaande data
+
+De migratie bevat een `INSERT INTO suppliers ... SELECT DISTINCT leverancier FROM costs` statement om bestaande leveranciersnamen automatisch over te nemen, zodat er geen data verloren gaat.
+
+---
+
+## Technische details
+
+### Hash-berekening (browser)
+
+```text
+async function computeFileHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  // Convert to hex string
+}
+```
+
+### Duplicaat-query
+
+```text
+SELECT id, bedrag, leverancier, datum 
+FROM costs 
+WHERE project_id = ? 
+AND file_hashes && ARRAY[?]
+AND id != ? (bij edit)
+```
+
+### Volgorde van implementatie
+
+1. Database migratie (beide tabellen tegelijk)
+2. `SuppliersManager` component + `useSuppliers` hook
+3. Leveranciers-autocomplete in Create/Edit dialogen
+4. Duplicaat-factuurdetectie in Create/Edit dialogen
+5. Settings-menu en filter updates in ProjectCosts
