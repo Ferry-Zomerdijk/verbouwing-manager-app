@@ -59,3 +59,6 @@ verify_jwt = true
 
 [functions.admin-manage-subscription]
 verify_jwt = true
+
+[functions.check-maintenance-due]
+verify_jwt = false
