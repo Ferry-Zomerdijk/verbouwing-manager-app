@@ -49,6 +49,7 @@ export interface MaintenanceInstruction {
   created_at: string;
   periode_van: string | null;
   periode_tot: string | null;
+  status: string;
 }
 
 interface EditMaintenanceDialogProps {
@@ -77,6 +78,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
   const [periodeVan, setPeriodeVan] = useState("");
   const [periodeTot, setPeriodeTot] = useState("");
+  const [status, setStatus] = useState("Nog doen");
 
   // Fetch linked document name if document_id exists
   const { data: linkedDoc } = useQuery({
@@ -116,6 +118,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
       setDocumentId(instruction.document_id || null);
       setPeriodeVan(instruction.periode_van || "");
       setPeriodeTot(instruction.periode_tot || "");
+      setStatus(instruction.status || "Nog doen");
     }
   }, [instruction]);
 
@@ -172,6 +175,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           document_id: documentId || null,
           periode_van: periodeVan || null,
           periode_tot: periodeTot || null,
+          status,
         })
         .eq("id", instruction.id);
 
@@ -203,6 +207,21 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
             onChange={(e) => setTitel(e.target.value)}
             placeholder={t.management.maintenance.placeholders.title}
           />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.status.label}</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Nog doen">{t.management.maintenance.status.todo}</SelectItem>
+              <SelectItem value="Mee bezig">{t.management.maintenance.status.inProgress}</SelectItem>
+              <SelectItem value="Gedaan">{t.management.maintenance.status.done}</SelectItem>
+              <SelectItem value="On hold">{t.management.maintenance.status.onHold}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>

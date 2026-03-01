@@ -488,6 +488,13 @@ export type UITexts = {
         months: string;
         years: string;
       };
+      status: {
+        todo: string;
+        inProgress: string;
+        done: string;
+        onHold: string;
+        label: string;
+      };
       timeline: {
         groupView: string;
         timelineView: string;

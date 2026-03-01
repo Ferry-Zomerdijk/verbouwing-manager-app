@@ -433,6 +433,13 @@ export const en: UITexts = {
         months: "months",
         years: "years",
       },
+      status: {
+        todo: "To do",
+        inProgress: "In progress",
+        done: "Done",
+        onHold: "On hold",
+        label: "Status",
+      },
       timeline: {
         groupView: "Group view",
         timelineView: "Timeline",

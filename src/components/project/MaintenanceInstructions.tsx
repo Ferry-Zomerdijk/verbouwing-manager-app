@@ -21,6 +21,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, P
 import { CreateMaintenanceDialog } from "./CreateMaintenanceDialog";
 import { EditMaintenanceDialog, type MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceTimelineView } from "./MaintenanceTimelineView";
+import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
 import { format, parse } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 
@@ -205,6 +206,13 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium">{item.titel}</h4>
+                            <div className="mt-1">
+                              <MaintenanceStatusBadge
+                                instructionId={item.id}
+                                projectId={projectId}
+                                currentStatus={item.status || "Nog doen"}
+                              />
+                            </div>
                             {item.beschrijving && (
                               <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line line-clamp-3">
                                 {item.beschrijving}

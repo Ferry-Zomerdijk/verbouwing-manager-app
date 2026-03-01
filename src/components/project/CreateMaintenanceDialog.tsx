@@ -60,6 +60,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
   const [periodeVan, setPeriodeVan] = useState("");
   const [periodeTot, setPeriodeTot] = useState("");
+  const [status, setStatus] = useState("Nog doen");
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
@@ -101,6 +102,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
     setLinkedDocumentName(null);
     setPeriodeVan("");
     setPeriodeTot("");
+    setStatus("Nog doen");
   };
 
   const handleSubmit = async () => {
@@ -125,6 +127,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           document_id: documentId || null,
           periode_van: periodeVan || null,
           periode_tot: periodeTot || null,
+          status,
         });
 
       if (error) throw error;
@@ -156,6 +159,21 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
             onChange={(e) => setTitel(e.target.value)}
             placeholder={t.management.maintenance.placeholders.title}
           />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.status.label}</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Nog doen">{t.management.maintenance.status.todo}</SelectItem>
+              <SelectItem value="Mee bezig">{t.management.maintenance.status.inProgress}</SelectItem>
+              <SelectItem value="Gedaan">{t.management.maintenance.status.done}</SelectItem>
+              <SelectItem value="On hold">{t.management.maintenance.status.onHold}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
