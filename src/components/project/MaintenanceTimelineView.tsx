@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle } from "lucide-react";
 import type { MaintenanceInstruction } from "./EditMaintenanceDialog";
+import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
 
 interface MaintenanceTimelineViewProps {
   instructions: MaintenanceInstruction[];
@@ -74,6 +75,11 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-medium text-sm">{item.titel}</h4>
+              <MaintenanceStatusBadge
+                instructionId={item.id}
+                projectId={item.project_id}
+                currentStatus={item.status || "Nog doen"}
+              />
               <StatusBadge status={status} t={t} />
             </div>
             <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">

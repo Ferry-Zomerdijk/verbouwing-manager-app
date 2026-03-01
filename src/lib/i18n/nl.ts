@@ -438,6 +438,13 @@ export const nl: UITexts = {
         months: "maanden",
         years: "jaren",
       },
+      status: {
+        todo: "Nog doen",
+        inProgress: "Mee bezig",
+        done: "Gedaan",
+        onHold: "On hold",
+        label: "Status",
+      },
       timeline: {
         groupView: "Groepsweergave",
         timelineView: "Tijdlijn",

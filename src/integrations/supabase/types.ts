@@ -637,6 +637,7 @@ export type Database = {
           periode_tot: string | null
           periode_van: string | null
           project_id: string
+          status: string
           titel: string
           volgorde: number
         }
@@ -653,6 +654,7 @@ export type Database = {
           periode_tot?: string | null
           periode_van?: string | null
           project_id: string
+          status?: string
           titel: string
           volgorde?: number
         }
@@ -669,6 +671,7 @@ export type Database = {
           periode_tot?: string | null
           periode_van?: string | null
           project_id?: string
+          status?: string
           titel?: string
           volgorde?: number
         }
