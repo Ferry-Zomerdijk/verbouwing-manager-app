@@ -61,6 +61,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [periodeVan, setPeriodeVan] = useState("");
   const [periodeTot, setPeriodeTot] = useState("");
   const [status, setStatus] = useState("Nog doen");
+  const [laatsteOnderhoud, setLaatsteOnderhoud] = useState("");
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
@@ -103,6 +104,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
     setPeriodeVan("");
     setPeriodeTot("");
     setStatus("Nog doen");
+    setLaatsteOnderhoud("");
   };
 
   const handleSubmit = async () => {
@@ -128,6 +130,7 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           periode_van: periodeVan || null,
           periode_tot: periodeTot || null,
           status,
+          laatste_onderhoud: laatsteOnderhoud || null,
         });
 
       if (error) throw error;
@@ -250,6 +253,14 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
             value={periodeTot}
             onChange={setPeriodeTot}
             minDate={periodeVan || undefined}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.lastMaintenance}</Label>
+          <DatePicker
+            value={laatsteOnderhoud}
+            onChange={setLaatsteOnderhoud}
           />
         </div>
 

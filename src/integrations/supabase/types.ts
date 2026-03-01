@@ -634,6 +634,7 @@ export type Database = {
           document_id: string | null
           frequentie: string | null
           id: string
+          laatste_onderhoud: string | null
           periode_tot: string | null
           periode_van: string | null
           project_id: string
@@ -651,6 +652,7 @@ export type Database = {
           document_id?: string | null
           frequentie?: string | null
           id?: string
+          laatste_onderhoud?: string | null
           periode_tot?: string | null
           periode_van?: string | null
           project_id: string
@@ -668,6 +670,7 @@ export type Database = {
           document_id?: string | null
           frequentie?: string | null
           id?: string
+          laatste_onderhoud?: string | null
           periode_tot?: string | null
           periode_van?: string | null
           project_id?: string

@@ -413,6 +413,8 @@ export const nl: UITexts = {
         linkedDocument: "Gekoppeld document",
         periodFrom: "Periode van",
         periodTo: "Periode tot",
+        lastMaintenance: "Laatst uitgevoerd",
+        nextMaintenance: "Volgende keer",
       },
       placeholders: {
         title: "Bijv. CV-ketel ontluchten",

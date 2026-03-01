@@ -46,9 +46,17 @@ export function MaintenanceStatusBadge({ instructionId, projectId, currentStatus
     if (newStatus === status) return;
     
     try {
+      const updateData: Record<string, any> = { status: newStatus };
+      
+      // Auto-set laatste_onderhoud when marking as done
+      if (newStatus === "Gedaan") {
+        const today = new Date();
+        updateData.laatste_onderhoud = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      }
+      
       const { error } = await supabase
         .from("maintenance_instructions" as any)
-        .update({ status: newStatus })
+        .update(updateData)
         .eq("id", instructionId);
 
       if (error) throw error;
