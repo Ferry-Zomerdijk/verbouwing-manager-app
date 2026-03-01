@@ -461,6 +461,8 @@ export type UITexts = {
         chooseFromDocuments: string;
         removeAttachment: string;
         linkedDocument: string;
+        periodFrom: string;
+        periodTo: string;
       };
       placeholders: {
         title: string;
@@ -485,6 +487,16 @@ export type UITexts = {
         weeks: string;
         months: string;
         years: string;
+      };
+      timeline: {
+        groupView: string;
+        timelineView: string;
+        overdue: string;
+        thisWeek: string;
+        active: string;
+        planned: string;
+        noPeriod: string;
+        noTasks: string;
       };
       messages: {
         created: string;

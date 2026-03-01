@@ -406,6 +406,8 @@ export const en: UITexts = {
         chooseFromDocuments: "Choose from documents",
         removeAttachment: "Remove attachment",
         linkedDocument: "Linked document",
+        periodFrom: "Period from",
+        periodTo: "Period to",
       },
       placeholders: {
         title: "E.g. Bleed central heating",
@@ -430,6 +432,16 @@ export const en: UITexts = {
         weeks: "weeks",
         months: "months",
         years: "years",
+      },
+      timeline: {
+        groupView: "Group view",
+        timelineView: "Timeline",
+        overdue: "Overdue",
+        thisWeek: "This week",
+        active: "Active",
+        planned: "Planned",
+        noPeriod: "No period",
+        noTasks: "No tasks this month",
       },
       messages: {
         created: "Instruction added!",

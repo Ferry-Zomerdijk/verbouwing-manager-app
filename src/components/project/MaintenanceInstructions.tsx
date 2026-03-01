@@ -17,9 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, Paperclip } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, Paperclip, CalendarDays, LayoutList, CalendarRange } from "lucide-react";
 import { CreateMaintenanceDialog } from "./CreateMaintenanceDialog";
 import { EditMaintenanceDialog, type MaintenanceInstruction } from "./EditMaintenanceDialog";
+import { MaintenanceTimelineView } from "./MaintenanceTimelineView";
+import { format, parse } from "date-fns";
+import { nl, enUS } from "date-fns/locale";
 
 interface MaintenanceInstructionsProps {
   projectId: string;
@@ -27,7 +30,8 @@ interface MaintenanceInstructionsProps {
 }
 
 export function MaintenanceInstructions({ projectId, isAdminOrOwner }: MaintenanceInstructionsProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = language === 'nl' ? nl : enUS;
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -36,6 +40,7 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
   const [toDelete, setToDelete] = useState<MaintenanceInstruction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"group" | "timeline">("group");
 
   const { data: instructions, isLoading } = useQuery({
     queryKey: ["maintenance-instructions", projectId],
@@ -141,6 +146,28 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
           </Button>
         </div>
 
+        {/* View toggle */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant={viewMode === "group" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("group")}
+            className="h-8"
+          >
+            <LayoutList className="h-3.5 w-3.5 mr-1" />
+            {t.management.maintenance.timeline.groupView}
+          </Button>
+          <Button
+            variant={viewMode === "timeline" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("timeline")}
+            className="h-8"
+          >
+            <CalendarRange className="h-3.5 w-3.5 mr-1" />
+            {t.management.maintenance.timeline.timelineView}
+          </Button>
+        </div>
+
         {searchQuery && filtered && (
           <p className="text-xs text-muted-foreground">
             {filtered.length} {filtered.length === 1 ? "resultaat" : "resultaten"}
@@ -156,6 +183,13 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
               {t.management.maintenance.buttons.new}
             </p>
           </div>
+        ) : viewMode === "timeline" ? (
+          <MaintenanceTimelineView
+            instructions={filtered}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            isAdminOrOwner={isAdminOrOwner}
+          />
         ) : (
           <div className="space-y-6">
             {Object.entries(grouped || {}).map(([group, items]) => (
@@ -177,6 +211,14 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
                               </p>
                             )}
                             <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              {(item.periode_van || item.periode_tot) && (
+                                <span className="flex items-center gap-1">
+                                  <CalendarDays className="h-3 w-3" />
+                                  {item.periode_van && format(parse(item.periode_van, "yyyy-MM-dd", new Date()), "d MMM", { locale })}
+                                  {" — "}
+                                  {item.periode_tot && format(parse(item.periode_tot, "yyyy-MM-dd", new Date()), "d MMM", { locale })}
+                                </span>
+                              )}
                               {item.frequentie && (
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />

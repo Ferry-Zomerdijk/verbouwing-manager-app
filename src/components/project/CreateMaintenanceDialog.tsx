@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // HOUSE_PART_SUGGESTIONS removed - now using useHouseParts hook
 
@@ -57,6 +58,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
+  const [periodeVan, setPeriodeVan] = useState("");
+  const [periodeTot, setPeriodeTot] = useState("");
 
   const frequencies = [
     { value: "Wekelijks", label: t.management.maintenance.frequencies.weekly },
@@ -96,6 +99,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
     setBijlageUrl(null);
     setDocumentId(null);
     setLinkedDocumentName(null);
+    setPeriodeVan("");
+    setPeriodeTot("");
   };
 
   const handleSubmit = async () => {
@@ -118,6 +123,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           contact_telefoon: contactTelefoon.trim() || null,
           bijlage_url: bijlageUrl || null,
           document_id: documentId || null,
+          periode_van: periodeVan || null,
+          periode_tot: periodeTot || null,
         });
 
       if (error) throw error;
@@ -208,6 +215,23 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
             onChange={(e) => setBeschrijving(e.target.value)}
             placeholder={t.management.maintenance.placeholders.description}
             rows={4}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.periodFrom}</Label>
+          <DatePicker
+            value={periodeVan}
+            onChange={setPeriodeVan}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.periodTo}</Label>
+          <DatePicker
+            value={periodeTot}
+            onChange={setPeriodeTot}
+            minDate={periodeVan || undefined}
           />
         </div>
 
