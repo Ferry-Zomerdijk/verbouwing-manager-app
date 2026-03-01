@@ -408,6 +408,8 @@ export const en: UITexts = {
         linkedDocument: "Linked document",
         periodFrom: "Period from",
         periodTo: "Period to",
+        lastMaintenance: "Last performed",
+        nextMaintenance: "Next due",
       },
       placeholders: {
         title: "E.g. Bleed central heating",

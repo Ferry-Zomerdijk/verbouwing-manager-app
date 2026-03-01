@@ -50,6 +50,7 @@ export interface MaintenanceInstruction {
   periode_van: string | null;
   periode_tot: string | null;
   status: string;
+  laatste_onderhoud: string | null;
 }
 
 interface EditMaintenanceDialogProps {
@@ -79,6 +80,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const [periodeVan, setPeriodeVan] = useState("");
   const [periodeTot, setPeriodeTot] = useState("");
   const [status, setStatus] = useState("Nog doen");
+  const [laatsteOnderhoud, setLaatsteOnderhoud] = useState("");
 
   // Fetch linked document name if document_id exists
   const { data: linkedDoc } = useQuery({
@@ -119,6 +121,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
       setPeriodeVan(instruction.periode_van || "");
       setPeriodeTot(instruction.periode_tot || "");
       setStatus(instruction.status || "Nog doen");
+      setLaatsteOnderhoud(instruction.laatste_onderhoud || "");
     }
   }, [instruction]);
 
@@ -176,6 +179,7 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           periode_van: periodeVan || null,
           periode_tot: periodeTot || null,
           status,
+          laatste_onderhoud: laatsteOnderhoud || null,
         })
         .eq("id", instruction.id);
 
@@ -298,6 +302,14 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
             value={periodeTot}
             onChange={setPeriodeTot}
             minDate={periodeVan || undefined}
+          />
+        </div>
+
+        <div>
+          <Label>{t.management.maintenance.labels.lastMaintenance}</Label>
+          <DatePicker
+            value={laatsteOnderhoud}
+            onChange={setLaatsteOnderhoud}
           />
         </div>
 

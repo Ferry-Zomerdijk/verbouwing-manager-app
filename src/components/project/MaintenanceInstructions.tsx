@@ -17,13 +17,48 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, Paperclip, CalendarDays, LayoutList, CalendarRange } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, Wrench, Phone, User, Clock, X, Paperclip, CalendarDays, LayoutList, CalendarRange, CheckCircle2, CalendarClock } from "lucide-react";
 import { CreateMaintenanceDialog } from "./CreateMaintenanceDialog";
 import { EditMaintenanceDialog, type MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceTimelineView } from "./MaintenanceTimelineView";
 import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
-import { format, parse } from "date-fns";
+import { format, parse, isBefore, addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
+
+function getToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function calculateNextMaintenance(laatsteOnderhoud: string, frequentie: string): Date | null {
+  const lastDate = parse(laatsteOnderhoud, "yyyy-MM-dd", new Date());
+  
+  const frequencyMap: Record<string, (d: Date) => Date> = {
+    "Wekelijks": (d) => addWeeks(d, 1),
+    "Tweewekelijks": (d) => addWeeks(d, 2),
+    "Maandelijks": (d) => addMonths(d, 1),
+    "Per kwartaal": (d) => addMonths(d, 3),
+    "Halfjaarlijks": (d) => addMonths(d, 6),
+    "Jaarlijks": (d) => addYears(d, 1),
+  };
+
+  if (frequencyMap[frequentie]) {
+    return frequencyMap[frequentie](lastDate);
+  }
+
+  // Custom: "Elke X eenheid"
+  const customMatch = frequentie.match(/^Elke (\d+) (\w+)$/);
+  if (customMatch) {
+    const amount = parseInt(customMatch[1]);
+    const unit = customMatch[2];
+    if (unit === "dagen") return addDays(lastDate, amount);
+    if (unit === "weken") return addWeeks(lastDate, amount);
+    if (unit === "maanden") return addMonths(lastDate, amount);
+    if (unit === "jaren") return addYears(lastDate, amount);
+  }
+
+  return null;
+}
 
 interface MaintenanceInstructionsProps {
   projectId: string;
@@ -219,6 +254,23 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
                               </p>
                             )}
                             <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              {item.laatste_onderhoud && (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                  {t.management.maintenance.labels.lastMaintenance}: {format(parse(item.laatste_onderhoud, "yyyy-MM-dd", new Date()), "d MMM yyyy", { locale })}
+                                </span>
+                              )}
+                              {item.laatste_onderhoud && item.frequentie && (() => {
+                                const next = calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
+                                if (!next) return null;
+                                const isOverdue = isBefore(next, getToday());
+                                return (
+                                  <span className={`flex items-center gap-1 ${isOverdue ? "text-destructive font-medium" : ""}`}>
+                                    <CalendarClock className="h-3 w-3" />
+                                    {t.management.maintenance.labels.nextMaintenance}: {format(next, "d MMM yyyy", { locale })}
+                                  </span>
+                                );
+                              })()}
                               {(item.periode_van || item.periode_tot) && (
                                 <span className="flex items-center gap-1">
                                   <CalendarDays className="h-3 w-3" />

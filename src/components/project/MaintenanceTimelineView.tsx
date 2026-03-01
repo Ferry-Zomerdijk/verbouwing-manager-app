@@ -1,9 +1,9 @@
-import { format, parse, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
+import { format, parse, isAfter, isBefore, addDays, addWeeks, addMonths, addYears, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle } from "lucide-react";
+import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle, CheckCircle2, CalendarClock } from "lucide-react";
 import type { MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
 
@@ -56,6 +56,29 @@ function StatusBadge({ status, t }: { status: MaintenanceStatus; t: any }) {
   return <Badge className={c.className}>{c.label}</Badge>;
 }
 
+function calculateNextMaintenance(laatsteOnderhoud: string, frequentie: string): Date | null {
+  const lastDate = parse(laatsteOnderhoud, "yyyy-MM-dd", new Date());
+  const frequencyMap: Record<string, (d: Date) => Date> = {
+    "Wekelijks": (d) => addWeeks(d, 1),
+    "Tweewekelijks": (d) => addWeeks(d, 2),
+    "Maandelijks": (d) => addMonths(d, 1),
+    "Per kwartaal": (d) => addMonths(d, 3),
+    "Halfjaarlijks": (d) => addMonths(d, 6),
+    "Jaarlijks": (d) => addYears(d, 1),
+  };
+  if (frequencyMap[frequentie]) return frequencyMap[frequentie](lastDate);
+  const customMatch = frequentie.match(/^Elke (\d+) (\w+)$/);
+  if (customMatch) {
+    const amount = parseInt(customMatch[1]);
+    const unit = customMatch[2];
+    if (unit === "dagen") return addDays(lastDate, amount);
+    if (unit === "weken") return addWeeks(lastDate, amount);
+    if (unit === "maanden") return addMonths(lastDate, amount);
+    if (unit === "jaren") return addYears(lastDate, amount);
+  }
+  return null;
+}
+
 function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruction; onEdit: (i: MaintenanceInstruction) => void; t: any; language: string }) {
   const status = getMaintenanceStatus(item);
   const locale = language === 'nl' ? nl : enUS;
@@ -83,6 +106,24 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
               <StatusBadge status={status} t={t} />
             </div>
             <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
+              {item.laatste_onderhoud && (
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  {t.management.maintenance.labels.lastMaintenance}: {format(parse(item.laatste_onderhoud, "yyyy-MM-dd", new Date()), "d MMM yyyy", { locale })}
+                </span>
+              )}
+              {item.laatste_onderhoud && item.frequentie && (() => {
+                const next = calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
+                if (!next) return null;
+                const today = getToday();
+                const isOverdue = isBefore(next, today);
+                return (
+                  <span className={`flex items-center gap-1 ${isOverdue ? "text-destructive font-medium" : ""}`}>
+                    <CalendarClock className="h-3 w-3" />
+                    {t.management.maintenance.labels.nextMaintenance}: {format(next, "d MMM yyyy", { locale })}
+                  </span>
+                );
+              })()}
               {(item.periode_van || item.periode_tot) && (
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-3 w-3" />
