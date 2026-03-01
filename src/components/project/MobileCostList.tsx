@@ -33,6 +33,7 @@ interface MobileCostListProps {
   categoryOptions?: CategoryOption[];
   onOpenPayersManager?: () => void;
   onOpenCategoriesManager?: () => void;
+  onOpenSuppliersManager?: () => void;
 }
 
 const DEFAULT_CATEGORY_CHART_COLORS: Record<string, string> = {
@@ -59,7 +60,8 @@ export const MobileCostList = ({
   payerOptions = [],
   categoryOptions = [],
   onOpenPayersManager,
-  onOpenCategoriesManager
+  onOpenCategoriesManager,
+  onOpenSuppliersManager
 }: MobileCostListProps) => {
   const betaaldDoorOptions = payerOptions.length > 0 ? payerOptions : [...defaultBetaaldDoorOptions];
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -153,6 +155,16 @@ export const MobileCostList = ({
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
+          {onOpenSuppliersManager && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onOpenSuppliersManager}
+              title="Leveranciers beheren"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
           {onOpenCategoriesManager && (
             <Button 
               variant="outline" 
