@@ -1,44 +1,20 @@
 
+# Plan: "Sleutelbeheer" tab hernoemen naar "Beheer" in UserManagement
 
-# Plan: Zoekfunctie in leveranciers-filter dropdown
+## Probleem
 
-## Samenvatting
+In `src/pages/UserManagement.tsx` (de instellingen/admin pagina) staat op regel 475 nog de tab-tekst **"Sleutelbeheer"**. Dit hoort **"Beheer"** te zijn, consistent met de naamgeving in ProjectDetail.
 
-De leveranciers-dropdown in het Kosten-filter vervangen door een doorzoekbaar menu, zodat je snel een leverancier kunt vinden door te typen.
+**Overige vindplaatsen van "Sleutelbeheer":**
+- `KeyManagement.tsx` regel 134: card-titel binnen de Beheer-sectie — dit is correct, want het beschrijft de subsectie "Sleutelbeheer" binnen Beheer
+- `nl.ts` regel 447: `management.keys.title = "Sleutelbeheer"` — dit is de subsectie-titel, ook correct
 
-## Gebruikerservaring
+Alleen de **tab-label** in UserManagement moet worden aangepast.
 
-De leverancier-filterknop blijft er hetzelfde uitzien, maar bij openen verschijnt er bovenaan een zoekveld. Terwijl je typt worden de leveranciers direct gefilterd. "Alle leveranciers" blijft altijd zichtbaar bovenaan.
+## Wijziging
 
-```text
-+---------------------------+
-| [Zoek leverancier...]     |
-+---------------------------+
-| v  Alle leveranciers      |
-|    ABE maatwerk            |
-|    Aannemingsbedrijf R...  |
-|    AliExpress              |
-+---------------------------+
-```
+| Bestand | Regel | Huidig | Nieuw |
+|---------|-------|--------|-------|
+| `src/pages/UserManagement.tsx` | 475 | `Sleutelbeheer` | `Beheer` |
 
-## Technische wijzigingen
-
-### ProjectCosts.tsx
-
-De bestaande `Select` component voor leveranciers (regels 780-792) vervangen door een **Popover + Command** combobox:
-
-- `Popover` als container (uit `@/components/ui/popover`)
-- `Command` met `CommandInput` (zoekveld), `CommandList`, `CommandEmpty`, `CommandGroup` en `CommandItem` (uit `@/components/ui/command`)
-- De trigger-knop behoudt dezelfde styling als de andere filterknopppen
-- Bij selectie van een leverancier: `setLeverancierFilter()` aanroepen en popover sluiten
-- State toevoegen: `leverancierPopoverOpen` (boolean)
-- Geselecteerde leverancier tonen met een vinkje in de lijst
-
-### Te wijzigen bestand
-
-| Bestand | Wijziging |
-|---------|-----------|
-| `src/components/project/ProjectCosts.tsx` | Leverancier `Select` vervangen door `Popover + Command` combobox met zoekfunctie |
-
-Er zijn geen database- of i18n-wijzigingen nodig. De bestaande imports van `Popover` en `Command` componenten worden hergebruikt.
-
+Dit is een eenvoudige tekstaanpassing van 1 regel. Geen verdere wijzigingen nodig.
