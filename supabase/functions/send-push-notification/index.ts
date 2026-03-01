@@ -39,9 +39,60 @@ serve(async (req) => {
   }
 
   try {
+    // This function should only be called from other edge functions (server-side)
+    // Verify the caller is using the service role key via Authorization header
+    const authHeader = req.headers.get('Authorization');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Only allow service role calls (from other edge functions)
+    if (token !== supabaseServiceRoleKey) {
+      // Also check if it's an authenticated user with admin role
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        supabaseAnonKey,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user }, error: userError } = await userClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Only admins can directly call this function
+      const adminClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        supabaseServiceRoleKey
+      );
+      const { data: adminRole } = await adminClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      if (!adminRole) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: admin access required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseServiceRoleKey
     );
 
     const { user_id, title, body, url, tag, icon } = await req.json();
