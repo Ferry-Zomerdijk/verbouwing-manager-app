@@ -159,7 +159,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-2" />
-                    Kopieer Link
+                    Kopieer link
                   </>
                 )}
               </Button>
@@ -209,7 +209,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
       <Drawer open={open} onOpenChange={handleClose}>
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
-            <DrawerTitle>Projectgebruiker Uitnodigen</DrawerTitle>
+            <DrawerTitle>Projectgebruiker uitnodigen</DrawerTitle>
             <DrawerDescription>
               Genereer een uitnodigingslink. De ontvanger kan zelf een pincode instellen.
             </DrawerDescription>
@@ -224,7 +224,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
                   Annuleren
                 </Button>
                 <Button onClick={handleGenerateLink} disabled={loading} className="flex-1">
-                  {loading ? "Genereren..." : "Genereer Link"}
+                  {loading ? "Genereren..." : "Genereer link"}
                 </Button>
               </>
             ) : (
@@ -242,7 +242,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
                   ) : (
                     <>
                       <Copy className="w-4 h-4 mr-2" />
-                      Kopieer Link
+                      Kopieer link
                     </>
                   )}
                 </Button>
@@ -261,7 +261,7 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Projectgebruiker Uitnodigen</DialogTitle>
+          <DialogTitle>Projectgebruiker uitnodigen</DialogTitle>
           <DialogDescription>
             Genereer een uitnodigingslink. De ontvanger kan zelf een pincode instellen en krijgt direct toegang tot het project.
           </DialogDescription>

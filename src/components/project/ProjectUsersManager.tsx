@@ -67,7 +67,7 @@ export const ProjectUsersManager = ({ open, onOpenChange, projectId }: ProjectUs
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Projectgebruikers Beheren</DialogTitle>
+            <DialogTitle>Projectgebruikers beheren</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
