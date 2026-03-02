@@ -23,6 +23,8 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
   const [copied, setCopied] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
 
@@ -50,7 +52,13 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
       setGeneratedUrl(data.inviteUrl);
       setExpiresAt(data.expiresAt);
       setIsNewUser(data.isNewUser);
-      toast.success("Uitnodigingslink gegenereerd!");
+      setEmailSent(data.emailSent || false);
+      setEmailError(data.emailError || null);
+      if (data.emailSent) {
+        toast.success("Uitnodiging verstuurd per email!");
+      } else {
+        toast.success("Uitnodigingslink gegenereerd! (email kon niet worden verstuurd)");
+      }
     } catch (error: any) {
       console.error('Error generating link:', error);
       toast.error(error.message || "Kon geen uitnodigingslink genereren");
@@ -79,6 +87,8 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
     setExpiresAt(null);
     setCopied(false);
     setIsNewUser(false);
+    setEmailSent(false);
+    setEmailError(null);
     onOpenChange(false);
   };
 
@@ -163,18 +173,29 @@ export const InviteProjectUserDialog = ({ open, onOpenChange, projectId }: Invit
             </div>
           )}
 
-          <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+          <div className={`p-3 border rounded-md ${emailSent ? 'bg-green-500/10 border-green-500/20' : 'bg-primary/10 border-primary/20'}`}>
             <div className="flex items-start gap-2">
-              <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <Mail className={`w-5 h-5 mt-0.5 flex-shrink-0 ${emailSent ? 'text-green-600' : 'text-primary'}`} />
               <div className="text-sm">
                 <p className="font-medium text-foreground">
-                  Deel deze link met {email}
+                  {emailSent 
+                    ? `Uitnodiging verstuurd naar ${email}`
+                    : `Deel deze link met ${email}`}
                 </p>
                 <p className="text-muted-foreground mt-1">
-                  {isNewUser 
-                    ? "Via deze link kan de gebruiker een pincode aanmaken en direct toegang krijgen tot het project."
-                    : "De gebruiker heeft al een account en krijgt via deze link direct toegang tot het project."}
+                  {emailSent
+                    ? isNewUser
+                      ? "De gebruiker ontvangt een email met een link om een pincode aan te maken en toegang te krijgen."
+                      : "De gebruiker ontvangt een email met een link voor directe toegang tot het project."
+                    : isNewUser 
+                      ? "Via deze link kan de gebruiker een pincode aanmaken en direct toegang krijgen tot het project."
+                      : "De gebruiker heeft al een account en krijgt via deze link direct toegang tot het project."}
                 </p>
+                {emailError && (
+                  <p className="text-destructive mt-1 text-xs">
+                    ⚠️ {emailError} — kopieer de link handmatig.
+                  </p>
+                )}
               </div>
             </div>
           </div>
