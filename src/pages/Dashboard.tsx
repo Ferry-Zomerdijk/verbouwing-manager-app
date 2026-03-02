@@ -68,18 +68,15 @@ const Dashboard = () => {
   useEffect(() => {
     const previousTier = localStorage.getItem('previousSubscriptionTier');
     
-    // If user had Pro and now has Basis or Free, reset the banner
     if (previousTier === 'pro' && (currentTier === 'basis' || currentTier === 'free')) {
       localStorage.removeItem('upgradeBannerDismissed');
       setShowUpgradeBanner(true);
     }
-    // If user had Basis and now has Free, also reset the banner
     if (previousTier === 'basis' && currentTier === 'free') {
       localStorage.removeItem('upgradeBannerDismissed');
       setShowUpgradeBanner(true);
     }
     
-    // Store current tier for next comparison
     localStorage.setItem('previousSubscriptionTier', currentTier);
   }, [currentTier]);
 
@@ -107,7 +104,6 @@ const Dashboard = () => {
           isAdmin: !!adminRole,
         });
 
-        // Show onboarding if not completed
         if (profile && !profile.onboarding_completed) {
           setShowOnboarding(true);
         }
@@ -125,40 +121,16 @@ const Dashboard = () => {
         .eq("id", user.id);
     }
     setShowOnboarding(false);
-    toast.success("Welkom! Je bent klaar om te beginnen.");
+    toast.success(t.onboarding.welcome);
   };
 
   useKeyboardShortcuts([
-    {
-      key: "n",
-      ctrlKey: true,
-      callback: () => setCreateDialogOpen(true),
-    },
-    {
-      key: "?",
-      shiftKey: true,
-      callback: () => setShortcutsDialogOpen(true),
-    },
-    {
-      key: "1",
-      altKey: true,
-      callback: () => setFilter("all"),
-    },
-    {
-      key: "2",
-      altKey: true,
-      callback: () => setFilter("Lopend"),
-    },
-    {
-      key: "3",
-      altKey: true,
-      callback: () => setFilter("Gepland"),
-    },
-    {
-      key: "4",
-      altKey: true,
-      callback: () => setFilter("Afgerond"),
-    },
+    { key: "n", ctrlKey: true, callback: () => setCreateDialogOpen(true) },
+    { key: "?", shiftKey: true, callback: () => setShortcutsDialogOpen(true) },
+    { key: "1", altKey: true, callback: () => setFilter("all") },
+    { key: "2", altKey: true, callback: () => setFilter("Lopend") },
+    { key: "3", altKey: true, callback: () => setFilter("Gepland") },
+    { key: "4", altKey: true, callback: () => setFilter("Afgerond") },
   ]);
 
   const { data: projects, isLoading, error, refetch } = useQuery({
@@ -220,7 +192,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold">De Renovatie App</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Jouw renovatieprojecten</p>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">{t.dashboard.subtitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2">
@@ -230,7 +202,7 @@ const Dashboard = () => {
               </div>
               <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary" size="sm">
                 <Plus className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nieuw Project</span>
+                <span className="hidden sm:inline">{t.dashboard.newProject}</span>
               </Button>
               <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)} className="hidden sm:flex">
                 <Keyboard className="w-4 h-4" />
@@ -271,11 +243,11 @@ const Dashboard = () => {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => navigate("/users")}>
                         <Users className="w-4 h-4 mr-2" />
-                        Gebruikers beheren
+                        {t.dashboard.manageUsers}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setContactMessagesOpen(true)}>
                         <Mail className="w-4 h-4 mr-2" />
-                        Contactberichten
+                        {t.dashboard.contactMessages}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate("/app-store-screenshots")}>
                         <Smartphone className="w-4 h-4 mr-2" />
@@ -309,7 +281,7 @@ const Dashboard = () => {
               <button 
                 onClick={handleDismissUpgradeBanner}
                 className="absolute top-2 right-2 p-1 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Sluiten"
+                aria-label={t.actions.close}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -320,18 +292,18 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="font-medium">
-                      {currentTier === "free" ? "Upgrade naar Basis of Pro" : "Upgrade naar Pro"}
+                      {currentTier === "free" ? t.dashboard.upgradeBanner.titleFree : t.dashboard.upgradeBanner.titleBasis}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {currentTier === "free" 
-                        ? "Krijg toegang tot meer projecten, AI factuurscanning en extra features"
-                        : "Krijg onbeperkte projecten, prioriteit support en alle premium features"
+                        ? t.dashboard.upgradeBanner.descriptionFree
+                        : t.dashboard.upgradeBanner.descriptionBasis
                       }
                     </p>
                   </div>
                 </div>
                 <Button onClick={() => navigate("/pricing")} className="gradient-primary shrink-0">
-                  Bekijk plannen
+                  {t.dashboard.upgradeBanner.viewPlans}
                 </Button>
               </div>
             </div>
@@ -341,10 +313,10 @@ const Dashboard = () => {
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
             <TabsList className="inline-flex w-auto min-w-full sm:w-auto">
-              <TabsTrigger value="all" className="text-xs sm:text-sm">Alle</TabsTrigger>
-              <TabsTrigger value="Lopend" className="text-xs sm:text-sm">Lopend</TabsTrigger>
-              <TabsTrigger value="Gepland" className="text-xs sm:text-sm">Gepland</TabsTrigger>
-              <TabsTrigger value="Afgerond" className="text-xs sm:text-sm">Afgerond</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs sm:text-sm">{t.dashboard.filters.all}</TabsTrigger>
+              <TabsTrigger value="Lopend" className="text-xs sm:text-sm">{t.dashboard.filters.active}</TabsTrigger>
+              <TabsTrigger value="Gepland" className="text-xs sm:text-sm">{t.dashboard.filters.planned}</TabsTrigger>
+              <TabsTrigger value="Afgerond" className="text-xs sm:text-sm">{t.dashboard.filters.completed}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -360,13 +332,13 @@ const Dashboard = () => {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
                   <AlertCircle className="w-8 h-8 text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Fout bij laden projecten</h3>
+                <h3 className="text-lg font-semibold mb-2">{t.dashboard.errors.loadFailed}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Er is een probleem met de verbinding naar de database. Probeer het opnieuw.
+                  {t.dashboard.errors.loadFailedDescription}
                 </p>
                 <Button onClick={() => refetch()} className="gradient-primary">
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Opnieuw proberen
+                  {t.dashboard.errors.retry}
                 </Button>
               </div>
             ) : filteredProjects && filteredProjects.length > 0 ? (
@@ -380,7 +352,7 @@ const Dashboard = () => {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent flex items-center justify-center">
                   <Home className="w-8 h-8 text-accent-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Geen projecten gevonden</h3>
+                <h3 className="text-lg font-semibold mb-2">{t.dashboard.empty.noProjects}</h3>
                 <p className="text-muted-foreground mb-2">
                   {emptyStateMessages.projects.noProjects}
                 </p>
@@ -389,7 +361,7 @@ const Dashboard = () => {
                 </p>
                 <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
                   <Plus className="w-4 h-4 mr-2" />
-                  Nieuw Project
+                  {t.dashboard.newProject}
                 </Button>
               </div>
             )}
@@ -402,38 +374,38 @@ const Dashboard = () => {
         onOpenChange={setCreateDialogOpen}
         onSuccess={() => {
           refetch();
-          toast.success("Project succesvol aangemaakt!");
+          toast.success(t.projects.messages.created);
         }}
       />
 
       <Dialog open={shortcutsDialogOpen} onOpenChange={setShortcutsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Toetsenbord Sneltoetsen</DialogTitle>
+            <DialogTitle>{t.dashboard.shortcutsDialog.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm">Nieuw project</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.newProject}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Ctrl + N</kbd>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Sneltoetsen tonen</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.showShortcuts}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Shift + ?</kbd>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Filter: Alle projecten</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.filterAll}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 1</kbd>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Filter: Lopend</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.filterActive}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 2</kbd>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Filter: Gepland</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.filterPlanned}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 3</kbd>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Filter: Afgerond</span>
+              <span className="text-sm">{t.dashboard.shortcutsDialog.filterCompleted}</span>
               <kbd className="px-2 py-1 text-xs bg-muted rounded">Alt + 4</kbd>
             </div>
           </div>

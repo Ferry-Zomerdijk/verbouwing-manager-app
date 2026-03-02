@@ -435,6 +435,220 @@ export type UITexts = {
   };
 
   // ============================================
+  // ACCOUNT
+  // ============================================
+  account: {
+    title: string;
+    myAccount: string;
+    profile: string;
+    password: string;
+    pin: string;
+    subscription: string;
+    notifications: string;
+    about: string;
+    help: string;
+    labels: {
+      name: string;
+      email: string;
+      emailReadOnly: string;
+      newPassword: string;
+      confirmPassword: string;
+      currentPassword: string;
+      pinCode: string;
+      confirmPin: string;
+      newPin: string;
+    };
+    buttons: {
+      saveProfile: string;
+      changePassword: string;
+      setupPin: string;
+      changePin: string;
+      removePin: string;
+      upgrade: string;
+      manageSubscription: string;
+      checkUpdates: string;
+      installUpdate: string;
+      restartOnboarding: string;
+    };
+    pinSection: {
+      title: string;
+      active: string;
+      setupDescription: string;
+      activeDescription: string;
+      passwordRequired: string;
+      changingDescription: string;
+    };
+    messages: {
+      profileUpdated: string;
+      passwordChanged: string;
+      passwordMinLength: string;
+      passwordMismatch: string;
+      pinRemoved: string;
+      pinMustBe6: string;
+      pinMismatch: string;
+      enterPassword: string;
+      pinSet: string;
+      pinChanged: string;
+      upToDate: string;
+      saveError: string;
+      updateAvailable: string;
+      checking: string;
+    };
+  };
+
+  // ============================================
+  // AUTHENTICATIE
+  // ============================================
+  auth: {
+    login: string;
+    loginWithPin: string;
+    loginWithPassword: string;
+    register: string;
+    forgotPassword: string;
+    resetPassword: string;
+    sendResetLink: string;
+    backToLogin: string;
+    noAccount: string;
+    hasAccount: string;
+    rememberMe: string;
+    pinLogin: string;
+    passwordLogin: string;
+    pinLoginDescription: string;
+    registerTitle: string;
+    forgotPasswordDescription: string;
+    labels: {
+      email: string;
+      password: string;
+      name: string;
+      pin: string;
+    };
+    messages: {
+      loginSuccess: string;
+      registerSuccess: string;
+      resetSent: string;
+      loginFailed: string;
+      noPinSet: string;
+      enterPin: string;
+      loginToView: string;
+      redirectAfterLogin: string;
+    };
+  };
+
+  // ============================================
+  // DELEN / PUBLIEKE LINKS
+  // ============================================
+  sharing: {
+    title: string;
+    description: string;
+    publicLink: string;
+    copyLink: string;
+    generateLink: string;
+    newLink: string;
+    existingLinks: string;
+    expiryDate: string;
+    never: string;
+    active: string;
+    inactive: string;
+    expired: string;
+    views: string;
+    qrCode: string;
+    downloadQr: string;
+    scanDescription: string;
+    linkCopied: string;
+    messages: {
+      created: string;
+      updated: string;
+      deleted: string;
+      noLinks: string;
+      copySuccess: string;
+      qrDownloaded: string;
+      error: string;
+    };
+  };
+
+  // ============================================
+  // UITNODIGINGEN
+  // ============================================
+  invitations: {
+    title: string;
+    pending: string;
+    pendingDescription: string;
+    invite: string;
+    sentOn: string;
+    expiresIn: string;
+    expired: string;
+    copyLink: string;
+    shareWhatsApp: string;
+    resend: string;
+    messages: {
+      canceled: string;
+      linkCopied: string;
+      emailSent: string;
+      resent: string;
+      resendFailed: string;
+      none: string;
+    };
+  };
+
+  // ============================================
+  // WEBHOOKS
+  // ============================================
+  webhooks: {
+    noEvents: string;
+  };
+
+  // ============================================
+  // SLEUTELBEHEER
+  // ============================================
+  keys: {
+    messages: {
+      noKeys: string;
+      confirmDelete: string;
+    };
+  };
+
+  // ============================================
+  // DASHBOARD
+  // ============================================
+  dashboard: {
+    subtitle: string;
+    newProject: string;
+    shortcuts: string;
+    contactMessages: string;
+    manageUsers: string;
+    upgradeBanner: {
+      titleFree: string;
+      titleBasis: string;
+      descriptionFree: string;
+      descriptionBasis: string;
+      viewPlans: string;
+    };
+    filters: {
+      all: string;
+      active: string;
+      planned: string;
+      completed: string;
+    };
+    errors: {
+      loadFailed: string;
+      loadFailedDescription: string;
+      retry: string;
+    };
+    empty: {
+      noProjects: string;
+    };
+    shortcutsDialog: {
+      title: string;
+      newProject: string;
+      showShortcuts: string;
+      filterAll: string;
+      filterActive: string;
+      filterPlanned: string;
+      filterCompleted: string;
+    };
+  };
+
+  // ============================================
   // BEHEER
   // ============================================
   management: {

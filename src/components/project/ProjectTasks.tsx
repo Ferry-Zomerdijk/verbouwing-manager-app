@@ -7,13 +7,14 @@ import { Plus } from "lucide-react";
 import TaskCard from "./TaskCard";
 import CreateTaskDialog from "./CreateTaskDialog";
 import { toast } from "sonner";
-import { UI } from "@/lib/uiTexts";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProjectTasksProps {
   projectId: string;
 }
 
 const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
+  const { t } = useLanguage();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data: tasks, refetch } = useQuery({
@@ -39,10 +40,10 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{UI.tasks.title}</h2>
+        <h2 className="text-2xl font-bold">{t.tasks.title}</h2>
         <Button onClick={() => setCreateDialogOpen(true)} className="gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
-          {UI.tasks.buttons.new}
+          {t.tasks.buttons.new}
         </Button>
       </div>
 
@@ -64,7 +65,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                 ))
               ) : (
                 <p className="text-center text-sm text-muted-foreground py-8">
-                  {UI.tasks.messages.noTasks}
+                  {t.tasks.messages.noTasks}
                 </p>
               )}
             </CardContent>
@@ -78,7 +79,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
         projectId={projectId}
         onSuccess={() => {
           refetch();
-          toast.success(UI.tasks.messages.created);
+          toast.success(t.tasks.messages.created);
         }}
       />
     </div>
