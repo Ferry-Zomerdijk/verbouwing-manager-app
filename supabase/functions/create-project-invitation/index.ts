@@ -110,10 +110,88 @@ serve(async (req) => {
     }
 
     // 4. Generate the invitation URL
-    const baseUrl = req.headers.get('origin') || 'https://preview--verbouwing-manager-app.lovable.app';
+    const baseUrl = req.headers.get('origin') || 'https://verbouwing-manager-app.lovable.app';
     const inviteUrl = `${baseUrl}/accept-invite/${inviteToken}`;
 
     console.log('Successfully created invitation');
+
+    // 5. Send email via Resend
+    let emailSent = false;
+    let emailError: string | null = null;
+
+    try {
+      // Fetch project name
+      const { data: project } = await supabaseAdmin
+        .from('projects')
+        .select('naam')
+        .eq('id', projectId)
+        .single();
+
+      // Fetch inviter name
+      const { data: inviterProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('naam, email')
+        .eq('id', inviter.id)
+        .single();
+
+      const projectName = project?.naam || 'een project';
+      const inviterName = inviterProfile?.naam || inviterProfile?.email || 'Iemand';
+
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (!RESEND_API_KEY) {
+        throw new Error('RESEND_API_KEY not configured');
+      }
+
+      const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; padding: 40px 20px;">
+  <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <h1 style="font-size: 20px; color: #18181b; margin: 0 0 8px;">Je bent uitgenodigd!</h1>
+    <p style="color: #52525b; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+      <strong>${inviterName}</strong> heeft je uitgenodigd voor het project <strong>"${projectName}"</strong> in De Renovatie App.
+    </p>
+    <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px;">
+      Uitnodiging accepteren
+    </a>
+    <p style="color: #a1a1aa; font-size: 13px; margin: 24px 0 0; line-height: 1.5;">
+      ${!existingUser ? 'Via deze link kun je een pincode aanmaken en direct aan de slag.' : 'Je hebt al een account en krijgt via deze link direct toegang.'}
+    </p>
+    <p style="color: #a1a1aa; font-size: 12px; margin: 16px 0 0;">
+      Deze link is 7 dagen geldig. Werkt de knop niet? Kopieer dan deze link:<br>
+      <span style="word-break: break-all;">${inviteUrl}</span>
+    </p>
+  </div>
+</body>
+</html>`;
+
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'De Renovatie App <onboarding@resend.dev>',
+          to: [userEmail],
+          subject: `Je bent uitgenodigd voor project "${projectName}"`,
+          html: emailHtml,
+        }),
+      });
+
+      if (resendRes.ok) {
+        emailSent = true;
+        console.log('Invitation email sent successfully');
+      } else {
+        const resendError = await resendRes.text();
+        console.error('Resend API error:', resendError);
+        emailError = `Email kon niet worden verstuurd: ${resendRes.status}`;
+      }
+    } catch (mailErr: any) {
+      console.error('Failed to send invitation email:', mailErr);
+      emailError = mailErr.message;
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -122,6 +200,8 @@ serve(async (req) => {
         userId,
         expiresAt,
         isNewUser: !existingUser,
+        emailSent,
+        emailError,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
