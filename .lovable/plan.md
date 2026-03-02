@@ -1,44 +1,36 @@
 
-# Plan: Handmatige wachtwoord reset email via Resend
 
-## Wat gaan we doen
+# Plan: Wachtwoord reset via Resend koppelen aan de UI
 
-Een edge function maken die:
-1. Via de Supabase Admin API een wachtwoord reset link genereert voor `ron@fonkelmedia.nl`
-2. Deze link via Resend als email verstuurt
+## Samenvatting
 
-## Aanpak
+De edge function `send-password-reset` bestaat al en werkt. Het probleem is dat de "Wachtwoord vergeten?" knop op het inlogscherm nog steeds `supabase.auth.resetPasswordForEmail()` aanroept, wat via de onbetrouwbare standaard Supabase SMTP gaat. De fix is eenvoudig: deze aanroep vervangen door een call naar de bestaande edge function.
 
-### Nieuwe Edge Function: `send-password-reset`
+## Wijziging
 
-Een eenvoudige edge function die:
-- De Supabase Admin API (`generateLink`) gebruikt om een recovery link te genereren
-- De link via Resend stuurt met een nette HTML email
-- Beveiligd is zodat alleen admins deze kunnen aanroepen
+### `src/pages/Auth.tsx`
 
-### Werking
+De `handleForgotPassword` functie (regel 230-246) wordt aangepast:
 
+**Huidige code:**
 ```text
-1. Admin roept edge function aan met { email: "ron@fonkelmedia.nl" }
-2. Function genereert recovery link via supabase.auth.admin.generateLink()
-3. Link wordt verstuurd via Resend API
-4. Gebruiker ontvangt email met link naar /reset-password pagina
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${window.location.origin}/reset-password`,
+});
 ```
 
-### Belangrijke details
+**Nieuwe code:**
+```text
+const { data, error } = await supabase.functions.invoke('send-password-reset', {
+  body: { email }
+});
+if (data?.error) throw new Error(data.error);
+```
 
-- **Afzender**: `onboarding@resend.dev` (Resend test domain, zelfde als contact emails). NB: Resend's test domain kan alleen naar het emailadres van de Resend account-eigenaar sturen. Als `ron@fonkelmedia.nl` niet het Resend account-email is, moet er een eigen domein worden geconfigureerd.
-- **Redirect URL**: `https://verbouwing-manager-app.lovable.app/reset-password`
-- **Beveiliging**: Alleen authenticated admins of service role key
-- **Bestaande secrets**: `RESEND_API_KEY` en `SUPABASE_SERVICE_ROLE_KEY` zijn al geconfigureerd
+Dit stuurt het verzoek naar de edge function die:
+1. Via de Supabase Admin API een recovery link genereert
+2. Deze via Resend als nette HTML-email verstuurt
 
-### Te maken bestanden
+## Belangrijke opmerking
 
-| Bestand | Actie |
-|---------|-------|
-| `supabase/functions/send-password-reset/index.ts` | Nieuwe edge function |
-| `supabase/config.toml` | `verify_jwt = false` toevoegen (met in-code auth check) |
-
-### Na deployment
-
-De function direct aanroepen via de curl tool om de reset email naar `ron@fonkelmedia.nl` te sturen.
+De Resend afzender is momenteel `onboarding@resend.dev` (test-domein). Dit domein kan alleen emails sturen naar het emailadres van de Resend account-eigenaar. Voor betrouwbare levering aan alle gebruikers is een eigen domein nodig in Resend. Dit is een bestaande beperking van de huidige setup.
