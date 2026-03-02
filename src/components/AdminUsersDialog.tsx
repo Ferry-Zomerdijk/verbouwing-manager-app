@@ -130,7 +130,7 @@ const AdminUsersDialog = ({ open, onOpenChange }: AdminUsersDialogProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Gebruikers Beheren
+            Gebruikers beheren
           </DialogTitle>
         </DialogHeader>
 

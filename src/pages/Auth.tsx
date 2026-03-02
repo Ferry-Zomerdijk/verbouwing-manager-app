@@ -66,7 +66,7 @@ const getPageName = (path: string): string => {
     "/dashboard": "Dashboard",
     "/project": "Project",
     "/project-tasks": "Taken",
-    "/users": "Gebruikers Beheren",
+    "/users": "Gebruikers beheren",
     "/checkout/success": "Checkout",
     "/app-store-screenshots": "App Store Screenshots",
   };

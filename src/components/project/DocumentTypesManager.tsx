@@ -165,7 +165,7 @@ const DocumentTypesManager = ({ projectId, open, onOpenChange }: DocumentTypesMa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Document Types Beheren</DialogTitle>
+          <DialogTitle>Documenttypes beheren</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

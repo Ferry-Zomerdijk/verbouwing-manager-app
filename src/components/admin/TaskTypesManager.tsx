@@ -188,7 +188,7 @@ export const TaskTypesManager = ({ open, onOpenChange }: TaskTypesManagerProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Taaktypes Beheren</DialogTitle>
+          <DialogTitle>Taaktypes beheren</DialogTitle>
           <DialogDescription>
             Beheer de types die aan taken kunnen worden toegewezen.
           </DialogDescription>

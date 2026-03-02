@@ -407,7 +407,7 @@ const UserManagement = () => {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage className="text-xs font-medium">
-                  Gebruikers Beheren
+                  Gebruikers beheren
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -425,7 +425,7 @@ const UserManagement = () => {
             <div>
               <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
                 <Users className="w-5 h-5 sm:w-6 sm:h-6" />
-                Gebruikers Beheren
+                Gebruikers beheren
               </h1>
               {project && (
                 <p className="text-xs sm:text-sm text-muted-foreground">{project.naam}</p>
@@ -442,13 +442,13 @@ const UserManagement = () => {
             {projectId && (
               <TabsTrigger value="project" className="gap-2">
                 <UserPlus className="w-4 h-4" />
-                Project Gebruikers
+                Projectgebruikers
               </TabsTrigger>
             )}
             {isAdmin && (
               <TabsTrigger value="platform" className="gap-2">
                 <Shield className="w-4 h-4" />
-                Platform Gebruikers
+                Platformgebruikers
               </TabsTrigger>
             )}
             {isAdmin && (
@@ -567,7 +567,7 @@ const UserManagement = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="w-5 h-5" />
-                    Openstaande Uitnodigingen
+                    Openstaande uitnodigingen
                   </CardTitle>
                   <CardDescription>
                     Uitnodigingen die nog niet zijn geaccepteerd
@@ -807,10 +807,10 @@ const UserManagement = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Taaktypes Beheren</span>
+                    <span>Taaktypes beheren</span>
                     <Button onClick={() => setTaskTypesDialogOpen(true)} size="sm">
                       <Tag className="w-4 h-4 mr-2" />
-                      Types Beheren
+                      Types beheren
                     </Button>
                   </CardTitle>
                   <CardDescription>
@@ -819,7 +819,7 @@ const UserManagement = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Klik op "Types Beheren" om taaktypes toe te voegen, te bewerken of te verwijderen.
+                    Klik op "Types beheren" om taaktypes toe te voegen, te bewerken of te verwijderen.
                   </p>
                 </CardContent>
               </Card>

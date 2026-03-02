@@ -271,7 +271,7 @@ const Dashboard = () => {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => navigate("/users")}>
                         <Users className="w-4 h-4 mr-2" />
-                        Gebruikers Beheren
+                        Gebruikers beheren
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setContactMessagesOpen(true)}>
                         <Mail className="w-4 h-4 mr-2" />
