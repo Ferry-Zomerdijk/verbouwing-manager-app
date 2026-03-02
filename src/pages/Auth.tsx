@@ -232,10 +232,11 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email }
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message || 'Er is een fout opgetreden');
+      if (data?.error) throw new Error(data.error);
       toast.success("Wachtwoord reset email verzonden! Check je inbox.");
       setMode("login");
     } catch (error: any) {
