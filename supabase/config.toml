@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.check-maintenance-due]
 verify_jwt = false
+
+[functions.send-password-reset]
+verify_jwt = false
