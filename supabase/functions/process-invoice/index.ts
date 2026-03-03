@@ -143,195 +143,81 @@ serve(async (req) => {
       return btoa(binary);
     };
 
-    let extractedData;
+    // Send file directly to Gemini Vision API (works for both PDF and images)
+    const arrayBuffer = await fileData.arrayBuffer();
+    const base64 = arrayBufferToBase64(arrayBuffer);
+    const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Use OCR.space API for PDF text extraction
-    if (mimeType === 'application/pdf') {
-      console.log('Extracting text from PDF...');
-      
-      const arrayBuffer = await fileData.arrayBuffer();
-      const base64 = arrayBufferToBase64(arrayBuffer);
+    console.log('Sending to Gemini Vision API...');
 
-      // Use OCR.space free API for PDF text extraction
-      const formData = new FormData();
-      formData.append('base64Image', `data:${mimeType};base64,${base64}`);
-      formData.append('isOverlayRequired', 'false');
-      formData.append('filetype', 'PDF');
-
-      const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
-        method: 'POST',
-        headers: {
-          'apikey': 'helloworld', // Free API key
-        },
-        body: formData,
-      });
-
-      if (!ocrResponse.ok) {
-        const errorText = await ocrResponse.text();
-        console.error('OCR error:', ocrResponse.status, errorText);
-        throw new Error('PDF text extractie mislukt');
-      }
-
-      const ocrResult = await ocrResponse.json();
-      console.log('OCR result:', JSON.stringify(ocrResult).substring(0, 200));
-
-      // Check if we have any extracted text - partial success (page limit reached) is OK
-      const extractedTextResult = ocrResult.ParsedResults?.[0]?.ParsedText;
-      if (!extractedTextResult || extractedTextResult.trim().length === 0) {
-        console.error('OCR processing error:', ocrResult.ErrorMessage || ocrResult.ErrorDetails);
-        throw new Error('Kon geen tekst extraheren uit PDF');
-      }
-      
-      if (ocrResult.ErrorMessage) {
-        console.log('OCR warning (continuing with partial text):', ocrResult.ErrorMessage);
-      }
-
-      const extractedText = extractedTextResult;
-      console.log('Extracted text length:', extractedText.length);
-
-      // Analyze extracted text with AI
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            {
-              role: 'user',
-              content: `Analyseer deze factuur tekst en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.
-
-Factuur tekst:
-${extractedText}`
-            }
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "extract_invoice_data",
-                description: "Extract structured data from an invoice",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    bedrag: { type: "number", description: "Total amount including VAT" },
-                    leverancier: { type: "string", description: "Supplier name" },
-                    beschrijving: { type: "string", description: "Short description of products/services" },
-                    datum: { type: "string", description: "Invoice date in YYYY-MM-DD format" }
-                  },
-                  required: ["bedrag", "leverancier", "beschrijving", "datum"],
-                  additionalProperties: false
-                }
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analyseer deze factuur/bon en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.`
+              },
+              {
+                type: 'image_url',
+                image_url: { url: dataUrl }
               }
-            }
-          ],
-          tool_choice: { type: "function", function: { name: "extract_invoice_data" } }
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI analysis error:', response.status, errorText);
-        
-        if (response.status === 429) {
-          throw new Error('Te veel aanvragen. Probeer het later opnieuw.');
-        }
-        if (response.status === 402) {
-          throw new Error('AI credits zijn op. Voeg credits toe in Lovable.');
-        }
-        
-        throw new Error('AI analyse mislukt');
-      }
-
-      const aiResponse = await response.json();
-      const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall) {
-        throw new Error('Geen gestructureerde data ontvangen van AI');
-      }
-
-      extractedData = JSON.parse(toolCall.function.arguments);
-
-    } else {
-      // Use Vision API for images
-      console.log('Processing image with Vision API...');
-      
-      const arrayBuffer = await fileData.arrayBuffer();
-      const base64 = arrayBufferToBase64(arrayBuffer);
-      const dataUrl = `data:${mimeType};base64,${base64}`;
-
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `Analyseer deze factuur/bon en extraheer de volgende informatie. Geef het antwoord via de extract_invoice_data functie.`
+            ]
+          }
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_invoice_data",
+              description: "Extract structured data from an invoice",
+              parameters: {
+                type: "object",
+                properties: {
+                  bedrag: { type: "number", description: "Total amount including VAT" },
+                  leverancier: { type: "string", description: "Supplier name" },
+                  beschrijving: { type: "string", description: "Short description of products/services" },
+                  datum: { type: "string", description: "Invoice date in YYYY-MM-DD format" }
                 },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: dataUrl
-                  }
-                }
-              ]
-            }
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "extract_invoice_data",
-                description: "Extract structured data from an invoice",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    bedrag: { type: "number", description: "Total amount including VAT" },
-                    leverancier: { type: "string", description: "Supplier name" },
-                    beschrijving: { type: "string", description: "Short description of products/services" },
-                    datum: { type: "string", description: "Invoice date in YYYY-MM-DD format" }
-                  },
-                  required: ["bedrag", "leverancier", "beschrijving", "datum"],
-                  additionalProperties: false
-                }
+                required: ["bedrag", "leverancier", "beschrijving", "datum"],
+                additionalProperties: false
               }
             }
-          ],
-          tool_choice: { type: "function", function: { name: "extract_invoice_data" } }
-        }),
-      });
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "extract_invoice_data" } }
+      }),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Vision API error:', response.status, errorText);
-        
-        if (response.status === 429) {
-          throw new Error('Te veel aanvragen. Probeer het later opnieuw.');
-        }
-        if (response.status === 402) {
-          throw new Error('AI credits zijn op. Voeg credits toe in Lovable.');
-        }
-        
-        throw new Error('AI verwerking mislukt');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Vision API error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        throw new Error('Te veel aanvragen. Probeer het later opnieuw.');
       }
-
-      const aiResponse = await response.json();
-      const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall) {
-        throw new Error('Geen gestructureerde data ontvangen van AI');
+      if (response.status === 402) {
+        throw new Error('AI credits zijn op. Voeg credits toe in Lovable.');
       }
-
-      extractedData = JSON.parse(toolCall.function.arguments);
+      
+      throw new Error('AI verwerking mislukt');
     }
+
+    const aiResponse = await response.json();
+    const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) {
+      throw new Error('Geen gestructureerde data ontvangen van AI');
+    }
+
+    const extractedData = JSON.parse(toolCall.function.arguments);
     
     console.log('Extracted data:', extractedData);
 
