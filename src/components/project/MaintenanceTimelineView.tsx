@@ -1,4 +1,4 @@
-import { format, parse, isAfter, isBefore, addDays, addWeeks, addMonths, addYears, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
+import { format, parse, isBefore, addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle, CheckCircle2, CalendarClock } from "lucide-react";
 import type { MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
+import { getMonthName } from "./MonthPicker";
 
 interface MaintenanceTimelineViewProps {
   instructions: MaintenanceInstruction[];
@@ -21,27 +22,28 @@ function getToday(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-function getMaintenanceStatus(item: MaintenanceInstruction): MaintenanceStatus {
-  if (!item.periode_van && !item.periode_tot) return "noPeriod";
-  
-  const today = getToday();
-  const endDate = item.periode_tot ? parse(item.periode_tot, "yyyy-MM-dd", new Date()) : null;
-  const startDate = item.periode_van ? parse(item.periode_van, "yyyy-MM-dd", new Date()) : null;
-
-  if (endDate && isBefore(endDate, today)) return "overdue";
-  
-  const weekFromNow = addDays(today, 7);
-  if (startDate && isBefore(startDate, weekFromNow) && (!endDate || !isBefore(endDate, today))) {
-    if (endDate && isBefore(endDate, weekFromNow)) return "thisWeek";
-    if (!endDate && isBefore(startDate, weekFromNow)) return "thisWeek";
-    if (startDate && !isAfter(startDate, today)) return "active";
-    if (startDate && isAfter(startDate, today) && isBefore(startDate, weekFromNow)) return "thisWeek";
+function isMonthInPeriod(month: number, from: number, to: number): boolean {
+  if (from <= to) {
+    return month >= from && month <= to;
   }
+  // Wrap-around (e.g. Nov-Mar = 11-3)
+  return month >= from || month <= to;
+}
+
+function getMaintenanceStatus(item: MaintenanceInstruction): MaintenanceStatus {
+  if (item.periode_van == null && item.periode_tot == null) return "noPeriod";
   
-  if (startDate && !isAfter(startDate, today) && endDate && !isBefore(endDate, today)) return "active";
-  if (startDate && isAfter(startDate, today)) return "planned";
+  const currentMonth = new Date().getMonth() + 1;
+  const from = item.periode_van ?? 1;
+  const to = item.periode_tot ?? 12;
+
+  if (isMonthInPeriod(currentMonth, from, to)) return "active";
   
-  return "noPeriod";
+  // Check if the period recently ended (within last month)
+  const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  if (to === prevMonth) return "overdue";
+  
+  return "planned";
 }
 
 function StatusBadge({ status, t }: { status: MaintenanceStatus; t: any }) {
@@ -83,11 +85,6 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
   const status = getMaintenanceStatus(item);
   const locale = language === 'nl' ? nl : enUS;
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return null;
-    return format(parse(dateStr, "yyyy-MM-dd", new Date()), "d MMM", { locale });
-  };
-
   return (
     <Card 
       className={`group cursor-pointer transition-colors hover:bg-accent/50 ${status === "overdue" ? "border-destructive/50" : ""}`}
@@ -124,10 +121,10 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
                   </span>
                 );
               })()}
-              {(item.periode_van || item.periode_tot) && (
+              {(item.periode_van != null || item.periode_tot != null) && (
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-3 w-3" />
-                  {formatDate(item.periode_van)} — {formatDate(item.periode_tot)}
+                  {item.periode_van != null ? getMonthName(item.periode_van, language) : ""} — {item.periode_tot != null ? getMonthName(item.periode_tot, language) : ""}
                 </span>
               )}
               {item.deel_van_huis && (
@@ -171,10 +168,8 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
 
 export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTimelineViewProps) {
   const { t, language } = useLanguage();
-  const locale = language === 'nl' ? nl : enUS;
-  const today = getToday();
 
-  // Separate: overdue, with period, without period
+  // Separate: overdue, active/planned with period, without period
   const overdue: MaintenanceInstruction[] = [];
   const withPeriod: MaintenanceInstruction[] = [];
   const noPeriod: MaintenanceInstruction[] = [];
@@ -186,42 +181,18 @@ export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTim
     else withPeriod.push(item);
   });
 
-  // Sort by periode_van
-  withPeriod.sort((a, b) => {
-    const aDate = a.periode_van || "9999-12-31";
-    const bDate = b.periode_van || "9999-12-31";
-    return aDate.localeCompare(bDate);
+  // Sort by periode_van month
+  withPeriod.sort((a, b) => (a.periode_van ?? 13) - (b.periode_van ?? 13));
+
+  // Group by start month
+  const monthGroups: Record<number, MaintenanceInstruction[]> = {};
+  withPeriod.forEach(item => {
+    const month = item.periode_van ?? 0;
+    if (!monthGroups[month]) monthGroups[month] = [];
+    monthGroups[month].push(item);
   });
 
-  overdue.sort((a, b) => {
-    const aDate = a.periode_tot || "0000-01-01";
-    const bDate = b.periode_tot || "0000-01-01";
-    return aDate.localeCompare(bDate);
-  });
-
-  // Group withPeriod by month
-  const monthGroups: Record<string, MaintenanceInstruction[]> = {};
-  
-  if (withPeriod.length > 0) {
-    const firstDate = parse(withPeriod[0].periode_van || format(today, "yyyy-MM-dd"), "yyyy-MM-dd", new Date());
-    const lastItem = withPeriod[withPeriod.length - 1];
-    const lastDate = parse(lastItem.periode_tot || lastItem.periode_van || format(today, "yyyy-MM-dd"), "yyyy-MM-dd", new Date());
-    
-    const months = eachMonthOfInterval({ start: firstDate < today ? firstDate : today, end: lastDate });
-    months.forEach(month => {
-      const key = format(month, "yyyy-MM");
-      monthGroups[key] = [];
-    });
-
-    withPeriod.forEach(item => {
-      const startDate = item.periode_van ? parse(item.periode_van, "yyyy-MM-dd", new Date()) : today;
-      const key = format(startOfMonth(startDate), "yyyy-MM");
-      if (!monthGroups[key]) monthGroups[key] = [];
-      monthGroups[key].push(item);
-    });
-  }
-
-  const currentMonthKey = format(today, "yyyy-MM");
+  const currentMonth = new Date().getMonth() + 1;
 
   return (
     <div className="space-y-6">
@@ -244,33 +215,27 @@ export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTim
       )}
 
       {/* Monthly groups */}
-      {Object.entries(monthGroups).map(([monthKey, items]) => {
-        const monthDate = parse(monthKey + "-01", "yyyy-MM-dd", new Date());
-        const isCurrentMonth = monthKey === currentMonthKey;
+      {Object.entries(monthGroups).map(([monthStr, items]) => {
+        const month = parseInt(monthStr);
+        const isCurrentMonth = month === currentMonth;
 
         return (
-          <div key={monthKey}>
+          <div key={month}>
             <div className="flex items-center gap-2 mb-2">
               <h3 className={`text-sm font-semibold capitalize ${isCurrentMonth ? "text-primary" : "text-muted-foreground"}`}>
-                {format(monthDate, "MMMM yyyy", { locale })}
+                {getMonthName(month, language)}
               </h3>
               {isCurrentMonth && (
                 <Badge variant="default" className="text-xs">
                   {language === 'nl' ? 'Nu' : 'Now'}
                 </Badge>
               )}
-              {items.length > 0 && (
-                <span className="text-xs text-muted-foreground">({items.length})</span>
-              )}
+              <span className="text-xs text-muted-foreground">({items.length})</span>
             </div>
             <div className={`space-y-2 border-l-2 pl-4 ${isCurrentMonth ? "border-primary/40" : "border-muted"}`}>
-              {items.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-1 italic">{t.management.maintenance.timeline.noTasks}</p>
-              ) : (
-                items.map(item => (
-                  <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
-                ))
-              )}
+              {items.map(item => (
+                <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
+              ))}
             </div>
           </div>
         );
