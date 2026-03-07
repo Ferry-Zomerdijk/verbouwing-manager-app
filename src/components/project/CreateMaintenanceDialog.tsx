@@ -31,6 +31,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
 import { DatePicker } from "@/components/ui/date-picker";
+import { MonthPicker } from "./MonthPicker";
 
 // HOUSE_PART_SUGGESTIONS removed - now using useHouseParts hook
 
@@ -58,8 +59,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
   const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
-  const [periodeVan, setPeriodeVan] = useState("");
-  const [periodeTot, setPeriodeTot] = useState("");
+  const [periodeVan, setPeriodeVan] = useState<number | null>(null);
+  const [periodeTot, setPeriodeTot] = useState<number | null>(null);
   const [status, setStatus] = useState("Nog doen");
   const [laatsteOnderhoud, setLaatsteOnderhoud] = useState("");
 
@@ -101,8 +102,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
     setBijlageUrl(null);
     setDocumentId(null);
     setLinkedDocumentName(null);
-    setPeriodeVan("");
-    setPeriodeTot("");
+    setPeriodeVan(null);
+    setPeriodeTot(null);
     setStatus("Nog doen");
     setLaatsteOnderhoud("");
   };
@@ -241,19 +242,12 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
 
         <div>
           <Label>{t.management.maintenance.labels.periodFrom}</Label>
-          <DatePicker
-            value={periodeVan}
-            onChange={setPeriodeVan}
-          />
+          <MonthPicker value={periodeVan} onChange={setPeriodeVan} />
         </div>
 
         <div>
           <Label>{t.management.maintenance.labels.periodTo}</Label>
-          <DatePicker
-            value={periodeTot}
-            onChange={setPeriodeTot}
-            minDate={periodeVan || undefined}
-          />
+          <MonthPicker value={periodeTot} onChange={setPeriodeTot} />
         </div>
 
         <div>
