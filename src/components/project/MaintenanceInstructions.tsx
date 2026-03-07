@@ -22,6 +22,7 @@ import { CreateMaintenanceDialog } from "./CreateMaintenanceDialog";
 import { EditMaintenanceDialog, type MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceTimelineView } from "./MaintenanceTimelineView";
 import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
+import { getMonthName } from "./MonthPicker";
 import { format, parse, isBefore, addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 
@@ -274,9 +275,9 @@ export function MaintenanceInstructions({ projectId, isAdminOrOwner }: Maintenan
                               {(item.periode_van || item.periode_tot) && (
                                 <span className="flex items-center gap-1">
                                   <CalendarDays className="h-3 w-3" />
-                                  {item.periode_van && format(parse(item.periode_van, "yyyy-MM-dd", new Date()), "d MMM", { locale })}
+                                  {item.periode_van ? getMonthName(item.periode_van, language) : ""}
                                   {" — "}
-                                  {item.periode_tot && format(parse(item.periode_tot, "yyyy-MM-dd", new Date()), "d MMM", { locale })}
+                                  {item.periode_tot ? getMonthName(item.periode_tot, language) : ""}
                                 </span>
                               )}
                               {item.frequentie && (

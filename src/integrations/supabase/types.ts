@@ -638,8 +638,8 @@ export type Database = {
           frequentie: string | null
           id: string
           laatste_onderhoud: string | null
-          periode_tot: string | null
-          periode_van: string | null
+          periode_tot: number | null
+          periode_van: number | null
           project_id: string
           status: string
           titel: string
@@ -656,8 +656,8 @@ export type Database = {
           frequentie?: string | null
           id?: string
           laatste_onderhoud?: string | null
-          periode_tot?: string | null
-          periode_van?: string | null
+          periode_tot?: number | null
+          periode_van?: number | null
           project_id: string
           status?: string
           titel: string
@@ -674,8 +674,8 @@ export type Database = {
           frequentie?: string | null
           id?: string
           laatste_onderhoud?: string | null
-          periode_tot?: string | null
-          periode_van?: string | null
+          periode_tot?: number | null
+          periode_van?: number | null
           project_id?: string
           status?: string
           titel?: string

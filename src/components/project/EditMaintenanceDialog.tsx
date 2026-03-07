@@ -31,6 +31,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { MaintenanceAttachmentSection } from "./MaintenanceAttachmentSection";
 import { DatePicker } from "@/components/ui/date-picker";
+import { MonthPicker } from "./MonthPicker";
 
 // HOUSE_PART_SUGGESTIONS removed - now using useHouseParts hook
 
@@ -47,8 +48,8 @@ export interface MaintenanceInstruction {
   document_id: string | null;
   volgorde: number;
   created_at: string;
-  periode_van: string | null;
-  periode_tot: string | null;
+  periode_van: number | null;
+  periode_tot: number | null;
   status: string;
   laatste_onderhoud: string | null;
 }
@@ -77,8 +78,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
   const [bijlageUrl, setBijlageUrl] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [linkedDocumentName, setLinkedDocumentName] = useState<string | null>(null);
-  const [periodeVan, setPeriodeVan] = useState("");
-  const [periodeTot, setPeriodeTot] = useState("");
+  const [periodeVan, setPeriodeVan] = useState<number | null>(null);
+  const [periodeTot, setPeriodeTot] = useState<number | null>(null);
   const [status, setStatus] = useState("Nog doen");
   const [laatsteOnderhoud, setLaatsteOnderhoud] = useState("");
 
@@ -118,8 +119,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
       setContactTelefoon(instruction.contact_telefoon || "");
       setBijlageUrl(instruction.bijlage_url || null);
       setDocumentId(instruction.document_id || null);
-      setPeriodeVan(instruction.periode_van || "");
-      setPeriodeTot(instruction.periode_tot || "");
+      setPeriodeVan(instruction.periode_van ?? null);
+      setPeriodeTot(instruction.periode_tot ?? null);
       setStatus(instruction.status || "Nog doen");
       setLaatsteOnderhoud(instruction.laatste_onderhoud || "");
     }
@@ -176,8 +177,8 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           contact_telefoon: contactTelefoon.trim() || null,
           bijlage_url: bijlageUrl || null,
           document_id: documentId || null,
-          periode_van: periodeVan || null,
-          periode_tot: periodeTot || null,
+          periode_van: periodeVan,
+          periode_tot: periodeTot,
           status,
           laatste_onderhoud: laatsteOnderhoud || null,
         })
@@ -290,19 +291,12 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
 
         <div>
           <Label>{t.management.maintenance.labels.periodFrom}</Label>
-          <DatePicker
-            value={periodeVan}
-            onChange={setPeriodeVan}
-          />
+          <MonthPicker value={periodeVan} onChange={setPeriodeVan} />
         </div>
 
         <div>
           <Label>{t.management.maintenance.labels.periodTo}</Label>
-          <DatePicker
-            value={periodeTot}
-            onChange={setPeriodeTot}
-            minDate={periodeVan || undefined}
-          />
+          <MonthPicker value={periodeTot} onChange={setPeriodeTot} />
         </div>
 
         <div>
