@@ -128,8 +128,8 @@ export function CreateMaintenanceDialog({ open, onOpenChange, projectId }: Creat
           contact_telefoon: contactTelefoon.trim() || null,
           bijlage_url: bijlageUrl || null,
           document_id: documentId || null,
-          periode_van: periodeVan || null,
-          periode_tot: periodeTot || null,
+          periode_van: periodeVan,
+          periode_tot: periodeTot,
           status,
           laatste_onderhoud: laatsteOnderhoud || null,
         });
