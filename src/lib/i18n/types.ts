@@ -720,6 +720,8 @@ export type UITexts = {
         active: string;
         planned: string;
         noPeriod: string;
+        ifNeeded: string;
+        ifNeededDescription: string;
         noTasks: string;
       };
       messages: {

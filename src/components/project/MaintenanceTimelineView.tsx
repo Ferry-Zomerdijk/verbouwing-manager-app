@@ -1,9 +1,9 @@
-import { format, parse, isBefore, addDays, addWeeks, addMonths, addYears } from "date-fns";
+import { format, parse, isBefore, isAfter, addDays, addWeeks, addMonths, addYears, differenceInDays } from "date-fns";
 import { nl, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle, CheckCircle2, CalendarClock } from "lucide-react";
+import { Clock, User, Phone, Paperclip, CalendarDays, AlertTriangle, CheckCircle2, CalendarClock, HelpCircle } from "lucide-react";
 import type { MaintenanceInstruction } from "./EditMaintenanceDialog";
 import { MaintenanceStatusBadge } from "./MaintenanceStatusBadge";
 import { getMonthName } from "./MonthPicker";
@@ -15,47 +15,9 @@ interface MaintenanceTimelineViewProps {
   isAdminOrOwner?: boolean;
 }
 
-type MaintenanceStatus = "overdue" | "thisWeek" | "active" | "planned" | "noPeriod";
-
 function getToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-function isMonthInPeriod(month: number, from: number, to: number): boolean {
-  if (from <= to) {
-    return month >= from && month <= to;
-  }
-  // Wrap-around (e.g. Nov-Mar = 11-3)
-  return month >= from || month <= to;
-}
-
-function getMaintenanceStatus(item: MaintenanceInstruction): MaintenanceStatus {
-  if (item.periode_van == null && item.periode_tot == null) return "noPeriod";
-  
-  const currentMonth = new Date().getMonth() + 1;
-  const from = item.periode_van ?? 1;
-  const to = item.periode_tot ?? 12;
-
-  if (isMonthInPeriod(currentMonth, from, to)) return "active";
-  
-  // Check if the period recently ended (within last month)
-  const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-  if (to === prevMonth) return "overdue";
-  
-  return "planned";
-}
-
-function StatusBadge({ status, t }: { status: MaintenanceStatus; t: any }) {
-  const config = {
-    overdue: { label: t.management.maintenance.timeline.overdue, className: "bg-destructive text-destructive-foreground" },
-    thisWeek: { label: t.management.maintenance.timeline.thisWeek, className: "bg-orange-500 text-white" },
-    active: { label: t.management.maintenance.timeline.active, className: "bg-green-600 text-white" },
-    planned: { label: t.management.maintenance.timeline.planned, className: "bg-muted text-muted-foreground" },
-    noPeriod: { label: t.management.maintenance.timeline.noPeriod, className: "bg-muted text-muted-foreground" },
-  };
-  const c = config[status];
-  return <Badge className={c.className}>{c.label}</Badge>;
 }
 
 function calculateNextMaintenance(laatsteOnderhoud: string, frequentie: string): Date | null {
@@ -81,16 +43,78 @@ function calculateNextMaintenance(laatsteOnderhoud: string, frequentie: string):
   return null;
 }
 
-function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruction; onEdit: (i: MaintenanceInstruction) => void; t: any; language: string }) {
-  const status = getMaintenanceStatus(item);
+function getNextDate(item: MaintenanceInstruction): Date | null {
+  if (item.laatste_onderhoud && item.frequentie) {
+    return calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
+  }
+  return null;
+}
+
+function formatRelativeDate(date: Date, today: Date, language: string): string {
+  const days = differenceInDays(date, today);
+  if (days === 0) return language === 'nl' ? 'Vandaag' : 'Today';
+  if (days === 1) return language === 'nl' ? 'Morgen' : 'Tomorrow';
+  if (days === -1) return language === 'nl' ? 'Gisteren' : 'Yesterday';
+  if (days < -1) {
+    const absDays = Math.abs(days);
+    return language === 'nl' ? `${absDays} dagen te laat` : `${absDays} days overdue`;
+  }
+  if (days <= 7) return language === 'nl' ? `Over ${days} dagen` : `In ${days} days`;
+  return '';
+}
+
+function TimelineCard({ 
+  item, 
+  onEdit, 
+  t, 
+  language, 
+  nextDate, 
+  variant 
+}: { 
+  item: MaintenanceInstruction; 
+  onEdit: (i: MaintenanceInstruction) => void; 
+  t: any; 
+  language: string; 
+  nextDate: Date | null;
+  variant: 'overdue' | 'scheduled' | 'ifNeeded';
+}) {
   const locale = language === 'nl' ? nl : enUS;
+  const today = getToday();
+
+  const borderClass = variant === 'overdue' 
+    ? 'border-l-4 border-l-destructive' 
+    : variant === 'scheduled' 
+      ? 'border-l-4 border-l-primary' 
+      : 'border-l-4 border-l-muted';
 
   return (
     <Card 
-      className={`group cursor-pointer transition-colors hover:bg-accent/50 ${status === "overdue" ? "border-destructive/50" : ""}`}
+      className={`group cursor-pointer transition-colors hover:bg-accent/50 ${borderClass}`}
       onClick={() => onEdit(item)}
     >
       <CardContent className="p-3">
+        {/* Prominent next date */}
+        {nextDate && (
+          <div className={`flex items-center gap-2 mb-2 ${variant === 'overdue' ? 'text-destructive' : 'text-primary'}`}>
+            <CalendarClock className="h-4 w-4 shrink-0" />
+            <span className="font-semibold text-sm">
+              {format(nextDate, "d MMMM yyyy", { locale })}
+            </span>
+            {(() => {
+              const rel = formatRelativeDate(nextDate, today, language);
+              return rel ? (
+                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                  variant === 'overdue' 
+                    ? 'bg-destructive/10 text-destructive' 
+                    : 'bg-primary/10 text-primary'
+                }`}>
+                  {rel}
+                </span>
+              ) : null;
+            })()}
+          </div>
+        )}
+
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -100,7 +124,6 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
                 projectId={item.project_id}
                 currentStatus={item.status || "Nog doen"}
               />
-              <StatusBadge status={status} t={t} />
             </div>
             <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
               {item.laatste_onderhoud && (
@@ -109,18 +132,6 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
                   {t.management.maintenance.labels.lastMaintenance}: {format(parse(item.laatste_onderhoud, "yyyy-MM-dd", new Date()), "d MMM yyyy", { locale })}
                 </span>
               )}
-              {item.laatste_onderhoud && item.frequentie && (() => {
-                const next = calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
-                if (!next) return null;
-                const today = getToday();
-                const isOverdue = isBefore(next, today);
-                return (
-                  <span className={`flex items-center gap-1 ${isOverdue ? "text-destructive font-medium" : ""}`}>
-                    <CalendarClock className="h-3 w-3" />
-                    {t.management.maintenance.labels.nextMaintenance}: {format(next, "d MMM yyyy", { locale })}
-                  </span>
-                );
-              })()}
               {(item.periode_van != null || item.periode_tot != null) && (
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-3 w-3" />
@@ -168,81 +179,82 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
 
 export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTimelineViewProps) {
   const { t, language } = useLanguage();
-
-  // Calculate next maintenance date for sorting
-  function getNextDate(item: MaintenanceInstruction): Date | null {
-    if (item.laatste_onderhoud && item.frequentie) {
-      return calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
-    }
-    return null;
-  }
-
-  // Separate overdue from the rest, then sort by next date
   const today = getToday();
-  const overdue: MaintenanceInstruction[] = [];
-  const rest: MaintenanceInstruction[] = [];
+
+  const overdue: (MaintenanceInstruction & { _next: Date })[] = [];
+  const scheduled: (MaintenanceInstruction & { _next: Date })[] = [];
+  const ifNeeded: MaintenanceInstruction[] = [];
 
   instructions.forEach(item => {
     const next = getNextDate(item);
-    if (next && isBefore(next, today)) {
-      overdue.push(item);
+    if (!next) {
+      ifNeeded.push(item);
+    } else if (isBefore(next, today)) {
+      overdue.push({ ...item, _next: next });
     } else {
-      rest.push(item);
+      scheduled.push({ ...item, _next: next });
     }
   });
 
-  // Sort overdue: most overdue first
-  overdue.sort((a, b) => {
-    const na = getNextDate(a);
-    const nb = getNextDate(b);
-    if (!na) return 1;
-    if (!nb) return -1;
-    return na.getTime() - nb.getTime();
-  });
-
-  // Sort rest: soonest next date first, no-date items at bottom
-  rest.sort((a, b) => {
-    const na = getNextDate(a);
-    const nb = getNextDate(b);
-    if (!na && !nb) return (a.periode_van ?? 13) - (b.periode_van ?? 13);
-    if (!na) return 1;
-    if (!nb) return -1;
-    return na.getTime() - nb.getTime();
-  });
+  // Most overdue first
+  overdue.sort((a, b) => a._next.getTime() - b._next.getTime());
+  // Soonest first
+  scheduled.sort((a, b) => a._next.getTime() - b._next.getTime());
 
   return (
     <div className="space-y-6">
-      {/* Overdue section */}
+      {/* Overdue */}
       {overdue.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="h-4 w-4 text-destructive" />
             <h3 className="text-sm font-semibold text-destructive">
               {t.management.maintenance.timeline.overdue}
             </h3>
             <Badge variant="destructive" className="text-xs">{overdue.length}</Badge>
           </div>
-          <div className="space-y-2 border-l-2 border-destructive/30 pl-4">
+          <div className="space-y-2">
             {overdue.map(item => (
-              <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
+              <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} nextDate={item._next} variant="overdue" />
             ))}
           </div>
         </div>
       )}
 
-      {/* Upcoming / all items sorted by next date */}
-      {rest.length > 0 && (
+      {/* Scheduled */}
+      {scheduled.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-muted-foreground">
+          <div className="flex items-center gap-2 mb-3">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
               {t.management.maintenance.timeline.planned}
             </h3>
-            <span className="text-xs text-muted-foreground">({rest.length})</span>
+            <span className="text-xs text-muted-foreground">({scheduled.length})</span>
           </div>
-          <div className="space-y-2 border-l-2 border-muted pl-4">
-            {rest.map(item => (
-              <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
+          <div className="space-y-2">
+            {scheduled.map(item => (
+              <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} nextDate={item._next} variant="scheduled" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* If needed */}
+      {ifNeeded.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              {t.management.maintenance.timeline.ifNeeded}
+            </h3>
+            <span className="text-xs text-muted-foreground">({ifNeeded.length})</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3 ml-6">
+            {t.management.maintenance.timeline.ifNeededDescription}
+          </p>
+          <div className="space-y-2">
+            {ifNeeded.map(item => (
+              <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} nextDate={null} variant="ifNeeded" />
             ))}
           </div>
         </div>
