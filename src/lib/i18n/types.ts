@@ -677,6 +677,7 @@ export type UITexts = {
         linkedDocument: string;
         periodFrom: string;
         periodTo: string;
+        periodHint: string;
         lastMaintenance: string;
         nextMaintenance: string;
       };

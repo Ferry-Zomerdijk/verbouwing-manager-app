@@ -606,6 +606,7 @@ export const nl: UITexts = {
         linkedDocument: "Gekoppeld document",
         periodFrom: "Beginmaand",
         periodTo: "Eindmaand",
+        periodHint: "Niet verplicht — laat leeg als het onderhoud het hele jaar door kan.",
         lastMaintenance: "Laatst uitgevoerd",
         nextMaintenance: "Volgende keer",
       },

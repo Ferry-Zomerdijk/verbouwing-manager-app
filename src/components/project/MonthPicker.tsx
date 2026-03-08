@@ -30,12 +30,15 @@ export function MonthPicker({ value, onChange, placeholder }: MonthPickerProps) 
   return (
     <Select
       value={value !== null ? String(value) : ""}
-      onValueChange={(v) => onChange(v ? parseInt(v) : null)}
+      onValueChange={(v) => onChange(v === "__none__" ? null : v ? parseInt(v) : null)}
     >
       <SelectTrigger>
         <SelectValue placeholder={placeholder || (language === "nl" ? "Selecteer maand" : "Select month")} />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="__none__">
+          {language === "nl" ? "Selecteer maand" : "Select month"}
+        </SelectItem>
         {months.map((month, i) => (
           <SelectItem key={i + 1} value={String(i + 1)}>
             {month}
