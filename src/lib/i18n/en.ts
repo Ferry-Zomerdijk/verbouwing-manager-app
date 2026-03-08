@@ -644,6 +644,8 @@ export const en: UITexts = {
         active: "Active",
         planned: "Planned",
         noPeriod: "No period",
+        ifNeeded: "If needed",
+        ifNeededDescription: "Tasks without a scheduled date",
         noTasks: "No tasks this month",
       },
       messages: {

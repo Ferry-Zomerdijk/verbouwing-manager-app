@@ -649,6 +649,8 @@ export const nl: UITexts = {
         active: "Actief",
         planned: "Gepland",
         noPeriod: "Geen periode",
+        ifNeeded: "Indien nodig",
+        ifNeededDescription: "Taken zonder vastgestelde datum",
         noTasks: "Geen taken deze maand",
       },
       messages: {
