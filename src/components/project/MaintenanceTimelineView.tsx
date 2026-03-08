@@ -169,30 +169,46 @@ function TimelineCard({ item, onEdit, t, language }: { item: MaintenanceInstruct
 export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTimelineViewProps) {
   const { t, language } = useLanguage();
 
-  // Separate: overdue, active/planned with period, without period
+  // Calculate next maintenance date for sorting
+  function getNextDate(item: MaintenanceInstruction): Date | null {
+    if (item.laatste_onderhoud && item.frequentie) {
+      return calculateNextMaintenance(item.laatste_onderhoud, item.frequentie);
+    }
+    return null;
+  }
+
+  // Separate overdue from the rest, then sort by next date
+  const today = getToday();
   const overdue: MaintenanceInstruction[] = [];
-  const withPeriod: MaintenanceInstruction[] = [];
-  const noPeriod: MaintenanceInstruction[] = [];
+  const rest: MaintenanceInstruction[] = [];
 
   instructions.forEach(item => {
-    const status = getMaintenanceStatus(item);
-    if (status === "overdue") overdue.push(item);
-    else if (status === "noPeriod") noPeriod.push(item);
-    else withPeriod.push(item);
+    const next = getNextDate(item);
+    if (next && isBefore(next, today)) {
+      overdue.push(item);
+    } else {
+      rest.push(item);
+    }
   });
 
-  // Sort by periode_van month
-  withPeriod.sort((a, b) => (a.periode_van ?? 13) - (b.periode_van ?? 13));
-
-  // Group by start month
-  const monthGroups: Record<number, MaintenanceInstruction[]> = {};
-  withPeriod.forEach(item => {
-    const month = item.periode_van ?? 0;
-    if (!monthGroups[month]) monthGroups[month] = [];
-    monthGroups[month].push(item);
+  // Sort overdue: most overdue first
+  overdue.sort((a, b) => {
+    const na = getNextDate(a);
+    const nb = getNextDate(b);
+    if (!na) return 1;
+    if (!nb) return -1;
+    return na.getTime() - nb.getTime();
   });
 
-  const currentMonth = new Date().getMonth() + 1;
+  // Sort rest: soonest next date first, no-date items at bottom
+  rest.sort((a, b) => {
+    const na = getNextDate(a);
+    const nb = getNextDate(b);
+    if (!na && !nb) return (a.periode_van ?? 13) - (b.periode_van ?? 13);
+    if (!na) return 1;
+    if (!nb) return -1;
+    return na.getTime() - nb.getTime();
+  });
 
   return (
     <div className="space-y-6">
@@ -214,41 +230,18 @@ export function MaintenanceTimelineView({ instructions, onEdit }: MaintenanceTim
         </div>
       )}
 
-      {/* Monthly groups */}
-      {Object.entries(monthGroups).map(([monthStr, items]) => {
-        const month = parseInt(monthStr);
-        const isCurrentMonth = month === currentMonth;
-
-        return (
-          <div key={month}>
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className={`text-sm font-semibold capitalize ${isCurrentMonth ? "text-primary" : "text-muted-foreground"}`}>
-                {getMonthName(month, language)}
-              </h3>
-              {isCurrentMonth && (
-                <Badge variant="default" className="text-xs">
-                  {language === 'nl' ? 'Nu' : 'Now'}
-                </Badge>
-              )}
-              <span className="text-xs text-muted-foreground">({items.length})</span>
-            </div>
-            <div className={`space-y-2 border-l-2 pl-4 ${isCurrentMonth ? "border-primary/40" : "border-muted"}`}>
-              {items.map(item => (
-                <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* No period section */}
-      {noPeriod.length > 0 && (
+      {/* Upcoming / all items sorted by next date */}
+      {rest.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-            {t.management.maintenance.timeline.noPeriod}
-          </h3>
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              {t.management.maintenance.timeline.planned}
+            </h3>
+            <span className="text-xs text-muted-foreground">({rest.length})</span>
+          </div>
           <div className="space-y-2 border-l-2 border-muted pl-4">
-            {noPeriod.map(item => (
+            {rest.map(item => (
               <TimelineCard key={item.id} item={item} onEdit={onEdit} t={t} language={language} />
             ))}
           </div>
