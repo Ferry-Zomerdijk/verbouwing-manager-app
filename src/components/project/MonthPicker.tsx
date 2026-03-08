@@ -30,7 +30,7 @@ export function MonthPicker({ value, onChange, placeholder }: MonthPickerProps) 
   return (
     <Select
       value={value !== null ? String(value) : ""}
-      onValueChange={(v) => onChange(v ? parseInt(v) : null)}
+      onValueChange={(v) => onChange(v === "__none__" ? null : v ? parseInt(v) : null)}
     >
       <SelectTrigger>
         <SelectValue placeholder={placeholder || (language === "nl" ? "Selecteer maand" : "Select month")} />

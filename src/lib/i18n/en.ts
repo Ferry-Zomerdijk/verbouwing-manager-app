@@ -601,6 +601,7 @@ export const en: UITexts = {
         linkedDocument: "Linked document",
         periodFrom: "Start month",
         periodTo: "End month",
+        periodHint: "Optional — leave empty if maintenance applies all year round.",
         lastMaintenance: "Last performed",
         nextMaintenance: "Next due",
       },

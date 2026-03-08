@@ -299,6 +299,10 @@ export function EditMaintenanceDialog({ open, onOpenChange, instruction }: EditM
           <MonthPicker value={periodeTot} onChange={setPeriodeTot} />
         </div>
 
+        <p className="text-xs text-muted-foreground col-span-2">
+          {t.management.maintenance.labels.periodHint}
+        </p>
+
         <div>
           <Label>{t.management.maintenance.labels.lastMaintenance}</Label>
           <DatePicker
