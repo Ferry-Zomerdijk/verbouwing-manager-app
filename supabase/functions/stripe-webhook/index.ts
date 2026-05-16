@@ -713,34 +713,33 @@ async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscripti
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-  
-  if (!signature) {
-    console.log("No signature found, processing without verification");
-  }
 
   const startTime = Date.now();
   let eventId = "unknown";
   let eventType = "unknown";
 
+  // ALWAYS require signature verification — never parse without verifying.
+  if (!signature || !webhookSecret) {
+    console.error("Missing stripe-signature header or STRIPE_WEBHOOK_SECRET");
+    return new Response(
+      JSON.stringify({ error: "Missing signature or webhook secret" }),
+      { status: 400 },
+    );
+  }
+
   try {
     const body = await req.text();
     let event: Stripe.Event;
 
-    // If we have a webhook secret, verify the signature
-    if (webhookSecret && signature) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      } catch (err) {
-        const errMessage = err instanceof Error ? err.message : "Unknown error";
-        console.error("Webhook signature verification failed:", errMessage);
-        await logWebhookEvent("sig_failed_" + Date.now(), "signature_verification", "failed", {
-          errorMessage: errMessage,
-        });
-        return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
-      }
-    } else {
-      // Parse without verification (for testing)
-      event = JSON.parse(body);
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("Webhook signature verification failed:", errMessage);
+      await logWebhookEvent("sig_failed_" + Date.now(), "signature_verification", "failed", {
+        errorMessage: errMessage,
+      });
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
     }
 
     eventId = event.id;
