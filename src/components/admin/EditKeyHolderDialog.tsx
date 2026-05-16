@@ -171,6 +171,21 @@ export function EditKeyHolderDialog({
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="keyNotes">Notitie bij sleutel</Label>
+            <Textarea
+              id="keyNotes"
+              value={keyNotes}
+              onChange={(e) => setKeyNotes(e.target.value)}
+              placeholder="Algemene notitie over deze sleutel"
+              rows={2}
+              className="text-base"
+            />
+            <p className="text-xs text-muted-foreground">
+              Deze notitie blijft zichtbaar in het sleuteloverzicht
+            </p>
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
