@@ -33,6 +33,27 @@ serve(async (req) => {
       throw new Error('Missing projectId or userEmail');
     }
 
+    // Verify caller identity and project access
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: caller }, error: callerErr } = await supabaseAdmin.auth.getUser(token);
+    if (callerErr || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: hasAccess, error: accessErr } = await supabaseAdmin.rpc('has_project_access', {
+      _user_id: caller.id,
+      _project_id: projectId,
+    });
+    if (accessErr || !hasAccess) {
+      return new Response(
+        JSON.stringify({ error: 'Geen toegang tot dit project' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Generating access token for:', { projectId, userEmail });
 
     // 1. Check if user exists, otherwise create
