@@ -21,6 +21,7 @@ interface Key {
   current_holder: string | null;
   received_at: string | null;
   project_id: string;
+  notes?: string | null;
 }
 
 interface EditKeyHolderDialogProps {
@@ -38,11 +39,13 @@ export function EditKeyHolderDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [newHolder, setNewHolder] = useState("");
   const [transferNotes, setTransferNotes] = useState("");
+  const [keyNotes, setKeyNotes] = useState("");
 
   useEffect(() => {
     if (keyData) {
       setNewHolder(keyData.current_holder || "");
       setTransferNotes("");
+      setKeyNotes(keyData.notes || "");
     }
   }, [keyData]);
 
@@ -89,9 +92,11 @@ export function EditKeyHolderDialog({
       const updateData: {
         current_holder: string | null;
         received_at: string | null;
+        notes: string | null;
       } = {
         current_holder: newHolder.trim() || null,
         received_at: newHolder.trim() ? now : null,
+        notes: keyNotes.trim() || null,
       };
 
       const { error } = await supabase
@@ -163,6 +168,21 @@ export function EditKeyHolderDialog({
             />
             <p className="text-xs text-muted-foreground">
               Deze notitie wordt opgeslagen in de sleutelhistorie
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="keyNotes">Notitie bij sleutel</Label>
+            <Textarea
+              id="keyNotes"
+              value={keyNotes}
+              onChange={(e) => setKeyNotes(e.target.value)}
+              placeholder="Algemene notitie over deze sleutel"
+              rows={2}
+              className="text-base"
+            />
+            <p className="text-xs text-muted-foreground">
+              Deze notitie blijft zichtbaar in het sleuteloverzicht
             </p>
           </div>
 
