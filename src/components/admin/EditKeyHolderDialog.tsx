@@ -39,11 +39,13 @@ export function EditKeyHolderDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [newHolder, setNewHolder] = useState("");
   const [transferNotes, setTransferNotes] = useState("");
+  const [keyNotes, setKeyNotes] = useState("");
 
   useEffect(() => {
     if (keyData) {
       setNewHolder(keyData.current_holder || "");
       setTransferNotes("");
+      setKeyNotes(keyData.notes || "");
     }
   }, [keyData]);
 
