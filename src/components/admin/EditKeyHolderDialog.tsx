@@ -92,9 +92,11 @@ export function EditKeyHolderDialog({
       const updateData: {
         current_holder: string | null;
         received_at: string | null;
+        notes: string | null;
       } = {
         current_holder: newHolder.trim() || null,
         received_at: newHolder.trim() ? now : null,
+        notes: keyNotes.trim() || null,
       };
 
       const { error } = await supabase
