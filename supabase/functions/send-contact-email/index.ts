@@ -103,16 +103,20 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Contact message saved to database");
     }
 
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeMessage = escapeHtml(message);
+
     // Send notification email to admin
     const adminEmailResponse = await sendEmail(
-      ["support@derenovatieapp.nl"], // Replace with actual support email
-      `Nieuw contactformulier bericht van ${name}`,
+      ["support@derenovatieapp.nl"],
+      `Nieuw contactformulier bericht van ${safeName}`,
       `
         <h2>Nieuw bericht via het contactformulier</h2>
-        <p><strong>Naam:</strong> ${name}</p>
-        <p><strong>E-mail:</strong> ${email}</p>
+        <p><strong>Naam:</strong> ${safeName}</p>
+        <p><strong>E-mail:</strong> ${safeEmail}</p>
         <p><strong>Bericht:</strong></p>
-        <p style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</p>
+        <p style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${safeMessage}</p>
         <hr>
         <p style="color: #666; font-size: 12px;">Dit bericht is verzonden via het contactformulier op De Renovatie App.</p>
       `
@@ -126,12 +130,12 @@ const handler = async (req: Request): Promise<Response> => {
       "We hebben je bericht ontvangen!",
       `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #16a34a;">Bedankt voor je bericht, ${name}!</h1>
+          <h1 style="color: #16a34a;">Bedankt voor je bericht, ${safeName}!</h1>
           <p>We hebben je bericht ontvangen en nemen zo snel mogelijk contact met je op.</p>
           <p>Meestal reageren we binnen 24 uur.</p>
           <hr style="border: 1px solid #eee; margin: 20px 0;">
           <p style="color: #666;"><strong>Je bericht:</strong></p>
-          <p style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</p>
+          <p style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${safeMessage}</p>
           <hr style="border: 1px solid #eee; margin: 20px 0;">
           <p style="color: #999; font-size: 12px;">
             Met vriendelijke groet,<br>
