@@ -42,6 +42,28 @@ serve(async (req) => {
       throw new Error('Invalid authorization');
     }
 
+    // Verify caller owns the project or is an admin
+    const { data: projectAccess } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('user_id', inviter.id)
+      .maybeSingle();
+
+    const { data: adminRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', inviter.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (!projectAccess && !adminRole) {
+      return new Response(
+        JSON.stringify({ error: 'Geen toegang tot dit project' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 1. Check if user already exists
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === userEmail);
