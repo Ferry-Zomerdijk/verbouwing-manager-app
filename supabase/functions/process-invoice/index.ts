@@ -235,10 +235,12 @@ serve(async (req) => {
 
     if (usageError) {
       console.error('Failed to log AI usage:', usageError);
-      // Don't fail the request, just log the error
-    } else {
-      console.log('AI usage logged successfully');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Kon AI gebruik niet vastleggen' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    console.log('AI usage logged successfully');
 
     return new Response(
       JSON.stringify({
