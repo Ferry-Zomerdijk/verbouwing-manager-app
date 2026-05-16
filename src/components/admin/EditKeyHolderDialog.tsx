@@ -21,6 +21,7 @@ interface Key {
   current_holder: string | null;
   received_at: string | null;
   project_id: string;
+  notes?: string | null;
 }
 
 interface EditKeyHolderDialogProps {
