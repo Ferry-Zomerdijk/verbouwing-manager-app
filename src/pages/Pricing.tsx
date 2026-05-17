@@ -7,6 +7,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Footer } from "@/components/Footer";
+import { Seo } from "@/components/Seo";
 
 // Predefined pricing plans (will be synced with Stripe products)
 const PRICING_PLANS = [
@@ -104,10 +105,15 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Prijzen — De Renovatie App"
+        description="Vergelijk de Gratis, Basis (€4,99/maand) en Pro (€9,99/maand) abonnementen van De Renovatie App. Maandelijks opzegbaar."
+        path="/pricing"
+      />
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" aria-label="Terug" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

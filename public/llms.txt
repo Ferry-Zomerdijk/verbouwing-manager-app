@@ -1,0 +1,14 @@
+# De Renovatie App
+
+> Professioneel platform voor het plannen, volgen en beheren van woningverbouwingen — met taken, kosten, documenten, foto's, aannemers en rapportage op één plek.
+
+De Renovatie App helpt particulieren en ZZP'ers om renovatieprojecten in goede banen te leiden: van planning en budget tot foto's, documenten en samenwerking met aannemers. Beschikbaar als webapp en als PWA op mobiel.
+
+## Pages
+
+- [Home](/): Productoverzicht, functies, prijzen en FAQ.
+- [Prijzen](/pricing): Gratis, Basis (€4,99/maand) en Pro (€9,99/maand) abonnementen vergeleken.
+- [Inloggen](/auth): Toegang voor bestaande gebruikers (wachtwoord of pincode).
+- [App installeren](/install): PWA-installatie-instructies voor iOS en Android.
+- [Privacybeleid](/privacy): Hoe persoonsgegevens worden verzameld, gebruikt en beschermd (AVG).
+- [Algemene Voorwaarden](/terms): Voorwaarden voor het gebruik van de dienst.

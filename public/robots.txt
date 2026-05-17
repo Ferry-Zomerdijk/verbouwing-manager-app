@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://verbouwing-manager-app.lovable.app/sitemap.xml

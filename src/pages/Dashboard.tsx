@@ -38,6 +38,7 @@ import AiUsageWidget from "@/components/AiUsageWidget";
 import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
 import UpcomingDeliveriesWidget from "@/components/UpcomingDeliveriesWidget";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Seo } from "@/components/Seo";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -174,6 +175,11 @@ const Dashboard = () => {
 
   return (
     <div ref={isMobile ? containerRef : undefined} className="min-h-screen bg-gradient-subtle relative">
+      <Seo
+        title="Dashboard — De Renovatie App"
+        description="Overzicht van al je renovatieprojecten, taken, aanwezigheid en aankomende leveringen op één plek."
+        path="/dashboard"
+      />
       {isMobile && (
         <PullToRefreshIndicator
           pullDistance={pullDistance}
@@ -191,7 +197,7 @@ const Dashboard = () => {
                 <Home className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold">De Renovatie App</h1>
+                <h1 className="text-lg sm:text-2xl font-bold">De Renovatie App — Dashboard</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">{t.dashboard.subtitle}</p>
               </div>
             </div>
@@ -204,7 +210,7 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">{t.dashboard.newProject}</span>
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setShortcutsDialogOpen(true)} className="hidden sm:flex">
+              <Button variant="outline" size="icon" aria-label="Sneltoetsen tonen" onClick={() => setShortcutsDialogOpen(true)} className="hidden sm:flex">
                 <Keyboard className="w-4 h-4" />
               </Button>
               <PwaInstallButton />

@@ -98,6 +98,8 @@ export const LandingHeader = () => {
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2"
+            aria-label={isMobileMenuOpen ? "Menu sluiten" : "Menu openen"}
+            aria-expanded={isMobileMenuOpen}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

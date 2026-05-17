@@ -2,16 +2,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Footer } from "@/components/Footer";
+import { Seo } from "@/components/Seo";
 
 export default function PrivacyPolicy() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Seo
+        title="Privacybeleid — De Renovatie App"
+        description="Lees hoe De Renovatie App jouw persoonsgegevens verzamelt, gebruikt en beschermt onder de Algemene Verordening Gegevensbescherming (AVG)."
+        path="/privacy"
+      />
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" aria-label="Terug" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -23,7 +29,7 @@ export default function PrivacyPolicy() {
 
       <main className="container mx-auto px-4 py-12 flex-1">
         <div className="max-w-3xl mx-auto prose prose-neutral dark:prose-invert">
-          <h1 className="text-3xl font-bold mb-8">Privacybeleid De Renovatie App</h1>
+          <h2 className="text-3xl font-bold mb-8">Privacybeleid De Renovatie App</h2>
           
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Inleiding</h2>

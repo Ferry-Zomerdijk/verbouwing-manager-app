@@ -418,7 +418,7 @@ const ProjectPhotos = ({ projectId, readOnly = false, publicPhotos }: ProjectPho
               <div className="aspect-square relative">
                 <img
                   src={getPhotoUrl(photo.afbeelding_url)}
-                  alt={photo.notitie || "Project foto"}
+                  alt={photo.notitie || `Projectfoto — ${photo.fase}${photo.deel_van_huis && photo.deel_van_huis !== "Nog invullen" ? ` — ${photo.deel_van_huis}` : ""}`}
                   className="w-full h-full object-cover"
                 />
                 {!readOnly ? (

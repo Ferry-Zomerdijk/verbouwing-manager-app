@@ -145,7 +145,8 @@ const AcceptInvite = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
-          <CardTitle>Welkom!</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">De Renovatie App</h1>
+          <CardTitle className="text-base font-normal text-muted-foreground">Welkom!</CardTitle>
           <CardDescription>
             Je bent uitgenodigd om deel te nemen aan een project.
             {inviteEmail && (
