@@ -224,6 +224,7 @@ const ProjectDetail = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
+                aria-label="Terug naar dashboard"
                 className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors" 
                 onClick={() => navigate("/dashboard")}
               >

@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Checkbox } from "@/components/ui/checkbox";
 import { Home, Eye, EyeOff, ArrowLeft, KeyRound, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { Seo } from "@/components/Seo";
 
 type LoginMethod = "pin" | "password";
 type Mode = "login" | "register" | "forgot-password";
@@ -264,12 +265,17 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
+      <Seo
+        title="Inloggen — De Renovatie App"
+        description="Log in op De Renovatie App met je e-mailadres en wachtwoord of pincode om je renovatieprojecten te beheren."
+        path="/auth"
+      />
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary flex items-center justify-center">
             <Home className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">De Renovatie App</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">De Renovatie App</h1>
           <CardDescription>{getTitle()}</CardDescription>
         </CardHeader>
 
@@ -426,6 +432,7 @@ const Auth = () => {
                       />
                       <button
                         type="button"
+                        aria-label={showPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen"}
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       >
