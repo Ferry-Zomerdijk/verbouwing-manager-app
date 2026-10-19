@@ -50,7 +50,7 @@ serve(async (req: Request) => {
       }
     }
 
-    console.log("Generating recovery link for:", email);
+    console.log("Generating recovery link");
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",

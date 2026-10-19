@@ -73,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.error("Invalid email format:", email);
+      console.error("Invalid email format");
       return new Response(
         JSON.stringify({ error: "Ongeldig e-mailadres" }),
         {
@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Processing contact form from:", name, email);
+    console.log("Processing contact form submission");
 
     // Save to database using service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -123,29 +123,6 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     console.log("Admin email sent:", adminEmailResponse);
-
-    // Send confirmation email to the user
-    const userEmailResponse = await sendEmail(
-      [email],
-      "We hebben je bericht ontvangen!",
-      `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #16a34a;">Bedankt voor je bericht, ${safeName}!</h1>
-          <p>We hebben je bericht ontvangen en nemen zo snel mogelijk contact met je op.</p>
-          <p>Meestal reageren we binnen 24 uur.</p>
-          <hr style="border: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #666;"><strong>Je bericht:</strong></p>
-          <p style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${safeMessage}</p>
-          <hr style="border: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #999; font-size: 12px;">
-            Met vriendelijke groet,<br>
-            Het team van De Renovatie App
-          </p>
-        </div>
-      `
-    );
-
-    console.log("User confirmation email sent:", userEmailResponse);
 
     return new Response(
       JSON.stringify({ success: true }),

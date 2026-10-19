@@ -54,7 +54,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating access token for:', { projectId, userEmail });
+    console.log('Generating access token for project:', projectId);
 
     // 1. Check if user exists, otherwise create
     let userId: string;

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { safeRedirect, trustedOrigin } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +41,7 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    console.log("User authenticated:", user.id, user.email);
+    console.log("User authenticated:", user.id);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -57,7 +58,7 @@ serve(async (req) => {
 
     // If no customer exists, create one in Stripe
     if (!customerId) {
-      console.log("Creating new Stripe customer for user:", user.email);
+      console.log("Creating new Stripe customer for user:", user.id);
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -92,8 +93,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: successUrl || `${req.headers.get("origin")}/checkout/success`,
-      cancel_url: cancelUrl || `${req.headers.get("origin")}/pricing?canceled=true`,
+      success_url: safeRedirect(successUrl, `${trustedOrigin(req)}/checkout/success`),
+      cancel_url: safeRedirect(cancelUrl, `${trustedOrigin(req)}/pricing?canceled=true`),
       subscription_data: {
         metadata: {
           supabase_user_id: user.id,

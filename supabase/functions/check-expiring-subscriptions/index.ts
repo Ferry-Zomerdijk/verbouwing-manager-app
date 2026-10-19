@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { isInternalCaller } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -119,6 +120,11 @@ serve(async (req) => {
   }
 
   try {
+    if (!(await isInternalCaller(req, supabaseAdmin))) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.log("Starting check for expiring subscriptions...");
 
     // Calculate date 7 days from now
@@ -179,7 +185,7 @@ serve(async (req) => {
         });
 
         if (emailError) {
-          console.error(`Error sending email to ${profile.email}:`, emailError);
+          console.error(`Error sending expiry email for subscription ${subscription.id}:`, emailError);
           errors.push(`User ${subscription.user_id}: email send failed`);
           continue;
         }
@@ -196,7 +202,7 @@ serve(async (req) => {
           continue;
         }
 
-        console.log(`Sent expiry reminder to ${profile.email} for subscription ${subscription.id}`);
+        console.log(`Sent expiry reminder for subscription ${subscription.id}`);
         sentCount++;
       } catch (error) {
         console.error(`Error processing subscription ${subscription.id}:`, error);
