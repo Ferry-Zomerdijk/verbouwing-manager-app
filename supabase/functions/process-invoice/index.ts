@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
+import { isOwnInvoicePath } from "./pathCheck.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,14 +14,7 @@ const TIER_LIMITS: Record<string, number> = {
   pro: -1, // unlimited
 };
 
-export function isOwnInvoicePath(filePath: unknown, userId: string): boolean {
-  if (typeof filePath !== 'string' || filePath.length > 512) return false;
-  if (filePath.includes('..') || filePath.startsWith('/') || filePath.includes('\\')) return false;
-  const parts = filePath.split('/');
-  return parts.length >= 2 && parts[0] === userId && parts.slice(1).every((p) => p.length > 0);
-}
-
-if (import.meta.main) serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
