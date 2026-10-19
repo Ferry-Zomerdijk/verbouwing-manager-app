@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
+import { isOwnInvoicePath } from "./pathCheck.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,6 +55,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Niet ingelogd' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Bind the requested file to the caller: invoice uploads live under `${user.id}/...`
+    if (!isOwnInvoicePath(filePath, user.id)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Geen toegang tot dit bestand' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

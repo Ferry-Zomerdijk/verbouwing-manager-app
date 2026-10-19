@@ -1512,6 +1512,7 @@ export type Database = {
         Args: { p_project_id: string }
         Returns: undefined
       }
+      verify_cron_secret: { Args: { _secret: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "project_user"

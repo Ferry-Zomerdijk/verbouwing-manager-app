@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
+import { hasProEntitlement } from "../_shared/security.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,18 +44,30 @@ serve(async (req) => {
       );
     }
 
-    const { data: hasAccess, error: accessErr } = await supabaseAdmin.rpc('has_project_access', {
-      _user_id: caller.id,
-      _project_id: projectId,
-    });
-    if (accessErr || !hasAccess) {
+    // Only project owners or platform admins may add members (mirrors project_users RLS)
+    const { data: ownedProject } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('user_id', caller.id)
+      .maybeSingle();
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', { _user_id: caller.id, _role: 'admin' });
+    if (!ownedProject && !isAdmin) {
       return new Response(
         JSON.stringify({ error: 'Geen toegang tot dit project' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Generating access token for:', { projectId, userEmail });
+    // Team sharing is a Pro feature (platform admins exempt)
+    if (!(await hasProEntitlement(supabaseAdmin, caller.id))) {
+      return new Response(
+        JSON.stringify({ error: 'Teamleden toevoegen is alleen beschikbaar in het Pro abonnement', requiresUpgrade: true }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Generating access token for project:', projectId);
 
     // 1. Check if user exists, otherwise create
     let userId: string;

@@ -101,7 +101,7 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log("Creating user with email:", email);
+    console.log("Creating user");
 
     // Generate a random password (user will reset it via link)
     const randomPassword = crypto.randomUUID() + "Aa1!";
@@ -163,7 +163,7 @@ serve(async (req: Request) => {
         console.error("Error generating reset link:", resetError);
         // Don't fail the operation, just log it
       } else {
-        console.log("Password reset link generated for:", email);
+        console.log("Password reset link generated");
       }
     }
 

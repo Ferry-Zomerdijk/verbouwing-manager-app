@@ -115,7 +115,7 @@ serve(async (req) => {
       throw new Error('Deze uitnodiging is verlopen');
     }
 
-    console.log('Found valid invitation for:', invitation.email);
+    console.log('Found valid invitation:', invitation.id);
 
     // 3. Generate a secure random password for Supabase Auth
     const generatedPassword = generateSecurePassword(32);

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.1";
+import { hasProEntitlement } from "../_shared/security.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,7 +34,7 @@ serve(async (req) => {
       throw new Error('Missing projectId or userEmail');
     }
 
-    console.log('Creating invitation for:', { projectId, userEmail });
+    console.log('Creating invitation for project:', projectId);
 
     // Get current user from auth header
     const token = authHeader.replace('Bearer ', '');
@@ -60,6 +61,14 @@ serve(async (req) => {
     if (!projectAccess && !adminRole) {
       return new Response(
         JSON.stringify({ error: 'Geen toegang tot dit project' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Team sharing is a Pro feature (platform admins exempt) — enforce server-side
+    if (!(await hasProEntitlement(supabaseAdmin, inviter.id))) {
+      return new Response(
+        JSON.stringify({ error: 'Teamleden uitnodigen is alleen beschikbaar in het Pro abonnement', requiresUpgrade: true }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

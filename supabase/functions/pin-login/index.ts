@@ -95,7 +95,7 @@ serve(async (req) => {
       throw new Error('Pincode moet exact 6 cijfers zijn');
     }
 
-    console.log('PIN login attempt for:', email);
+    console.log('PIN login attempt');
 
     // 1. Find user by email
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
@@ -108,7 +108,7 @@ serve(async (req) => {
     const user = userData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
     
     if (!user) {
-      console.log('User not found:', email);
+      console.log('User not found for PIN login');
       // Don't reveal that user doesn't exist
       throw new Error('Ongeldige email of pincode');
     }

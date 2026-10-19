@@ -303,7 +303,7 @@ function generatePaymentFailedEmailHtml(userName: string, attemptCount: number):
 
 async function sendPaymentFailedEmail(customerEmail: string, customerName: string, attemptCount: number) {
   try {
-    console.log("Sending payment failed email to:", customerEmail);
+    console.log("Sending payment failed email");
 
     const { data, error } = await resend.emails.send({
       from: "Bouw App <onboarding@resend.dev>",
@@ -415,7 +415,7 @@ function generatePaymentRecoveredEmailHtml(userName: string): string {
 
 async function sendPaymentRecoveredEmail(customerEmail: string, customerName: string) {
   try {
-    console.log("Sending payment recovered email to:", customerEmail);
+    console.log("Sending payment recovered email");
 
     const { data, error } = await resend.emails.send({
       from: "Bouw App <onboarding@resend.dev>",
@@ -568,7 +568,7 @@ async function sendSubscriptionConfirmationEmail(
       return;
     }
 
-    console.log("Sending subscription confirmation email to:", profile.email);
+    console.log("Sending subscription confirmation email");
 
     const { data, error } = await resend.emails.send({
       from: "Bouw App <onboarding@resend.dev>",

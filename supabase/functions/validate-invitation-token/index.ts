@@ -65,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Invitation is valid for:', invitation.email);
+    console.log('Invitation is valid:', invitation.id);
 
     return new Response(
       JSON.stringify({ 

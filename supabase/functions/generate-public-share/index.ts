@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { hasProEntitlement } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,6 +90,18 @@ serve(async (req) => {
     if (project.user_id !== user.id && !isAdmin) {
       return new Response(
         JSON.stringify({ error: "Only project owners and admins can create share links" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Public links are a Pro feature (platform admins exempt) — enforce server-side
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    if (!(await hasProEntitlement(supabaseAdmin, user.id))) {
+      return new Response(
+        JSON.stringify({ error: "Openbare links zijn alleen beschikbaar in het Pro abonnement", requiresUpgrade: true }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
