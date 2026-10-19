@@ -13,7 +13,14 @@ const TIER_LIMITS: Record<string, number> = {
   pro: -1, // unlimited
 };
 
-serve(async (req) => {
+export function isOwnInvoicePath(filePath: unknown, userId: string): boolean {
+  if (typeof filePath !== 'string' || filePath.length > 512) return false;
+  if (filePath.includes('..') || filePath.startsWith('/') || filePath.includes('\\')) return false;
+  const parts = filePath.split('/');
+  return parts.length >= 2 && parts[0] === userId && parts.slice(1).every((p) => p.length > 0);
+}
+
+if (import.meta.main) serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -54,6 +61,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Niet ingelogd' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Bind the requested file to the caller: invoice uploads live under `${user.id}/...`
+    if (!isOwnInvoicePath(filePath, user.id)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Geen toegang tot dit bestand' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
