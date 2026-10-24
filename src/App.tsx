@@ -23,6 +23,7 @@ import UserManagement from "./pages/UserManagement";
 import AcceptInvite from "./pages/AcceptInvite";
 import PublicProjectView from "./pages/PublicProjectView";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NotFound from "./pages/NotFound";
 import AppStoreScreenshots from "./pages/AppStoreScreenshots";
@@ -77,6 +78,7 @@ const App = () => (
                 <Route path="/accept-invite/:token" element={<AcceptInvite />} />
                 <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/checkout" element={<Checkout />} />
                 <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />

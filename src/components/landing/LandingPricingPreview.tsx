@@ -21,7 +21,7 @@ const plans = [
       "Uitgebreid takenbeheer",
       "Document opslag",
       "Aannemers beheer",
-      "AI factuurscanning",
+      "Email ondersteuning",
     ],
     popular: true,
   },

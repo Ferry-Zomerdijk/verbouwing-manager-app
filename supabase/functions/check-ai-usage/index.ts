@@ -9,7 +9,7 @@ const corsHeaders = {
 // Tier limits configuration (keep in sync with frontend)
 const TIER_LIMITS: Record<string, number> = {
   free: 0,
-  basis: 10,
+  basis: 0, // invoice scanning is Pro-only
   pro: -1, // unlimited
 };
 

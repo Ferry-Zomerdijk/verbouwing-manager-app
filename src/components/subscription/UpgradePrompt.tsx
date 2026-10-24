@@ -27,7 +27,7 @@ export function UpgradePrompt({ currentTier, feature, limitType, compact = false
     public_links: "Publieke links zijn alleen beschikbaar in het Pro abonnement",
     import_export: "Importeren en exporteren is beschikbaar vanaf het Basis abonnement",
     contractors: "Aannemers beheren is beschikbaar vanaf het Basis abonnement",
-    ai_invoice_scan: "AI factuurscanning is beschikbaar vanaf het Basis abonnement",
+    ai_invoice_scan: "AI factuurscanning is alleen beschikbaar in het Pro abonnement",
   };
 
   const message = limitType 
@@ -45,7 +45,7 @@ export function UpgradePrompt({ currentTier, feature, limitType, compact = false
           <Sparkles className="h-5 w-5 text-primary" />
           <p className="text-sm">{message}</p>
         </div>
-        <Button size="sm" onClick={() => navigate("/pricing")}>
+        <Button size="sm" onClick={() => navigate(`/checkout?plan=${feature && ["team_sharing","public_links","ai_invoice_scan"].includes(feature) ? "pro" : currentTier === "free" ? "basis" : "pro"}`)}>
           Upgrade naar {nextTier}
         </Button>
       </div>
@@ -62,7 +62,7 @@ export function UpgradePrompt({ currentTier, feature, limitType, compact = false
         <CardDescription>{message}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button onClick={() => navigate("/pricing")} className="w-full">
+        <Button onClick={() => navigate(`/checkout?plan=${feature && ["team_sharing","public_links","ai_invoice_scan"].includes(feature) ? "pro" : currentTier === "free" ? "basis" : "pro"}`)} className="w-full">
           Bekijk abonnementen
         </Button>
       </CardContent>

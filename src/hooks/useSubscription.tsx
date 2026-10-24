@@ -71,8 +71,8 @@ export const TIER_LIMITS = {
     maxPhotos: 100,
     maxDocuments: 20,
     maxContractors: 10,
-    maxAiScansPerMonth: 10, // 10 scans per month
-    features: ["basic_tasks", "basic_photos", "import_export", "contractors", "ai_invoice_scan"],
+    maxAiScansPerMonth: 0, // Invoice scanning is Pro-only
+    features: ["basic_tasks", "basic_photos", "import_export", "contractors"],
   },
   pro: {
     maxProjects: -1, // unlimited
@@ -188,8 +188,8 @@ export function useSubscription() {
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
-          successUrl: `${window.location.origin}/dashboard?subscription=success`,
-          cancelUrl: `${window.location.origin}/pricing?subscription=canceled`,
+          successUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout?canceled=true`,
         },
       });
 

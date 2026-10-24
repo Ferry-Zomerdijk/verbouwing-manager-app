@@ -37,7 +37,7 @@ const PRICING_PLANS = [
       "20 documenten",
       "Importeren & exporteren",
       "Aannemers beheren",
-      "10 AI factuurscans per maand",
+      "Geen AI factuurscanning",
       "Email ondersteuning",
     ],
   },
@@ -87,20 +87,7 @@ export default function Pricing() {
       return;
     }
 
-    // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Je moet ingelogd zijn om een abonnement te kiezen");
-      navigate("/auth");
-      return;
-    }
-
-    const priceId = getPriceIdForTier(tier);
-    if (priceId) {
-      createCheckout(priceId);
-    } else {
-      toast.error("Prijs niet gevonden. Neem contact op met ondersteuning.");
-    }
+    navigate(`/checkout?plan=${tier}`);
   };
 
   return (
