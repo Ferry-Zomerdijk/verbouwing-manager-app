@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { safeRedirect, trustedOrigin } from "../_shared/security.ts";
+import { isAllowedPrice } from "./prices.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,8 +18,8 @@ serve(async (req) => {
   try {
     const { priceId, successUrl, cancelUrl } = await req.json();
 
-    if (!priceId) {
-      throw new Error("Price ID is required");
+    if (!isAllowedPrice(priceId)) {
+      throw new Error("Onbekend abonnement");
     }
 
     console.log("Creating checkout session for price:", priceId);
@@ -94,7 +95,7 @@ serve(async (req) => {
       ],
       mode: "subscription",
       success_url: safeRedirect(successUrl, `${trustedOrigin(req)}/checkout/success`),
-      cancel_url: safeRedirect(cancelUrl, `${trustedOrigin(req)}/pricing?canceled=true`),
+      cancel_url: safeRedirect(cancelUrl, `${trustedOrigin(req)}/checkout?canceled=true`),
       subscription_data: {
         metadata: {
           supabase_user_id: user.id,

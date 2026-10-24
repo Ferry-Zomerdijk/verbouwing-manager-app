@@ -114,7 +114,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
 
     // Check if user can use AI
     if (!canUseAi) {
-      if (currentTier === 'free') {
+      if (!isUnlimited && limit === 0) {
         toast.error("AI factuurscanning is alleen beschikbaar in het Pro abonnement");
       } else {
         toast.error("Je hebt de maandelijkse limiet bereikt. Upgrade naar Pro voor onbeperkte scans.");
@@ -346,13 +346,13 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
   const AiUsageIndicator = () => {
     if (isLoadingAi) return null;
 
-    if (currentTier === 'free') {
+    if (!isUnlimited && limit === 0) {
       return (
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
           <Lock className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
             <p className="text-sm font-medium">AI niet beschikbaar</p>
-            <p className="text-xs text-muted-foreground">Upgrade voor AI factuurscanning</p>
+            <p className="text-xs text-muted-foreground">Upgrade naar Pro voor AI factuurscanning</p>
           </div>
           <Button size="sm" variant="default" onClick={() => navigate('/checkout?plan=pro')}>
             <Sparkles className="h-3 w-3 mr-1" />
