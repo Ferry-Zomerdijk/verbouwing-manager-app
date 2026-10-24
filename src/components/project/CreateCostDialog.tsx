@@ -354,7 +354,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
             <p className="text-sm font-medium">AI niet beschikbaar</p>
             <p className="text-xs text-muted-foreground">Upgrade voor AI factuurscanning</p>
           </div>
-          <Button size="sm" variant="default" onClick={() => navigate('/pricing')}>
+          <Button size="sm" variant="default" onClick={() => navigate('/checkout?plan=pro')}>
             <Sparkles className="h-3 w-3 mr-1" />
             Upgrade
           </Button>
@@ -400,7 +400,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
           </div>
         </div>
         {isNearLimit && (
-          <Button size="sm" variant="outline" onClick={() => navigate('/pricing')}>
+          <Button size="sm" variant="outline" onClick={() => navigate('/checkout?plan=pro')}>
             Upgrade
           </Button>
         )}
