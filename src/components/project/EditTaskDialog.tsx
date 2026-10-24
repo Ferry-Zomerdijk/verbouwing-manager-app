@@ -1,3 +1,4 @@
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -243,7 +244,7 @@ const EditTaskDialog = ({ open, onOpenChange, task, onSuccess, availableDelenVan
 
       const { error } = await supabase
         .from("tasks")
-        .update(updates)
+        .update(updates as TablesUpdate<"tasks">)
         .eq("id", task.id);
 
       if (error) throw error;
