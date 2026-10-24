@@ -36,6 +36,7 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { StartProjectChooser } from "@/components/StartProjectChooser";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 import AiUsageWidget from "@/components/AiUsageWidget";
+import SubscriptionWidget from "@/components/SubscriptionWidget";
 import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
 import UpcomingDeliveriesWidget from "@/components/UpcomingDeliveriesWidget";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -281,6 +282,7 @@ const Dashboard = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Widgets Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <SubscriptionWidget />
           <AiUsageWidget />
           <TodayAttendanceWidget />
           <UpcomingDeliveriesWidget />
