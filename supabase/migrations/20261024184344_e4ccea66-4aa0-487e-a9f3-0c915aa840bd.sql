@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Anyone can read app settings" ON public.app_settings;
+CREATE POLICY "Anyone can read public pro plan" ON public.app_settings FOR SELECT TO anon, authenticated USING (key = 'pro_plan');

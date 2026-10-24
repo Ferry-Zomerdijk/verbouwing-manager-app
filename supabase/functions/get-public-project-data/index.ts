@@ -23,7 +23,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Validating share token:", shareToken);
+    console.log("Validating share token");
 
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
