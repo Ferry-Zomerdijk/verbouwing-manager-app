@@ -115,7 +115,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
     // Check if user can use AI
     if (!canUseAi) {
       if (currentTier === 'free') {
-        toast.error("AI factuurscanning is alleen beschikbaar vanaf het Basis abonnement");
+        toast.error("AI factuurscanning is alleen beschikbaar in het Pro abonnement");
       } else {
         toast.error("Je hebt de maandelijkse limiet bereikt. Upgrade naar Pro voor onbeperkte scans.");
       }
@@ -422,7 +422,7 @@ const CreateCostDialog = ({ open, onOpenChange, projectId, onSuccess, availableD
         <TabsContent value="upload" className="space-y-4">
           <AiUsageIndicator />
 
-          {currentTier !== 'free' && canUseAi && (
+          {canUseAi && (
             <>
               {!selectedFile ? (
                 <div 

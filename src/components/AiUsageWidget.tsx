@@ -20,7 +20,7 @@ const AiUsageWidget = () => {
   }
 
   // Free tier - no AI access
-  if (currentTier === "free") {
+  if (limit === 0) {
     return (
       <div className="p-4 rounded-lg bg-card border">
         <div className="flex items-center gap-2 mb-2">
@@ -33,13 +33,13 @@ const AiUsageWidget = () => {
           </div>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Upgrade naar Basis of Pro om facturen automatisch te laten scannen met AI.
+          Upgrade naar Pro om facturen automatisch te laten scannen met AI.
         </p>
         <Button 
           size="sm" 
           variant="outline" 
           className="w-full text-xs"
-          onClick={() => navigate("/pricing")}
+          onClick={() => navigate("/checkout?plan=pro")}
         >
           Bekijk plannen
           <ArrowRight className="w-3 h-3 ml-1" />
@@ -107,7 +107,7 @@ const AiUsageWidget = () => {
           <Button 
             size="sm" 
             className="w-full text-xs gradient-primary"
-            onClick={() => navigate("/pricing")}
+            onClick={() => navigate("/checkout?plan=pro")}
           >
             Upgrade naar Pro
             <ArrowRight className="w-3 h-3 ml-1" />
