@@ -1,3 +1,4 @@
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -126,7 +127,7 @@ export const TaskListView = ({ tasks, onUpdate, availableDelenVanHuis }: TaskLis
 
       const { error } = await supabase
         .from("tasks")
-        .update(updates)
+        .update(updates as unknown as TablesUpdate<"tasks">)
         .eq("id", taskId);
 
       if (error) throw error;

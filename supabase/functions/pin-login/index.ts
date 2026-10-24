@@ -97,15 +97,17 @@ serve(async (req) => {
 
     console.log('PIN login attempt');
 
-    // 1. Find user by email
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (userError) {
-      console.error('Error fetching users:', userError);
-      throw new Error('Inloggen mislukt');
+    // 1. Find user by email (paginate: listUsers returns max 50 per page by default)
+    let user: any = null;
+    for (let page = 1; page <= 50 && !user; page++) {
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (userError) {
+        console.error('Error fetching users:', userError.message);
+        throw new Error('Inloggen mislukt');
+      }
+      user = userData.users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase()) ?? null;
+      if (userData.users.length < 1000) break;
     }
-
-    const user = userData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
     
     if (!user) {
       console.log('User not found for PIN login');
@@ -125,11 +127,12 @@ serve(async (req) => {
       throw new Error('Deze gebruiker heeft geen pincode ingesteld. Log in met wachtwoord.');
     }
 
-    // 3. Check if account is locked
+    // 3. Check if PIN login is locked. Only the PIN route is blocked;
+    // password login, existing sessions and project access stay untouched.
     if (pinData.locked_until && new Date(pinData.locked_until) > new Date()) {
       const remainingMinutes = Math.ceil((new Date(pinData.locked_until).getTime() - Date.now()) / 60000);
-      console.log('Account locked, remaining minutes:', remainingMinutes);
-      throw new Error(`Account tijdelijk geblokkeerd. Probeer het over ${remainingMinutes} minuten opnieuw.`);
+      console.log('PIN locked for user:', user.id, 'remaining minutes:', remainingMinutes);
+      throw new Error(`Inloggen met pincode is tijdelijk geblokkeerd. Probeer het over ${remainingMinutes} minuten opnieuw of log in met je wachtwoord.`);
     }
 
     // 4. Verify PIN using PBKDF2
@@ -160,7 +163,7 @@ serve(async (req) => {
       if (remainingAttempts > 0) {
         throw new Error(`Ongeldige pincode. Nog ${remainingAttempts} poging${remainingAttempts === 1 ? '' : 'en'} over.`);
       } else {
-        throw new Error(`Account geblokkeerd voor ${LOCKOUT_MINUTES} minuten vanwege te veel mislukte pogingen.`);
+        throw new Error(`Inloggen met pincode is ${LOCKOUT_MINUTES} minuten geblokkeerd na te veel foute pogingen. Je kunt wel inloggen met je wachtwoord.`);
       }
     }
 
