@@ -29,6 +29,39 @@ export interface RenovationTemplate {
 
 export const renovationTemplates: RenovationTemplate[] = [
   {
+    id: 'woning',
+    naam: 'Complete woningrenovatie',
+    beschrijving: 'Volledige renovatie van een woning: van sloop en installaties tot afwerking.',
+    icon: 'Home',
+    geschatte_doorlooptijd: '3-9 maanden',
+    vergunningen: [
+      {
+        naam: 'Omgevingsvergunning bouwen',
+        beschrijving: 'Nodig bij constructieve wijzigingen of aanpassingen aan de gevel.',
+        instantie: 'Gemeente',
+        wanneer_nodig: 'Bij dragende muren, gevelwijzigingen of uitbreidingen',
+        link: 'https://www.omgevingsloket.nl',
+      },
+    ],
+    taken: [
+      { titel: 'Bouwkundige keuring laten uitvoeren', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Hoog', volgorde: 1 },
+      { titel: 'Budget en planning opstellen', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Hoog', volgorde: 2 },
+      { titel: 'Offertes aannemers opvragen', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Hoog', volgorde: 3 },
+      { titel: 'Vergunning controleren en aanvragen', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Hoog', volgorde: 4, vergunning_gerelateerd: true },
+      { titel: 'Sloopwerk', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Middel', volgorde: 5 },
+      { titel: 'Elektrische installatie vernieuwen', beschrijving: null, deel_van_huis: 'Elektrische installatie', prioriteit: 'Hoog', volgorde: 6 },
+      { titel: 'Waterleiding en afvoer vernieuwen', beschrijving: null, deel_van_huis: 'Waterleiding en sanitair', prioriteit: 'Hoog', volgorde: 7 },
+      { titel: 'Isolatie dak, vloer en gevels', beschrijving: null, deel_van_huis: 'Dak', prioriteit: 'Middel', volgorde: 8 },
+      { titel: 'Ramen en deuren vervangen', beschrijving: null, deel_van_huis: 'Ramen en deuren', prioriteit: 'Middel', volgorde: 9 },
+      { titel: 'Keuken plaatsen', beschrijving: null, deel_van_huis: 'Keuken', prioriteit: 'Middel', volgorde: 10 },
+      { titel: 'Badkamer plaatsen', beschrijving: null, deel_van_huis: 'Badkamer', prioriteit: 'Middel', volgorde: 11 },
+      { titel: 'Stucwerk en schilderwerk', beschrijving: null, deel_van_huis: 'Woonkamer', prioriteit: 'Laag', volgorde: 12 },
+      { titel: 'Vloeren leggen', beschrijving: null, deel_van_huis: 'Woonkamer', prioriteit: 'Laag', volgorde: 13 },
+      { titel: 'Oplevering en restpunten', beschrijving: null, deel_van_huis: 'Woning', prioriteit: 'Middel', volgorde: 14 },
+    ],
+    tips: ['Begin met installaties voordat je afwerkt', 'Houd 10-15% reserve aan in je budget'],
+  },
+  {
     id: 'badkamer',
     naam: 'Badkamer Renovatie',
     beschrijving: 'Complete checklist voor het renoveren van een badkamer, van ontwerp tot oplevering.',
