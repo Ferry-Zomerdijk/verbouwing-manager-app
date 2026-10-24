@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { safeRedirect, trustedOrigin } from "../_shared/security.ts";
-import { isAllowedPrice } from "./prices.ts";
+import { getProPlan, isCheckoutPrice } from "../_shared/proPlan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +18,8 @@ serve(async (req) => {
   try {
     const { priceId, successUrl, cancelUrl } = await req.json();
 
-    if (!isAllowedPrice(priceId)) {
+    const planAdmin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    if (!isCheckoutPrice(priceId, await getProPlan(planAdmin))) {
       throw new Error("Onbekend abonnement");
     }
 
