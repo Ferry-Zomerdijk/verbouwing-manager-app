@@ -29,6 +29,7 @@ import NotFound from "./pages/NotFound";
 import AppStoreScreenshots from "./pages/AppStoreScreenshots";
 import Install from "./pages/Install";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,20 @@ const queryClient = new QueryClient({
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
   key: "renovatie-app-cache",
+});
+
+// Wipe cached data whenever the signed-in user changes, so no data from a
+// previous account on this device is ever shown to another account.
+const CACHE_OWNER_KEY = "renovatie-app-cache-owner";
+supabase.auth.onAuthStateChange((_event, session) => {
+  const uid = session?.user?.id ?? "";
+  const previous = window.localStorage.getItem(CACHE_OWNER_KEY) ?? "";
+  if (uid !== previous) {
+    queryClient.clear();
+    window.localStorage.removeItem("renovatie-app-cache");
+    if (uid) window.localStorage.setItem(CACHE_OWNER_KEY, uid);
+    else window.localStorage.removeItem(CACHE_OWNER_KEY);
+  }
 });
 
 const App = () => (
