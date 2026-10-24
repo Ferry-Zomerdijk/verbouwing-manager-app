@@ -4,9 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ArrowRight, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CheckoutSuccess() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Pull the new subscription from Stripe right away so Pro features unlock immediately
+    supabase.functions.invoke("sync-subscription").finally(() => {
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    });
+  }, [queryClient]);
 
   useEffect(() => {
     // Fire confetti on mount
