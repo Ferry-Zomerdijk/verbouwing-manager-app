@@ -29,6 +29,8 @@ import NotFound from "./pages/NotFound";
 import AppStoreScreenshots from "./pages/AppStoreScreenshots";
 import Install from "./pages/Install";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SubscriptionManage from "./pages/SubscriptionManage";
+import ProTerms from "./pages/ProTerms";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient({
@@ -94,6 +96,8 @@ const App = () => (
                 <Route path="/public/project/:shareToken" element={<PublicProjectView />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/abonnement" element={<ProtectedRoute><SubscriptionManage /></ProtectedRoute>} />
+                <Route path="/pro-voorwaarden" element={<ProTerms />} />
                 <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />

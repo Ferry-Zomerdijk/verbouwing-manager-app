@@ -33,6 +33,7 @@ import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { StartProjectChooser } from "@/components/StartProjectChooser";
 import { ContactMessagesDialog } from "@/components/ContactMessagesDialog";
 import AiUsageWidget from "@/components/AiUsageWidget";
 import TodayAttendanceWidget from "@/components/TodayAttendanceWidget";
@@ -50,6 +51,7 @@ const Dashboard = () => {
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [contactMessagesOpen, setContactMessagesOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showStartChooser, setShowStartChooser] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(() => {
     return localStorage.getItem('upgradeBannerDismissed') !== 'true';
@@ -122,6 +124,7 @@ const Dashboard = () => {
         .eq("id", user.id);
     }
     setShowOnboarding(false);
+    if (!projects || projects.length === 0) setShowStartChooser(true);
     toast.success(t.onboarding.welcome);
   };
 
@@ -236,6 +239,7 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">{userInfo.email}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/abonnement")}>Abonnement</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
                     <Settings className="w-4 h-4 mr-2" />
                     {t.navigation.settings}
@@ -428,6 +432,8 @@ const Dashboard = () => {
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
       />
+
+      <StartProjectChooser open={showStartChooser} onDone={() => setShowStartChooser(false)} />
 
       <ContactMessagesDialog
         open={contactMessagesOpen}
