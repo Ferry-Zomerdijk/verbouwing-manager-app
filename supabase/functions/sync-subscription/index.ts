@@ -99,7 +99,7 @@ serve(async (req) => {
 
     const stripeSub = subscriptions.data[0];
     const priceId = stripeSub.items.data[0]?.price.id;
-    const tier = PRICE_TO_TIER[priceId] || "basis";
+    const tier = tierForPrice(priceId, await getProPlan(supabaseAdmin));
     
     logStep("Found Stripe subscription", { 
       subscriptionId: stripeSub.id, 
