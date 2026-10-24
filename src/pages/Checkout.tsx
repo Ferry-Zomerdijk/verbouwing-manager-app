@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Seo } from "@/components/Seo";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription, STRIPE_TIERS } from "@/hooks/useSubscription";
+import { useProPlan, formatEuro, intervalLabel } from "@/hooks/useProPlan";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileText, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PaidTier = "basis" | "pro";
@@ -37,7 +40,15 @@ export default function Checkout() {
   const initial = searchParams.get("plan") === "basis" ? "basis" : "pro";
   const [plan, setPlan] = useState<PaidTier>(initial);
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
-  const { currentTier, createCheckout, isCreatingCheckout, openPortal, isOpeningPortal } = useSubscription();
+  const { currentTier, createCheckout, isCreatingCheckout } = useSubscription();
+  const { data: proPlan } = useProPlan();
+  const [agreed, setAgreed] = useState(false);
+  const isOpeningPortal = false;
+  const PLANS_LIVE = {
+    ...PLANS,
+    pro: { ...PLANS.pro, name: proPlan?.name ?? PLANS.pro.name, price: proPlan ? formatEuro(proPlan.amount_cents) : PLANS.pro.price },
+  };
+  const periodOf = (t: PaidTier) => (t === "pro" && proPlan ? intervalLabel(proPlan.interval) : "maand");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -54,7 +65,8 @@ export default function Checkout() {
 
   const isCurrent = currentTier === plan;
   const isDowngrade = TIER_RANK[currentTier] > TIER_RANK[plan];
-  const selected = PLANS[plan];
+  const selected = PLANS_LIVE[plan];
+  const period = periodOf(plan);
 
   const handlePay = () => {
     if (!userId) {
@@ -62,10 +74,14 @@ export default function Checkout() {
       return;
     }
     if (currentTier !== "free") {
-      openPortal();
+      navigate("/abonnement");
       return;
     }
-    createCheckout(STRIPE_TIERS[plan].price_id);
+    if (!agreed) {
+      toast.error("Ga eerst akkoord met de voorwaarden");
+      return;
+    }
+    createCheckout(plan === "pro" ? (proPlan?.price_id ?? STRIPE_TIERS.pro.price_id) : STRIPE_TIERS.basis.price_id);
   };
 
   const buttonLabel = !userId
@@ -74,7 +90,7 @@ export default function Checkout() {
       ? "Abonnement beheren"
       : currentTier !== "free"
         ? isDowngrade ? "Wijzigen via abonnementsbeheer" : "Upgraden via abonnementsbeheer"
-        : `Afrekenen — ${selected.price} per maand`;
+        : `Afrekenen — ${selected.price} per ${period}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,13 +120,13 @@ export default function Checkout() {
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold">{PLANS[tier].name}</span>
+                  <span className="font-semibold">{PLANS_LIVE[tier].name}</span>
                   {currentTier === tier ? <Badge variant="secondary">Huidig plan</Badge> : tier === "pro" && <Badge>Aanbevolen</Badge>}
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">{PLANS[tier].tagline}</p>
                 <p className="text-2xl font-bold">
-                  {PLANS[tier].price}
-                  <span className="text-sm font-normal text-muted-foreground"> /maand</span>
+                  {PLANS_LIVE[tier].price}
+                  <span className="text-sm font-normal text-muted-foreground"> /{periodOf(tier)}</span>
                 </p>
               </button>
             ))}
@@ -144,7 +160,7 @@ export default function Checkout() {
           <Card className="lg:sticky lg:top-6">
             <CardHeader>
               <CardTitle className="text-base">Overzicht</CardTitle>
-              <CardDescription>Maandelijks opzegbaar</CardDescription>
+              <CardDescription>Per {period}, automatisch verlengd, altijd opzegbaar</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
@@ -152,9 +168,19 @@ export default function Checkout() {
                 <span>{selected.price}</span>
               </div>
               <div className="flex justify-between font-semibold border-t pt-3">
-                <span>Per maand</span>
+                <span>Per {period}</span>
                 <span>{selected.price}</span>
               </div>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2"><RefreshCw className="h-4 w-4 shrink-0" /><span>Start vandaag. Elke {period} wordt het abonnement automatisch verlengd en afgeschreven.</span></div>
+                <div className="flex items-start gap-2"><FileText className="h-4 w-4 shrink-0" /><span>Je facturen verschijnen automatisch in de app onder Abonnement.</span></div>
+              </div>
+              {userId && currentTier === "free" && (
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
+                  <span>Ik ga akkoord met de <a href="/pro-voorwaarden" target="_blank" className="underline">voorwaarden</a></span>
+                </label>
+              )}
               {isCurrent && <p className="text-sm text-muted-foreground">Je hebt dit plan al.</p>}
               <Button className="w-full" size="lg" onClick={handlePay} disabled={userId === undefined || isCreatingCheckout || isOpeningPortal}>
                 {isCreatingCheckout || isOpeningPortal ? "Even geduld..." : buttonLabel}
@@ -165,7 +191,7 @@ export default function Checkout() {
               </div>
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <Lock className="h-4 w-4 shrink-0" />
-                <span>Opzeggen kan altijd via abonnementsbeheer.</span>
+                <span>Opzeggen kan altijd zelf in de app via Abonnement.</span>
               </div>
             </CardContent>
           </Card>
